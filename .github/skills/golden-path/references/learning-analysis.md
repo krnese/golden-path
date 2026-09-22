@@ -3,7 +3,8 @@
 Load for recurring corrections, observations or evaluation failures that may
 change an enduring artifact. Learning grants no authority to rewrite intent.
 
-Follow Observe -> Evaluate -> Learn -> Hypothesize -> Propose -> Prove -> Review -> Codify.
+Follow Observe -> Evaluate -> Learn -> Hypothesize -> Propose -> Human decision ->
+Implement -> Prove -> Codify. Golden Path itself is a workload for this loop.
 
 1. Preserve observation and context, including failed/inconclusive evidence.
    Trace evaluation, capability, requirement, workload and outcome.
@@ -24,14 +25,21 @@ Follow Observe -> Evaluate -> Learn -> Hypothesize -> Propose -> Prove -> Review
 | Implementation defect | Code |
 | Missing operational visibility | Observability requirement/implementation |
 
-4. Form a falsifiable hypothesis and propose the smallest artifact change. Use a
-   consequential decision when architecture/authority changes; use normal Git/PR
-   reporting for scope, evidence and affected IDs. No separate learning registry.
-5. Add discriminating proof, make the authorized change and compare with baseline.
-   Do not rewrite acceptance to hide a failure. Preserve failed hypotheses.
+4. Form a falsifiable hypothesis and compare adding, changing, retaining,
+   consolidating, replacing or removing the affected mechanism. Existing
+   architecture must still earn its complexity; no change is a valid conclusion.
+   Use a consequential decision when architecture/authority changes; use normal
+   Git/PR reporting for scope, evidence and affected IDs. No separate learning registry.
+5. Define discriminating proof before implementation. Obtain the appropriate human
+   decision before consequential changes, implement only the authorized scope and
+   compare with baseline. Do not rewrite acceptance to hide a failure. Preserve
+   failed hypotheses; do not implement artificial changes for a retention decision.
 6. Request review and report actual changed artifacts and remaining uncertainty.
-   Codification means the owning artifact changed through review, not that a
-   status field says it did. I13 remains a human diff-review responsibility.
+   Codification preserves reviewed reasoning in the owning artifacts or existing
+   review history, including why something was retained or removed; a status field
+   is not proof. Remove obsolete implementation and update current bindings when
+   authorized, while preserving historical decisions through Git. I13 remains a
+   human review responsibility.
 
 The [bootstrap evolution](../../../../engineering/adr-bootstrap-minimum.json)
 preserves rejected reasoning without retaining obsolete implementation. Do not

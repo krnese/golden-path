@@ -16,6 +16,14 @@ controls govern the transition to operation; operating evidence informs learning
 Reuse means carrying forward justified capabilities, procedures and expertise,
 not copying an architecture whose requirements no longer apply.
 
+Reasoning, expertise/skills, executable capabilities/tools/MCP, knowledge, context,
+authority, state, policy/control, evaluation and observability are distinct from
+the runtime topology implementing them. The doctrine must remain usable across
+current and future agent runtimes. Copilot discovery paths, tool names and CI
+bindings implement this bootstrap; they are not universal lifecycle requirements
+or a claim of compatibility with every runtime. Replacing a binding must preserve
+the applicable authority, traceability and proof obligations, not its topology.
+
 The repository demonstrates this discipline with versioned artifacts, a governing
 procedure, deterministic validation and defined behavioral evaluations. Its
 [coverage limits](invariants.md) distinguish those mechanisms from controls and
@@ -52,13 +60,19 @@ Future workloads can be deterministic, AI-assisted, or agentic only as earned.
 12. **Architecture follows evidence.** Production observations can challenge
     assumptions and earn evolution, not silently alter intended state.
 13. **Learning is codified.** Appropriate requirements, tests, evaluations, skills,
-    instructions, policy, decisions or implementation must change through review.
+    instructions, policy, decisions or implementation are retained or changed
+    through review according to evidence, not a requirement to produce more artifacts.
 
 ## Earned Architecture
 
-**Complexity must be earned.** Ask "What requirement earns this?" before adding
-a capability or boundary. Compare against the strongest simpler alternative,
-including reuse and removal, rather than assuming more composition is progress.
+**Complexity must be earned continuously.** Ask "What requirement earns this?"
+for existing as well as proposed capabilities and boundaries. Changed requirements,
+constraints, evidence or operating costs can invalidate an earlier justification;
+prior approval is not permanent proof of necessity. Compare against the strongest
+simpler alternative, including reuse and removal, rather than assuming more
+composition is progress. Golden Path itself, including its governance artifacts
+and checks, is subject to this review. Removal must still preserve required
+behavior and controls; fewer components alone is not proof of improvement.
 
 The following distinctions guide selection; they are not stages every workload
 must traverse or new contract categories:
@@ -179,7 +193,7 @@ Memory availability is optional and introduces no runtime store.
 
 ## GitHub as an Engineering System of Record
 
-Source history answers **"What did we build and what changed?"** Versioned
+Source history records **what changed, its attributed author and when**. Versioned
 engineering intent and single-owner relationships let this repository additionally
 expose:
 
@@ -189,6 +203,7 @@ expose:
 - What assumptions, alternatives and decisions produced it?
 - What evidence demonstrates that it works?
 - What would be affected if a requirement changes?
+- Why was a mechanism retained, consolidated, replaced or removed?
 
 Requirements, decisions, scoped authority and evaluation/evidence references
 provide the reasoning behind the implementation. Derived traceability supports
@@ -360,28 +375,35 @@ are proposed into Git; no bot commits observations or rewrites contracts.
 
 ## Golden Loop
 
-The desired learning loop connects observations back to controlled engineering:
+The governed engineering loop applies to workloads and to Golden Path itself:
 
-Evidence -> Learning -> Proposed change -> Engineering artifact -> Validation ->
-Human/policy approval where required -> Merge -> Deployment -> New evidence
+Observe -> Evaluate -> Learn -> Hypothesize -> Propose -> Human decision ->
+Implement -> Prove -> Codify
 
-This is a conceptual lifecycle, not an installed automation or a replacement
-for artifact statuses. Merge and deployment apply when the changed system needs
-them and remain separately authorized; local repository use is not deployment.
-The existing engineering procedure describes the work within that loop:
+This is a conceptual lifecycle, not an installed automation, a runtime topology
+or a replacement for artifact statuses. Define proof before implementation;
+authorized investigation or draft experiments may inform the human decision.
+Consequential implementation requires the appropriate approval before execution,
+and resulting proof remains subject to review before codification. Merge and
+deployment apply only when needed and remain separately authorized.
 
-Observe -> Evaluate -> Learn -> Hypothesize -> Propose -> Prove -> Review -> Codify.
+The loop may add, change, retain, consolidate, replace or remove architecture.
+A justified no-change conclusion is valid: preserve its rationale in the existing
+review history without manufacturing implementation work or a new registry.
+Prior decisions remain explainable through Git and consequential decision records
+even when their implementation is removed or superseded. Do not retain obsolete
+code or dangling current bindings merely to preserve history.
 
 Recurring corrections and operating evidence may reveal incorrect requirements,
 architecture assumptions, procedures, context, capabilities, control,
 composition, detection, code or visibility. Load the governing skill's learning
 reference to target the owning artifact. Prompt changes are one possibility.
 
-Use evidence, a hypothesis, changed owning artifacts, proof and human review.
+Use evidence, a hypothesis, retained or changed owning artifacts, proof and human review.
 Architectural learning belongs in a consequential decision; other learning may
 belong in a requirement, test, policy, reference or code. Do not add a learning
 record solely to say learning occurred. I13 is advisory at bootstrap: reviewers
-inspect actual diffs and results rather than trusting a `codified` status field.
+inspect the rationale, any diffs and results rather than trusting a `codified` status field.
 
 No runtime self-improvement agent, background writer, hook or external integration
 is installed. Proposed improvements pass through the same software engineering

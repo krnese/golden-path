@@ -37,6 +37,14 @@ each added capability or boundary. Deterministic implementation is a first-class
 result; reasoning, domain context, skills, subagents, services, MCP, state, and
 infrastructure are options, not prerequisites.
 
+**Complexity must be earned continuously, including by Golden Path itself.**
+The repository is a workload for its own engineering loop, not an exemption from
+it. Evidence may justify adding, changing, retaining, consolidating, replacing or
+removing a mechanism. The [bootstrap evolution](engineering/adr-bootstrap-minimum.json)
+demonstrates simplification, not a component list that future designs must preserve.
+Self-governance means applying the same doctrine and human decision boundaries to
+this system; it does not authorize autonomous self-modification.
+
 **Stop at the lowest level that satisfies the workload.** This is not a maturity
 model: higher complexity is not better. Capability count does not imply agent
 count; reasoning does not imply agency; tools do not imply agents; context
@@ -91,11 +99,12 @@ engineering alignment or a business outcome. See the
 [state model](docs/golden-path.md#state-model) and
 [forms of proof](docs/golden-path.md#prove-release-and-run).
 
-Traditional repositories answer what was built and what changed. This repository
+Git history records what changed, its attributed author and when. This repository
 explores **GitHub as an engineering system of record for why it was built**:
-which requirements earned the architecture, what authority it has, and what
-evidence supports it. This is an architectural model demonstrated by the
-repository, not a claim about a built-in GitHub product capability.
+which requirements earned the architecture, which decisions authorized it, what
+evidence supports it, and why it was later changed or removed. This is an
+architectural model demonstrated by the repository, not a claim about a built-in
+GitHub product capability.
 
 ## Repository Map
 

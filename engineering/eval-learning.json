@@ -1,10 +1,10 @@
 {
   "$schema": "../contracts/engineering.schema.json",
-  "schemaVersion": 2, "id": "eval-learning", "kind": "evaluation", "title": "Review whether learning changed the correct durable artifacts",
+  "schemaVersion": 2, "id": "eval-learning", "kind": "evaluation", "title": "Review whether learning justified retaining or changing the affected mechanisms",
   "spec": {
     "requirementIds": ["req-learning"], "capabilityIds": ["cap-guide", "cap-edit"], "method": "manual",
-    "scenarios": ["Bootstrap review challenges seven skills and centralized state", "Correction is preserved as decision rationale rather than obsolete implementation", "Evidence or memory proposes but does not silently redefine intent"],
-    "passCriteria": "Reviewer traces observation, root cause, approved decision, changed owning artifacts and proof; approval scope and remaining uncertainty are explicit",
-    "procedure": "Review the consequential decision and implementation diff with the check output. Use the learning reference to classify root cause. Record an actual review result as evidence only after review; do not infer it from structural validity."
+    "scenarios": ["Bootstrap review challenges seven skills and centralized state", "Correction is preserved as decision rationale rather than obsolete implementation", "Evidence or memory proposes but does not silently redefine intent", "Previously approved Golden Path architecture is reconsidered when its justification no longer holds", "Retaining sufficient architecture without manufacturing implementation changes", "Current runtime bindings are distinguished from portable engineering doctrine"],
+    "passCriteria": "Reviewer traces observation, root cause, current requirement and justified choice to add, change, retain, consolidate, replace or remove a mechanism. Consequential changes have an appropriate human decision before implementation, preserve required behavior and controls, and retain explainable historical rationale. Retention needs reasoning, not a forced diff. Actual proof, approval scope and remaining uncertainty are explicit; structural validity alone is insufficient.",
+    "procedure": "Review the relevant decisions, Git/review history and any implementation diff with actual check output. Use the learning and architecture references to compare the strongest simpler option, including retention or removal. Check that current bindings resolve after removal and that prior reasoning is recoverable without retaining obsolete code or adding a ledger. Treat runtime-specific discovery checks as bootstrap bindings, not universal doctrine. Record an actual human review result as evidence only after review; these scenarios are defined, not claimed executed."
   }
 }

@@ -21,7 +21,9 @@ explains why there is one skill and no centralized authoritative ledger.
    persistent state, subagent, independent agent, additional autonomous
    authority. This is an order of consequence, not a mandatory ladder.
 5. **Evaluate existing architecture:** Prefer reuse or simplification; separate
-   capability need from composition. Known sequences belong in deterministic control.
+   capability need from composition. Recheck what earns retained complexity,
+   including Golden Path itself; retention, consolidation, replacement and removal
+   are valid outcomes. Known sequences belong in deterministic control.
 6. **Apply the Branch Rule:** Record what requirement earns each branch, the
    capability gained, alternatives, simpler-option limitation, operational cost
    and evidence or reasoning. No justification means no branch.

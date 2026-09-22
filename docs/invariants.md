@@ -8,7 +8,7 @@ not proof that a runtime control exists or that an approver is genuine.
 | --- | --- | --- |
 | I1 Capability -> workload | Capability -> decision -> requirement -> workload is derived and validated; significant file bindings checked | Detecting undeclared capabilities inside existing source |
 | I2 Measurable workload acceptance | Nonempty metric/target, unique criteria, requirement links and derived evaluation coverage | Whether a metric is truly measurable and its target useful |
-| I3 Earned architecture branch | Decision owns required requirement links and Branch Rule fields; implementation decisions are derived | Completeness of branch inventory and adequacy of reasoning |
+| I3 Earned architecture branch | Decision owns required requirement links and Branch Rule fields; implementation decisions are derived | Continuing justification of existing architecture, including Golden Path itself; safe retention, consolidation or removal requires evidence and review, not a structural pass |
 | I4 Executable authority declared | Every capability requires an authority enum, identity and boundary | Classification matches actual effects |
 | I5 Write authorization | WRITE/HIGH_IMPACT_WRITE require principal, scope, enforcement, denial and policy | Real authorization enforcement and negative runtime tests |
 | I6 High-impact policy/approval | Policy required; `none` approval rejected; rationale/enforcement required | Human approval appropriateness, authenticity and execution ordering |
@@ -18,7 +18,7 @@ not proof that a runtime control exists or that an approver is genuine.
 | I10 Tools do not imply agents | Bootstrap delegation disabled; unbound agent definitions rejected | The principle itself requires judgment; a tool boundary does not justify an agent |
 | I11 Earned agent boundaries | Non-primary boundary requires accepted basis, requirement and evidence links; only one primary | Evidence demonstrates need, safe concurrency and lifecycle isolation |
 | I12 Outcome-traceable production evidence | Evidence -> operational evaluation -> requirement -> workload -> outcome is derived and validated | Trustworthy source, retention, correct correlation and actual business causality |
-| I13 Codified learning | No automatic codification claim; normal schema/tests apply to changed artifacts | Human reviews root cause, actual artifact diff, proof and approval; no parallel learning registry |
+| I13 Codified learning | No automatic codification claim; normal schema/tests apply to changed artifacts | Human reviews root cause, justified retention or change, proof, approval and preserved historical rationale; no parallel learning registry |
 | I14 Observations cannot silently redefine intent | Read-only validator, no state-writing automation; nonmutation regression; contents-read CI token | Human review of evidence promotion; external tools and privileges remain outside this scaffold |
 | I15 Proposed != approved | Separate statuses; approval attribution required; active implementations require approved derived decisions; changed authority surface needs a new decision | Genuine independent approval, GitHub protections and complete semantic drift detection |
 
