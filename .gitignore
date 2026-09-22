@@ -2,3 +2,4 @@ node_modules/
 .local/
 coverage/
 *.log
+/.vscode/settings.json

@@ -10,15 +10,18 @@ what you are trying to achieve in normal language.
 
 ## Your First Prompt
 
-Open this repository in VS Code with GitHub Copilot. Select **Golden Path
-Engineer** in chat and try:
+With the repository open in VS Code and Copilot ready, start a new **Agent**
+session using the default Copilot agent and try:
 
 > I want to build something that helps our support engineers resolve complex
 > customer issues faster.
 
-The repository instructions also apply to the default Copilot agent. If you need
-help opening the repository or setting up Copilot, ask a teammate; the
-[README](../README.md#begin-with-an-outcome) has the repository setup details.
+The repository supplies the engineering instructions and Golden Path skill.
+You do not need to select a custom agent first. **Golden Path Engineer** is also
+available as an explicit entry point if you prefer.
+
+Not set up yet? Choose [local VS Code](#use-local-vs-code) or
+[Codespaces in your browser](#use-codespaces-in-your-browser) below.
 You do not need to run validation commands to describe your problem.
 
 Expect a conversation, not an immediate technology selection. The Golden Path
@@ -28,6 +31,111 @@ time or ask you to describe one representative incident.
 
 **Users describe intent, requirements, constraints, and what changes. The
 engineering system determines what architecture those requirements earn.**
+
+## Before You Begin
+
+You need a GitHub account with Copilot access. If your employer supplies it, use
+the account assigned that access and follow your organization's policies.
+A paid plan is not a stated prerequisite: Copilot Free offers limited access,
+and features, models and allowances vary. Check the current
+[Copilot plans](https://docs.github.com/en/copilot/get-started/plans).
+
+Repository access, Copilot access and permission to push changes are separate.
+No Azure subscription, separate model API key, MCP server or production
+credentials are required for this starting experience.
+
+Begin with fictional or redacted examples. Follow your organization's rules
+before sharing internal code, customer details or logs with an AI service.
+See the [Copilot Trust Center](https://resources.github.com/copilot-trust-center/)
+for data-handling information.
+
+### Use Local VS Code
+
+1. Install a current VS Code release and
+   [set up Copilot](https://code.visualstudio.com/docs/setup/copilot).
+2. Clone or download this repository and open its root folder in VS Code.
+   Viewing its GitHub page alone does not load the local engineering environment.
+3. Review any workspace-trust prompt. Trust the folder only if you trust its
+   contents; AI features may be unavailable in Restricted Mode.
+4. Confirm Copilot is signed in with the intended account and **Agent** is
+   available. Start a new chat with [the first prompt](#your-first-prompt).
+
+You do not need to select Golden Path Engineer or enable blanket tool
+auto-approval. Review requested commands and permissions as they arise.
+
+### Use Codespaces in Your Browser
+
+Codespaces supplies a remote computer and browser-based VS Code; Copilot supplies
+AI assistance. You need access to both. Codespaces compute and storage usage are
+separate from Copilot allowances. Confirm who pays and review
+[Codespaces billing](https://docs.github.com/en/billing/concepts/product-billing/github-codespaces)
+before creating one. Organization policies may restrict either service.
+
+1. On this repository's GitHub page, choose **Code -> Codespaces** and create a
+   codespace on the intended branch. For a first conversation and these repository
+   checks, the smallest available machine is a reasonable starting point.
+2. Wait for the remote connection and environment setup to finish. The editor
+   appearing does not mean the terminal and Copilot are ready yet.
+3. Review the workspace-trust prompt for this repository, then complete Copilot
+   sign-in if requested. Confirm the default **Agent** is ready.
+4. Send [the first prompt](#your-first-prompt). No custom agent is required.
+5. When finished, **stop the codespace explicitly** from the
+   [Codespaces dashboard](https://github.com/codespaces). Closing a tab is not a
+   reliable way to stop compute usage. Stopped codespaces still use storage;
+   preserve needed work before deleting one.
+
+Codespaces is different from opening a repository in github.dev: it provides
+compute and a terminal for running checks. No repository-specific dev-container
+configuration is supplied yet, so do not assume the default image will always
+provide the required tools or versions. See the
+[official Codespaces guide](https://docs.github.com/en/codespaces/quickstart).
+
+### Optional: Run Repository Checks
+
+For either environment, check `node --version` before running the
+[README validation commands](../README.md#begin-with-an-outcome). This repository
+requires Node 24 LTS and Git; install or select that version if necessary.
+`npm ci --ignore-scripts` installs the locked validation dependencies. These
+tools are needed for checks, not for the first conversation.
+
+Saving changes locally does not publish them. Use a branch or fork with the
+appropriate permissions when you are ready to contribute.
+
+### If Setup Does Not Work
+
+| Symptom | What to check |
+| --- | --- |
+| Copilot or Agent is unavailable | Account selection, Copilot access, organization policy and workspace trust. Ask your administrator rather than bypassing restrictions. |
+| Blank terminal or "Getting chat ready..." | Wait for remote setup to finish; inspect setup status and notifications if it persists. A visible editor alone is not a readiness check. |
+| The assistant appears unaware of the Golden Path | Confirm the repository root is open and inspect available instruction/skill discovery diagnostics and chat activity in your VS Code version. Restart with a fresh chat after correcting setup. |
+| Copilot stops accepting requests | Check usage allowance, billing and organization policy; repository access does not provide extra Copilot usage. |
+| Codespaces CLI creation reports a missing scope | CLI credentials are separate from browser sign-in. Use the browser path or explicitly review the requested credential scope; do not broaden it silently. |
+| Checks report a local editor settings file as unbound | See the local-settings note below; Git ignore rules and repository validation are separate. |
+
+Seeing a skill read in chat activity is evidence of discovery, not proof of all
+engineering behavior. An assistant's claim that it followed instructions is not
+sufficient verification on its own.
+
+Personal workspace settings, including terminal auto-approval preferences, are
+not shared Golden Path prerequisites. The root `.vscode/settings.json` is ignored
+by Git to prevent accidental sharing, but the repository inspector still reports
+it. The current bootstrap test requires zero unbound files, so that local file
+can make `npm run check` fail even though structural validation passes. Do not
+register personal approvals as shared governance or weaken checks merely to
+silence this failure; review it as a separate engineering issue.
+
+### What Has Been Tried
+
+Onboarding smoke checks on 2026-09-22 observed Golden Path skill discovery in a
+fresh local-host chat and in the default Agent in browser Codespaces. Codespaces
+at [revision f0ff8c0](https://github.com/krnese/golden-path/commit/f0ff8c0e0ef6ef7bd88f1008ae15f2f73ce0ba9b)
+provided Node 24 and passed all 26 repository tests. The local working copy had
+the editor-settings inventory failure described above.
+
+These were limited observations, not a clean-profile installation certification
+or the full bootstrap behavioral evaluation. The browser response loaded the
+guidance but suggested an investigation copilot before receiving clarifications:
+successful setup does not guarantee that every architectural judgment is sound.
 
 ## Five Ways to Begin
 

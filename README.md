@@ -45,15 +45,26 @@ separation does not automatically require agent separation. See
 
 ## Begin with an Outcome
 
-Open this repository in VS Code with GitHub Copilot, select **Golden Path
-Engineer**, and describe your problem:
+Choose [local VS Code](docs/getting-started.md#use-local-vs-code) or
+[browser-based Codespaces](docs/getting-started.md#use-codespaces-in-your-browser).
+With the repository open and Copilot ready, describe your problem in a new
+**Agent** session using the default Copilot agent:
 
 > I want to build something that helps our support engineers resolve complex
 > customer issues faster.
 
 You do not need to choose technology or fill in a technical template first.
-The [Getting Started guide](docs/getting-started.md) has examples for other kinds
-of work and shows how to describe changes as your needs evolve.
+The [Getting Started guide](docs/getting-started.md) covers account access,
+workspace trust, examples for other kinds of work, and how to describe changes
+as your needs evolve. Copilot access and Codespaces usage are separate;
+neither grants permission to change customer systems.
+
+The repository provides the engineering instructions and the governing
+`golden-path` skill with selectively loaded supporting references. A specialized
+**Golden Path Engineer** is also available as an explicit entry point, not a
+prerequisite. The discipline belongs to the engineering environment: versioned
+intent, procedures, contracts, validation and review, not just a custom agent's
+prompt.
 
 For local repository checks, use Node 24 LTS and Git. These are validation tools,
 not a runtime choice for future workloads:
@@ -64,9 +75,7 @@ npm run check
 npm run trace -- wl-engineering
 ```
 
-The repository instructions also apply when using the default Copilot agent.
-The primary agent loads one governing `golden-path` skill and selectively reads
-its supporting references. Verify discovery in your installed VS Code version.
+Verify instruction and skill discovery in your installed VS Code version.
 No editor extension or model is pinned by this repository.
 
 ## Engineering State and Responsibility
