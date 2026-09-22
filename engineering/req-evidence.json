@@ -1,5 +1,5 @@
 {
   "$schema": "../contracts/engineering.schema.json",
   "schemaVersion": 2, "id": "req-evidence", "kind": "requirement", "title": "Deterministic gates and separate behavioral evidence",
-  "spec": { "workloadId": "wl-engineering", "acceptanceIds": ["ac-structure", "ac-behavior"], "description": "Run deterministic validation and focused tests locally and in minimal CI. Define representative A-F behavioral scenarios and attributable evidence conventions. A passing structural test is not a model evaluation, authentic approval, runtime authorization or operational success." }
+  "spec": { "workloadId": "wl-engineering", "acceptanceIds": ["ac-structure", "ac-behavior"], "description": "Run deterministic validation and focused tests locally and in minimal CI. Define representative single-turn and multi-turn behavioral scenarios and attributable evidence conventions, including useful task completion, progressive intent discovery and scope restraint. A passing structural test is not a model evaluation, authentic approval, runtime authorization or operational success." }
 }

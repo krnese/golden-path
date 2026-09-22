@@ -29,6 +29,15 @@ should help clarify who benefits, where work is difficult, and what improvement
 would count as success. For example, it might ask where engineers lose the most
 time or ask you to describe one representative incident.
 
+For smaller requests such as "I need a script to clean up files", it should
+establish the relevant behavior and whether you want an example, saved and tested
+code, or an executed result. It should reuse answers and repository context,
+not require a full questionnaire when the task is already clear. As the
+conversation progresses, new needs such as scheduling or production use should
+trigger focused questions about the changed scope, not restart discovery.
+Asking why something was done is not approval to change it; asking to stop
+should stop pending work. Preparing code does not authorize external execution.
+
 **Users describe intent, requirements, constraints, and what changes. The
 engineering system determines what architecture those requirements earn.**
 

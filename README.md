@@ -107,7 +107,7 @@ repository, not a claim about a built-in GitHub product capability.
 | [Contract schema](contracts/engineering.schema.json) | Closed, versioned record shapes |
 | [Golden Path](docs/golden-path.md) | Architectural doctrine, earned complexity, state responsibilities, traceability, authority, proof and learning |
 | [Invariant coverage](docs/invariants.md) | What automation enforces and what still requires judgment |
-| [Behavioral evaluation](evaluations/bootstrap.md) | Six representative Copilot scenarios and evidence rubric |
+| [Behavioral evaluation](evaluations/bootstrap.md) | Architecture, authority and progressive intent scenarios with an evidence rubric |
 | [Engineering agent](.github/agents/golden-path.agent.md) | One reasoning boundary using one skill and supporting references |
 | [Validation](scripts/validate.mjs) | Read-only canonical discovery, derived traceability, implementation binding and transition checks |
 

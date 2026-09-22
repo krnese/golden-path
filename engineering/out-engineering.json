@@ -4,6 +4,6 @@
   "title": "Preserve engineering intent while deriving the simplest justified implementation",
   "spec": {
     "metric": "Structural regressions and human-reviewed behavioral scenarios satisfying acceptance",
-    "target": "All structural assertions pass; all A-F behavioral scenarios pass human review before claiming bootstrap behavioral acceptance"
+    "target": "All structural assertions pass; all declared behavioral scenarios pass human review before claiming bootstrap behavioral acceptance"
   }
 }

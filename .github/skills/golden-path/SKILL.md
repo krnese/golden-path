@@ -39,6 +39,27 @@ explains why there is one skill and no centralized authoritative ledger.
 12. **Report:** Explain what changed, why/requirement, artifacts, architecture,
     authority, evidence, remaining uncertainty and review needed.
 
+## Progressive Intent and Scope
+
+Before consequential work, establish the intended result, current deliverable,
+completion evidence and authorized scope. Use conversation and repository evidence
+before asking questions. Ask only about unresolved choices that materially affect
+the next step; proceed with clear, authorized work rather than requiring a full
+intake questionnaire. Load [workload decomposition](./references/workload-decomposition.md)
+when intent or scope needs clarification.
+
+A request for an artifact may not describe the full outcome; a possible downstream
+need is not automatically in scope. Distinguish explanation, local implementation
+and operational execution without requiring the user to know those categories.
+Do not substitute a snippet for an agreed saved implementation or add deployment
+to a request for an example.
+
+Revisit the working understanding when new information changes the goal, behavior,
+risk, deliverable or authority. Preserve settled decisions; ask about the changed
+part, not the whole task again. Briefly confirm scope at meaningful implementation
+or execution boundaries. Discussion, criticism and "why?" are not approval to
+change or execute. Stop or narrow work immediately when directed.
+
 ## Selective References
 
 Load only the reference needed for the current decision; do not load all six by default.

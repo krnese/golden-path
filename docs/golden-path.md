@@ -124,6 +124,16 @@ acceptance; (3) identify changed requirements; (4) derive logical capability;
 authority impact; (8) define proof; (9) record consequential decisions.
 Then (10) implement the scoped change; (11) prove; (12) report.
 
+Intent discovery continues throughout the conversation. Establish the current
+deliverable, completion evidence and authorized scope, using supplied answers and
+safe repository discovery before asking focused questions. Revisit only affected
+decisions when intent or evidence changes; proceed without unnecessary intake
+when work is clear. An artifact request does not automatically mean a chat example
+or authorize downstream deployment. Discussion and critique are not execution
+approval; stop or narrow work when directed. The
+[workload decomposition reference](../.github/skills/golden-path/references/workload-decomposition.md)
+owns the detailed procedure.
+
 Apply the [earned-architecture distinctions](#earned-architecture) to capability
 and composition choices. Tools, workflows, persistent state and independent
 agents also need justification; their availability is not a requirement.

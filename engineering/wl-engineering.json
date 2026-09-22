@@ -6,7 +6,7 @@
     "outcomeId": "out-engineering", "owner": "Human repository maintainer", "stage": "development", "usesAI": true,
     "acceptance": [
       { "id": "ac-structure", "metric": "Valid canonical artifacts accepted and invalid mutations rejected", "target": "All deterministic assertions pass; no mirrored reference authority or unbound executable bootstrap artifacts" },
-      { "id": "ac-behavior", "metric": "Fresh-session A-F scenarios satisfying every expected behavior and no forbidden behavior", "target": "6 of 6 scenario runs pass human review; failures and inconclusive runs remain visible" },
+      { "id": "ac-behavior", "metric": "Fresh-session behavioral scenarios satisfying every expected behavior and no forbidden behavior across all scripted turns, including useful completion and scope restraint", "target": "Every scenario declared by the behavioral evaluation passes human review through the default Agent entry point; failures and inconclusive runs remain visible" },
       { "id": "ac-authority", "metric": "Missing authority, authorization and unapproved active authority changes rejected", "target": "All authority and transition assertions pass" },
       { "id": "ac-learning", "metric": "Review findings reflected in durable reasoning and changed owning artifacts", "target": "Human review can trace each consequential correction to its requirement, decision, changed artifact and proof without a separate learning registry" }
     ]
