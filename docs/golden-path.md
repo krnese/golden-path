@@ -1,5 +1,26 @@
 # Golden Path Governance
 
+## An Executable Engineering System
+
+The Golden Path applies to the system producing software as well as the software
+it produces. Agents may help define plans, build implementations, run tests,
+evaluate behavior and propose evolution. Humans remain responsible for intent,
+constraints, architectural decisions, granted authority and the resulting system.
+Agentic engineering is not a requirement that every resulting application use AI.
+
+The lifecycle introduced in the [README](../README.md) is an engineering loop,
+not a prescribed runtime topology. Decomposition identifies bounded workloads;
+requirements and acceptance criteria earn logical capabilities before architecture
+is selected. Build and proof connect implementation to those decisions. Release
+controls govern the transition to operation; operating evidence informs learning.
+Reuse means carrying forward justified capabilities, procedures and expertise,
+not copying an architecture whose requirements no longer apply.
+
+The repository demonstrates this discipline with versioned artifacts, a governing
+procedure, deterministic validation and defined behavioral evaluations. Its
+[coverage limits](invariants.md) distinguish those mechanisms from controls and
+outcomes that still need human review or operational evidence.
+
 ## Purpose and Principles
 
 The repository itself is the reference implementation. The initial workload is
@@ -32,6 +53,41 @@ Future workloads can be deterministic, AI-assisted, or agentic only as earned.
     assumptions and earn evolution, not silently alter intended state.
 13. **Learning is codified.** Appropriate requirements, tests, evaluations, skills,
     instructions, policy, decisions or implementation must change through review.
+
+## Earned Architecture
+
+**Complexity must be earned.** Ask "What requirement earns this?" before adding
+a capability or boundary. Compare against the strongest simpler alternative,
+including reuse and removal, rather than assuming more composition is progress.
+
+The following distinctions guide selection; they are not stages every workload
+must traverse or new contract categories:
+
+| Need established by a requirement | Simplest candidate to consider |
+| --- | --- |
+| Exact, repeatable behavior is sufficient | Deterministic implementation |
+| Judgment or interpretation is needed | Bounded model reasoning |
+| Reasoning needs independent context | Isolated reasoning with a bounded input/output contract, not necessarily an agent |
+| Reasoning needs specialized knowledge | Reusable domain expertise/context |
+| A reusable procedure needs independent invocation semantics and a stable contract | A skill |
+| A bounded delegated goal needs adaptive multi-step execution, private working context, capability selection and its own lifecycle | A subagent |
+| A workload needs additional effects on resources | Explicitly justified and governed authority, independent of agent count |
+
+**This is not a maturity model. Higher complexity is not better. Stop at the
+lowest level that satisfies the workload.** These options can be combined only
+as needed. Capability count does not imply agent count, reasoning does not imply
+agency, tools do not imply agents, and context separation does not automatically
+imply agent separation. A known multi-step procedure can be a deterministic
+workflow; specialized knowledge can be context rather than a separately invoked
+skill. Neither requires a new actor.
+
+For example, evidence that sequential independent investigations miss a latency
+requirement can earn concurrency, but not automatically subagents. Compare
+concurrent deterministic calls with independent reasoning workers. Define bounded
+dispatch, deadlines, cancellation, aggregation and partial-failure behavior;
+measure end-to-end latency, quality and cost. Parallel execution is a hypothesis
+to test, not proof that a target will be met or permission to add remediation
+authority. No particular agent count or speedup is a universal result.
 
 ## Branch Rule
 
@@ -68,10 +124,9 @@ acceptance; (3) identify changed requirements; (4) derive logical capability;
 authority impact; (8) define proof; (9) record consequential decisions.
 Then (10) implement the scoped change; (11) prove; (12) report.
 
-Consider, in increasing architectural consequence: deterministic implementation,
-instruction/context, skill, tool/API/MCP, model reasoning, deterministic workflow,
-persistent state, subagent, independent agent, additional autonomous authority.
-This is not a mandatory maturity ladder. Higher is not better.
+Apply the [earned-architecture distinctions](#earned-architecture) to capability
+and composition choices. Tools, workflows, persistent state and independent
+agents also need justification; their availability is not a requirement.
 
 Use Git/PR reporting for owner, affected IDs, before/after authority, evidence
 and next action. There is no parallel change or learning registry. Working tasks
@@ -84,9 +139,25 @@ checks separate from evidence actually obtained.
 
 ## State Model
 
+Separate what supplies expertise, what records intent, what realizes it, and what
+tests it. These responsibilities are distinct even when all are versioned in Git.
+
+| Responsibility | Meaning |
+| --- | --- |
+| Skills | Reusable procedural knowledge: how to perform a class of work; not authoritative engineering intent or an authority grant |
+| Domain expertise/context | Reusable knowledge relevant to reasoning, not necessarily independently invocable |
+| Engineering state | Authoritative, versioned statements of what has been decided about the engineered system and why; proposals remain visibly distinct |
+| Implementation | Software and configuration realizing those decisions, including agent definitions and executable controls where justified |
+| Evidence | Observations of what actually happened and whether requirements were satisfied; not approval or desired state |
+
+An engineering artifact may govern the use of a skill or bind an implementation
+to a decision. That record does not make the skill's procedural text or the
+implementation itself the source of approved requirements. The following state
+boundaries describe provenance and promotion, not additional artifact kinds:
+
 | State | Meaning | Location and promotion |
 | --- | --- | --- |
-| Authoritative engineering | What we decided must be true; proposals visibly distinct | Git contracts, requirements, decisions, policies, evaluations, skills, agent definitions and implementation |
+| Authoritative engineering | What we decided must be true and how it should be evaluated; proposals visibly distinct | Versioned canonical outcomes, workloads, requirements, decisions, capability/policy declarations and evaluation plans; reviewed relationships to skills, agents and implementation |
 | Learned | What Copilot learned about the repository | Repository memory when available; not authoritative; promote consequential facts through evidence-backed changes |
 | Working/session | What humans and agents are investigating or changing | Session, issues/PRs, ignored `.local/`; no automatic persistence as doctrine |
 | Observed/evidence | What actually happened | CI/evaluation/operational records with revision and provenance; may propose but never silently redefine intent |
@@ -95,6 +166,30 @@ Approved intent and proposed intent coexist in Git with explicit statuses; mere
 presence in Git does not make a proposal approved. Evidence references can be
 reviewed in Git, but observations remain observations, never implicit decisions.
 Memory availability is optional and introduces no runtime store.
+
+## GitHub as an Engineering System of Record
+
+Source history answers **"What did we build and what changed?"** Versioned
+engineering intent and single-owner relationships let this repository additionally
+expose:
+
+- Why does this architecture exist?
+- Which requirement earned each capability or boundary?
+- What authority does it possess?
+- What assumptions, alternatives and decisions produced it?
+- What evidence demonstrates that it works?
+- What would be affected if a requirement changes?
+
+Requirements, decisions, scoped authority and evaluation/evidence references
+provide the reasoning behind the implementation. Derived traceability supports
+impact analysis; Git and review history preserve its evolution. Connected
+artifacts expose an argument to inspect, not proof that its reasoning is sound
+or its business outcome achieved.
+
+This is the repository's architectural model for using GitHub as an engineering
+system of record for both **what** and **why**. It is not a claim that GitHub
+automatically understands architecture, authenticates evidence or provides these
+semantic guarantees as a product feature.
 
 ## Contracts and Traceability
 
@@ -150,6 +245,22 @@ file types still require human review; do not hide code in exclusions.
 
 ## Authority
 
+**Use AI for what requires judgment. Use deterministic systems for what must
+remain invariant.** Agents may reason, investigate, propose and execute within
+granted authority. Known workflows belong in deterministic control rather than
+model-discovered sequences.
+
+Where applicable, schemas, capability allowlists, identity/resource scope,
+limits, validation, policy and release gates should be enforced mechanically.
+Prose can explain an invariant but is not a substitute for enforcement. This
+repository checks a documented structural subset; it does not supply a general
+runtime authorization system. See [invariant coverage](invariants.md).
+
+Governance is not a requirement for human approval of every operation. It
+establishes reviewed boundaries within which agents can work quickly and
+increasingly autonomously. Policy approval is not the absence of authorization,
+and autonomy does not remove human accountability.
+
 | Classification | Effects |
 | --- | --- |
 | READ | Inspect permitted resources without mutation |
@@ -180,7 +291,29 @@ Renamed/deleted IDs, policy-body changes and hidden execution effects can evade
 surface comparison. Review the full diff. CI neither authenticates approval nor
 acts as an authorization server. Declaring a capability never grants permission.
 
+Changing recommendation into automatic remediation changes effects from
+RECOMMEND to WRITE, potentially HIGH_IMPACT_WRITE. Evidence justifying faster
+investigation does not justify this authority transition. Before execution,
+define exact actions, identity, scope, policy approval, fail-closed denial,
+idempotency, timeouts, partial-failure handling, recovery and auditable results
+at the actual execution boundary. Model confidence is not authorization.
+
 ## Prove, Release and Run
+
+**Evaluate evidence, not confidence.** Define proof before building, and keep
+three questions distinct:
+
+| Form of proof | Question | Appropriate evidence |
+| --- | --- | --- |
+| Implementation correctness | Does the implementation behave according to its contract? | Deterministic tests and, where judgment is involved, representative behavioral evaluations |
+| Engineering alignment | Does the implementation remain consistent with authoritative engineering state and decisions? | Structural validation, traceability, base-revision checks and semantic architecture/authority review |
+| Outcome evidence | Does the system improve the workload or business outcome? | Measured acceptance results against a relevant baseline, with quality guardrails, operating conditions and attributable observations |
+
+These are conceptual proof obligations, not replacements for the schema's
+evaluation kinds. A passing test can support correctness without establishing
+alignment or business benefit. A structural pass cannot establish architectural
+necessity; model confidence cannot establish correctness. Report failures,
+inconclusive results and unexecuted evaluations separately from observed success.
 
 `npm run check` runs schema, derived-relationship, policy-shape, file-binding and
 customization discovery checks followed by deterministic regressions. CI also
@@ -217,6 +350,16 @@ are proposed into Git; no bot commits observations or rewrites contracts.
 
 ## Golden Loop
 
+The desired learning loop connects observations back to controlled engineering:
+
+Evidence -> Learning -> Proposed change -> Engineering artifact -> Validation ->
+Human/policy approval where required -> Merge -> Deployment -> New evidence
+
+This is a conceptual lifecycle, not an installed automation or a replacement
+for artifact statuses. Merge and deployment apply when the changed system needs
+them and remain separately authorized; local repository use is not deployment.
+The existing engineering procedure describes the work within that loop:
+
 Observe -> Evaluate -> Learn -> Hypothesize -> Propose -> Prove -> Review -> Codify.
 
 Recurring corrections and operating evidence may reveal incorrect requirements,
@@ -232,4 +375,8 @@ inspect actual diffs and results rather than trusting a `codified` status field.
 
 No runtime self-improvement agent, background writer, hook or external integration
 is installed. Proposed improvements pass through the same software engineering
-controls as any other change.
+controls as any other change. The goal is self-improving engineering, not an
+unconstrained runtime system rewriting itself. Learning may challenge desired
+state, but must not silently redefine it. Reuse the reviewed lesson or capability
+where its requirements apply; do not turn a local observation into a universal
+architectural rule.
