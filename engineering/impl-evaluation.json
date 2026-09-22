@@ -1,0 +1,5 @@
+{
+  "$schema": "../contracts/engineering.schema.json",
+  "schemaVersion": 2, "id": "impl-evaluation", "kind": "implementation", "title": "Fresh-session behavioral rubric and evidence conventions",
+  "spec": { "capabilityIds": ["cap-guide"], "state": "active", "paths": ["evaluations/bootstrap.md"] }
+}

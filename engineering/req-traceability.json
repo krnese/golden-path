@@ -1,0 +1,5 @@
+{
+  "$schema": "../contracts/engineering.schema.json",
+  "schemaVersion": 2, "id": "req-traceability", "kind": "requirement", "title": "Canonical intent with single-owner relationships",
+  "spec": { "workloadId": "wl-engineering", "acceptanceIds": ["ac-structure"], "description": "Use individually versioned typed artifacts with stable IDs. Store each direct relationship once in its owning artifact; derive inverse relationships, workload/decision ancestry and views. Bind significant implementation and reasoning surfaces to their purpose without requiring a registry entry for every incidental file." }
+}

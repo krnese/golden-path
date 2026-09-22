@@ -1,0 +1,5 @@
+{
+  "$schema": "../contracts/engineering.schema.json",
+  "schemaVersion": 2, "id": "req-procedure", "kind": "requirement", "title": "One outcome-first engineering guide and governing procedure",
+  "spec": { "workloadId": "wl-engineering", "acceptanceIds": ["ac-behavior"], "description": "Use one primary engineering agent and one golden-path skill with selectively loaded supporting references. Preserve decomposition, capability, architecture, authority, evaluation and learning expertise without independent skills until reuse or context requirements earn them. No runtime architecture is implied." }
+}

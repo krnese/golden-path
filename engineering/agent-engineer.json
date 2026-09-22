@@ -1,0 +1,5 @@
+{
+  "$schema": "../contracts/engineering.schema.json",
+  "schemaVersion": 2, "id": "agent-engineer", "kind": "agent", "title": "Single primary human-invoked Golden Path engineering guide",
+  "spec": { "capabilityIds": ["cap-guide", "cap-edit", "cap-check", "cap-proof"], "boundary": "primary", "path": ".github/agents/golden-path.agent.md" }
+}

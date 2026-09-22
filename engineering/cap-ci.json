@@ -1,0 +1,9 @@
+{
+  "$schema": "../contracts/engineering.schema.json",
+  "schemaVersion": 2, "id": "cap-ci", "kind": "capability", "title": "Execute repository checks in an ephemeral GitHub runner",
+  "spec": {
+    "decisionId": "adr-bootstrap-minimum", "executable": true, "authority": "WRITE", "identity": "GitHub Actions runner with contents-read token",
+    "boundary": "Ephemeral checkout, dependency cache, test scratch and platform run logs; no source write-back or deployment", "policyId": "pol-engineering",
+    "authorization": { "principal": "Repository-configured GitHub Actions event", "scope": "Install locked tooling, validate, test and audit", "enforcement": "Contents-read token, no persisted checkout credentials, pinned actions, no privileged event or supplied secrets", "deniedBehavior": "Fail the job; no auto-fix commit or authority expansion" }
+  }
+}

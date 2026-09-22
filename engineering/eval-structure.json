@@ -1,0 +1,10 @@
+{
+  "$schema": "../contracts/engineering.schema.json",
+  "schemaVersion": 2, "id": "eval-structure", "kind": "evaluation", "title": "Canonical structure, relationship ownership and authority regressions",
+  "spec": {
+    "requirementIds": ["req-traceability", "req-authority", "req-evidence"], "capabilityIds": ["cap-check", "cap-proof", "cap-ci"], "method": "deterministic",
+    "scenarios": ["A-F synthetic contract scenarios", "Duplicate IDs and broken/wrong-kind links", "Mirrored/transitive fields rejected", "Derived workload, evaluation coverage and approval", "Canonical discovery and base comparison", "Write policy and scope transition", "Unbound executable files, paths and customization metadata", "Validator does not mutate input"],
+    "passCriteria": "All npm run check assertions pass; base comparison passes for the chosen base; dependency audit reports no moderate-or-higher vulnerabilities",
+    "procedure": "Run npm ci --ignore-scripts, npm run check, npm run validate -- --base <full-sha>, and npm audit --audit-level=moderate as separate commands. Record actual subject revision or exact diff/content hash and output. CI runs the same gates."
+  }
+}

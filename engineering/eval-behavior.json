@@ -1,0 +1,10 @@
+{
+  "$schema": "../contracts/engineering.schema.json",
+  "schemaVersion": 2, "id": "eval-behavior", "kind": "evaluation", "title": "Representative fresh-session Golden Path behavior",
+  "spec": {
+    "requirementIds": ["req-procedure", "req-authority", "req-evidence"], "capabilityIds": ["cap-guide", "cap-edit"], "method": "behavioral",
+    "scenarios": ["A deterministic workload", "B reasoning/retrieval without autonomy", "C executable boundary and permission", "D unjustified three-agent request", "E earned bounded concurrency", "F RECOMMEND to WRITE"],
+    "passCriteria": "Each A-F fresh-session run satisfies all expected behavior and no forbidden behavior under human review; no claim of statistical reliability or production readiness",
+    "procedure": "Use evaluations/bootstrap.md in fresh Copilot sessions. Capture redacted input/output, repository revision or content hash, exposed model/editor versions and human scores. Defined, not yet executed."
+  }
+}

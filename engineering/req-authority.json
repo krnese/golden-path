@@ -1,0 +1,5 @@
+{
+  "$schema": "../contracts/engineering.schema.json",
+  "schemaVersion": 2, "id": "req-authority", "kind": "requirement", "title": "Explicit authority and consequential human review",
+  "spec": { "workloadId": "wl-engineering", "acceptanceIds": ["ac-authority", "ac-behavior"], "description": "Executable capabilities declare authority, identity and boundaries; writes declare authorization and policy. Distinguish discovery, invocation, authorization, approval, execution and evidence. Changes to authority or scope require an explicit decision; proposed and approved state remain distinct. Approval of architecture is not approval of production execution." }
+}

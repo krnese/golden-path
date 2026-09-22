@@ -1,0 +1,5 @@
+{
+  "$schema": "../contracts/engineering.schema.json",
+  "schemaVersion": 2, "id": "impl-ci", "kind": "implementation", "title": "Minimal deterministic CI with no source write-back",
+  "spec": { "capabilityIds": ["cap-ci"], "state": "active", "paths": [".github/workflows/golden-path.yml"] }
+}

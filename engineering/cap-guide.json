@@ -1,0 +1,5 @@
+{
+  "$schema": "../contracts/engineering.schema.json",
+  "schemaVersion": 2, "id": "cap-guide", "kind": "capability", "title": "Recommend justified outcome-first repository evolution",
+  "spec": { "decisionId": "adr-bootstrap-minimum", "executable": false, "authority": "RECOMMEND", "identity": "Human-invoked GitHub Copilot session", "boundary": "Analysis, recommendations and proposals; no implicit approval, delegation or runtime autonomy" }
+}

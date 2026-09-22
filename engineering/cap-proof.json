@@ -1,0 +1,9 @@
+{
+  "$schema": "../contracts/engineering.schema.json",
+  "schemaVersion": 2, "id": "cap-proof", "kind": "capability", "title": "Run focused regression tests in isolated scratch space",
+  "spec": {
+    "decisionId": "adr-bootstrap-minimum", "executable": true, "authority": "WRITE", "identity": "Developer or ephemeral CI test process",
+    "boundary": "Synthetic in-memory fixtures and uniquely allocated OS temporary directories; no authoritative source repair", "policyId": "pol-engineering",
+    "authorization": { "principal": "Developer invoking checks or configured CI workflow", "scope": "Test-owned temporary files and temporary Git fixtures, removed by test cleanup", "enforcement": "mkdtemp-owned paths and human review of tests; no external resource credentials", "deniedBehavior": "Fail test and report; never modify engineering artifacts to make a test pass" }
+  }
+}

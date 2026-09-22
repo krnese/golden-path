@@ -1,0 +1,5 @@
+{
+  "$schema": "../contracts/engineering.schema.json",
+  "schemaVersion": 2, "id": "req-learning", "kind": "requirement", "title": "Codify reviewed learning in its owning artifacts",
+  "spec": { "workloadId": "wl-engineering", "acceptanceIds": ["ac-learning"], "description": "Separate authoritative Git state, learned memory, session work and observed evidence. Use Observe -> Evaluate -> Learn -> Hypothesize -> Propose -> Prove -> Review -> Codify. Preserve consequential rationale in decisions and change the root-cause artifact through review; evidence never silently rewrites intent. Use Git and review history instead of parallel change/learning registries." }
+}

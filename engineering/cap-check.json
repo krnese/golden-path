@@ -1,0 +1,5 @@
+{
+  "$schema": "../contracts/engineering.schema.json",
+  "schemaVersion": 2, "id": "cap-check", "kind": "capability", "title": "Derive and validate engineering state without mutation",
+  "spec": { "decisionId": "adr-bootstrap-minimum", "executable": true, "authority": "READ", "identity": "Local developer or CI runner", "boundary": "Read canonical artifacts, source paths and optional Git base; derive indexes/traceability in memory and report only to stdout/stderr" }
+}

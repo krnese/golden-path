@@ -1,0 +1,5 @@
+{
+  "$schema": "../contracts/engineering.schema.json",
+  "schemaVersion": 2, "id": "impl-governance", "kind": "implementation", "title": "Human-readable governance and review entry points",
+  "spec": { "capabilityIds": ["cap-guide", "cap-edit"], "state": "active", "paths": ["README.md", "docs/golden-path.md", "docs/invariants.md", ".github/copilot-instructions.md", ".github/pull_request_template.md"] }
+}

@@ -1,0 +1,9 @@
+{
+  "$schema": "../contracts/engineering.schema.json",
+  "schemaVersion": 2, "id": "cap-edit", "kind": "capability", "title": "Implement explicitly scoped local repository changes",
+  "spec": {
+    "decisionId": "adr-bootstrap-minimum", "executable": true, "authority": "WRITE",
+    "identity": "Human developer and task-scoped Copilot session", "boundary": "Requested repository files; excludes external services, push, merge, publishing and deployment", "policyId": "pol-engineering",
+    "authorization": { "principal": "Human developer authorizing the current task", "scope": "Approved local bootstrap simplification and related contracts/tests/documentation", "enforcement": "Editor/tool confirmation, OS file permissions and human diff review; instructions are not a sandbox", "deniedBehavior": "Stop on absent or exceeded scope; request a human decision without executing the write" }
+  }
+}

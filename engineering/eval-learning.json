@@ -1,0 +1,10 @@
+{
+  "$schema": "../contracts/engineering.schema.json",
+  "schemaVersion": 2, "id": "eval-learning", "kind": "evaluation", "title": "Review whether learning changed the correct durable artifacts",
+  "spec": {
+    "requirementIds": ["req-learning"], "capabilityIds": ["cap-guide", "cap-edit"], "method": "manual",
+    "scenarios": ["Bootstrap review challenges seven skills and centralized state", "Correction is preserved as decision rationale rather than obsolete implementation", "Evidence or memory proposes but does not silently redefine intent"],
+    "passCriteria": "Reviewer traces observation, root cause, approved decision, changed owning artifacts and proof; approval scope and remaining uncertainty are explicit",
+    "procedure": "Review the consequential decision and implementation diff with the check output. Use the learning reference to classify root cause. Record an actual review result as evidence only after review; do not infer it from structural validity."
+  }
+}

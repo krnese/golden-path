@@ -1,0 +1,11 @@
+{
+  "$schema": "../contracts/engineering.schema.json",
+  "schemaVersion": 2, "id": "pol-engineering", "kind": "policy", "title": "Scoped writes, explicit approval and no silent intent changes",
+  "spec": {
+    "requirementIds": ["req-authority", "req-learning"],
+    "rules": ["Task authorization permits only the requested local changes", "Skill references, learned memory, observations and tool discovery grant no authority", "No implicit push, merge, publication, production write, permission change or secret access", "Consequential architecture and authority changes require human review", "Validation and derived views never rewrite authoritative artifacts"],
+    "approval": { "mode": "human", "rationale": "Humans remain accountable for scope and consequential decisions", "enforcement": "Explicit task approval and editor confirmations; human review and administrator-configured branch protections for merge. These files do not configure external permissions." },
+    "failureHandling": "Stop on missing identity, scope or approval. Preserve failures and user changes. Propose rollback instead of destructive cleanup.",
+    "observability": "Human request, decision approval attribution, Git diff, actual check output and review/evidence references; redact secrets."
+  }
+}

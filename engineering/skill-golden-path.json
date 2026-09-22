@@ -1,0 +1,15 @@
+{
+  "$schema": "../contracts/engineering.schema.json",
+  "schemaVersion": 2, "id": "skill-golden-path", "kind": "skill", "title": "One governing procedure with selective supporting expertise",
+  "spec": {
+    "decisionId": "adr-bootstrap-minimum", "path": ".github/skills/golden-path/SKILL.md", "authority": "NONE",
+    "references": [
+      ".github/skills/golden-path/references/workload-decomposition.md",
+      ".github/skills/golden-path/references/capability-selection.md",
+      ".github/skills/golden-path/references/architecture-review.md",
+      ".github/skills/golden-path/references/authority-review.md",
+      ".github/skills/golden-path/references/evaluation-design.md",
+      ".github/skills/golden-path/references/learning-analysis.md"
+    ]
+  }
+}

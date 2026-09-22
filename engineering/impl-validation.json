@@ -1,0 +1,5 @@
+{
+  "$schema": "../contracts/engineering.schema.json",
+  "schemaVersion": 2, "id": "impl-validation", "kind": "implementation", "title": "Canonical artifact schema, derived graph validator and focused regressions",
+  "spec": { "capabilityIds": ["cap-check", "cap-proof"], "state": "active", "paths": ["contracts/engineering.schema.json", "scripts/validate.mjs", "tests/golden-path.test.mjs", "package.json", "package-lock.json", ".gitignore"] }
+}
