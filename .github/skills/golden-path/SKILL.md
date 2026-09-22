@@ -50,6 +50,13 @@ the next step; proceed with clear, authorized work rather than requiring a full
 intake questionnaire. Load [workload decomposition](./references/workload-decomposition.md)
 when intent or scope needs clarification.
 
+When a request names a technology, service or region but leaves the workload
+unknown, first ask what problem it should solve and for whom. Preserve supplied
+constraints; do not substitute a choice of IaC versus deployment, runtime/SKU
+selection or an authorization questionnaire for outcome discovery. Check authority
+before effects, but missing execution authority does not prevent safe discussion
+of intent. If intent is already established, do not ask for it again.
+
 A request for an artifact may not describe the full outcome; a possible downstream
 need is not automatically in scope. Distinguish explanation, local implementation
 and operational execution without requiring the user to know those categories.

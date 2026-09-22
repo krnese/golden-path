@@ -56,6 +56,9 @@ proportionately without inventing architecture for a small task.
 2. Distinguish facts, explicit constraints and provisional assumptions. Infer
    routine reversible details from established conventions; surface uncertainty
    when it changes behavior, scope, risk or acceptance.
+   A named technology, service, region or request to deploy is not by itself a
+   workload outcome. When the problem and intended users are unknown, establish
+   them before asking the user to choose implementation or delivery mechanics.
 3. Select the unresolved choice with the greatest effect on correctness, scope or
    risk that blocks the next useful step. Ask one focused question in plain
    language; explain the consequence or offer a recommended option when helpful.
@@ -64,6 +67,17 @@ proportionately without inventing architecture for a small task.
 5. Before substantial implementation or external execution, briefly state the
    agreed deliverable, important exclusions and proof. Do not request repeated
    approval for unchanged, already authorized work.
+
+For "I want to deploy an App Service in Azure, swedencentral", retain App Service
+and the region as supplied constraints and first ask what the application should
+make possible and who will use it. Do not lead with IaC versus live deployment,
+subscription/identity intake, runtime, pricing tier or a recommendation to prepare
+templates. Those choices follow the relevant workload needs. Reading an authority
+contract, including a tagged file, must not displace the missing outcome question.
+Authority restrictions still block unauthorized effects; they do not require
+refusing safe intent discovery. If the user already supplied the outcome and
+behavior, skip this question and resolve only the next material gap. If execution
+is the next step, apply the authority boundary before any external action.
 
 For "I need a script to clean up files", discover what "clean up" means and which
 files qualify before selecting a deletion mechanism. Establish whether the user

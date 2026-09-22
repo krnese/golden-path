@@ -143,7 +143,11 @@ deliverable, completion evidence and authorized scope, using supplied answers an
 safe repository discovery before asking focused questions. Revisit only affected
 decisions when intent or evidence changes; proceed without unnecessary intake
 when work is clear. An artifact request does not automatically mean a chat example
-or authorize downstream deployment. Discussion and critique are not execution
+or authorize downstream deployment. When a technology-first request leaves the
+workload unknown, establish the problem and intended users before delivery or
+authorization intake; preserve supplied constraints and do not repeat established
+intent. Authority checks still precede effects, but do not block safe discussion.
+Discussion and critique are not execution
 approval; stop or narrow work when directed. The
 [workload decomposition reference](../.github/skills/golden-path/references/workload-decomposition.md)
 owns the detailed procedure.
