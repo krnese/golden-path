@@ -22,6 +22,8 @@ not proof that a runtime control exists or that an approver is genuine.
 | I14 Observations cannot silently redefine intent | Read-only validator, no state-writing automation; nonmutation regression; contents-read CI token | Human review of evidence promotion; external tools and privileges remain outside this scaffold |
 | I15 Proposed != approved | Separate statuses; approval attribution required; active implementations require approved derived decisions; changed authority surface needs a new decision | Genuine independent approval, GitHub protections and complete semantic drift detection |
 | I16 Governed delivery admission | Typed delivery records, exact candidate/plan/operation/target binding, authorization validity, approval presence, adapter support and authority ceiling, unresolved-value denial and synthetic allow/deny regressions | Correct semantic effect classification, authentic identity/approval, real policy enforcement, adapter correctness and actual deployment/recovery evidence |
+| I17 Framework provenance is not project authority | `project/` and `engineering/` artifacts cannot reference each other (V0.1 isolation), so framework approvals, policies and evaluations cannot activate, authorize or satisfy project state; `project/` rejects framework agent/skill kinds; project directory bindings cannot overlap other bindings | Whether a forker's edits to framework state are appropriate; upstream updates into forks; typed framework-project relationships and runtime-agent representation remain deferred |
+| I18 Evidence is retrievable or visibly unverified | Evidence locations that are provably machine-local (drive, absolute, home, network-share or `file:` paths, or paths outside the repository) or inside ignored areas (`.local/`, `node_modules/`, `coverage/`, `.git/`) are rejected; an existing regular repository file is repository-verified and owned by that evidence, rejecting symlinks, duplicate owners and canonical artifacts; every other location is reported as external with retrievability unverified, with derived counts | Retrievability of external sources, that a repository file is committed (CI on the committed tree proves that), and whether a free-text location is really session output rather than a durable identifier |
 
 ## Gate Boundaries
 
@@ -29,8 +31,10 @@ not proof that a runtime control exists or that an approver is genuine.
   classifications. Canonical discovery rejects aggregate ledgers and mismatched IDs.
 - Graph validation rejects broken/wrong-kind references, cross-workload proof,
   missing write policies, unjustified recorded agent boundaries and invalid status claims.
-- Bindings reject duplicate path authority, missing paths, unsafe paths, symlinks
-  and unbound recognized executable/workflow/agent/skill surfaces. Incidental
+- Bindings reject duplicate or overlapping path authority, missing paths, unsafe
+  paths, symlinks and unbound recognized executable/workflow/agent/skill surfaces.
+  Only project implementations may bind a directory (trailing `/`), never under
+  `.github/`, `engineering/`, `project/` or excluded roots. Incidental
   unbound files are reported for review. Canonical artifacts identify themselves;
   no second inventory or stored graph is authoritative.
 - Frontmatter checks use a YAML parser, validate discovery metadata and prevent
@@ -58,8 +62,8 @@ are roots of justification, not components that need circular self-justification
 Existing evidence kinds and future operational rules have tests, but no runtime
 collector, production workload or fabricated evidence record is installed.
 
-All sixteen invariants retain semantic or external limits. I1-I9, I11-I12 and
-I15-I16 have deterministic structural checks; I10 and I14 have bounded structural
+All eighteen invariants retain semantic or external limits. I1-I9, I11-I12 and
+I15-I18 have deterministic structural checks; I10 and I14 have bounded structural
 safeguards; I13 depends on human diff review. No claim of complete enforcement is
 made for any principle merely because its fields are present.
 

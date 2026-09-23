@@ -28,6 +28,12 @@ the generic default Agent is the canonical entry point. You do not need to selec
 a custom agent. **Golden Path Engineer** is available as an optional focused
 entry point if you prefer; it is not required for Golden Path behavior.
 
+Your fork or clone becomes the engineering environment for your own project.
+A fresh fork contains the engineering discipline but no assumptions about what
+you are building: Golden Path's own framework state is in `engineering/`, and your
+project's state is recorded in `project/` as your outcome is established. Upstream
+framework approvals never approve your project's decisions.
+
 Not set up yet? Choose [local VS Code](#use-local-vs-code) or
 [Codespaces in your browser](#use-codespaces-in-your-browser) below.
 You do not need to run validation commands to describe your problem.
@@ -70,7 +76,7 @@ for data-handling information.
 
 1. Install a current VS Code release and
    [set up Copilot](https://code.visualstudio.com/docs/setup/copilot).
-2. Clone or download this repository and open its root folder in VS Code.
+2. Fork or clone this repository and open its root folder in VS Code.
    Viewing its GitHub page alone does not load the local engineering environment.
 3. Review any workspace-trust prompt. Trust the folder only if you trust its
    contents; AI features may be unavailable in Restricted Mode.
@@ -88,7 +94,7 @@ separate from Copilot allowances. Confirm who pays and review
 [Codespaces billing](https://docs.github.com/en/billing/concepts/product-billing/github-codespaces)
 before creating one. Organization policies may restrict either service.
 
-1. On this repository's GitHub page, choose **Code -> Codespaces** and create a
+1. On your fork's GitHub page (or this repository's, to try it first), choose **Code -> Codespaces** and create a
    codespace on the intended branch. For a first conversation and these repository
    checks, the smallest available machine is a reasonable starting point.
 2. Wait for the remote connection and environment setup to finish. The editor
@@ -140,20 +146,6 @@ unbound, but the repository test tolerates Git-ignored personal files, so it doe
 not make `npm run check` fail. Git-ignored scripts, `.github/` customizations and
 agent instruction files are never tolerated, because local agents may still load
 them. Do not register personal approvals as shared governance.
-
-### What Has Been Tried
-
-Onboarding smoke checks on 2026-09-22 observed Golden Path skill discovery in a
-fresh local-host chat and in the default Agent in browser Codespaces. Codespaces
-at [revision f0ff8c0](https://github.com/krnese/golden-path/commit/f0ff8c0e0ef6ef7bd88f1008ae15f2f73ce0ba9b)
-provided Node 24 and passed all 26 repository tests. The local working copy then
-failed on the ignored editor-settings file; the V0.1 test change described in
-the local-settings note resolves that.
-
-These were limited observations, not a clean-profile installation certification
-or the full bootstrap behavioral evaluation. The browser response loaded the
-guidance but suggested an investigation copilot before receiving clarifications:
-successful setup does not guarantee that every architectural judgment is sound.
 
 ## Five Ways to Begin
 

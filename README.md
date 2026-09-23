@@ -13,7 +13,8 @@ simplest justified architecture, preserving intent, and evaluating results.
 
 ## Quick Start
 
-1. Clone this repository and open its root folder in VS Code (or a Codespace).
+1. Fork or clone this repository and open its root folder in VS Code (or a
+   Codespace). Your fork becomes the engineering environment for your own project.
 2. Sign in to GitHub Copilot and start a new chat in **Agent** mode with the
    default agent. No custom agent, extension, cloud account or setup script is needed.
 3. Describe the outcome you want in your own words, for example:
@@ -28,6 +29,24 @@ agent, skill, MCP server, workflow, model, database or cloud service. Expect
 questions about the problem before any technology choice. The
 [Getting Started guide](docs/getting-started.md) covers account access, workspace
 trust, Codespaces and examples.
+
+## Your Fork Is Your Engineering Environment
+
+**A fresh fork contains the engineering discipline but no assumptions about what
+you are building.** Canonical engineering state lives in two places:
+
+- `engineering/` is Golden Path's own framework state: why the framework exists
+  and how engineering is performed here. You normally leave it alone.
+- `project/` is yours. It does not exist in a fresh fork. As Golden Path
+  establishes your outcome, it records your workloads, requirements, decisions,
+  capabilities, implementation boundaries, evaluations and evidence there, using
+  the same schema and checks. You can have more than one workload.
+
+**Framework provenance must not become adopter authority.** Decisions in
+`engineering/` were approved by the upstream Golden Path maintainers for the
+framework; they never approve your project's decisions. The validator enforces
+this by rejecting references between `engineering/` and `project/`. See
+[framework state and project state](docs/golden-path.md#framework-state-and-project-state).
 
 **AI-assisted coding helps humans produce software. Governed agentic engineering
 enables humans to direct software-producing agents within an engineering system
@@ -128,7 +147,9 @@ GitHub product capability.
 | Artifact | Purpose |
 | --- | --- |
 | [Getting Started](docs/getting-started.md) | Plain-language starting prompts, changed requirements and optional engineering questions |
-| [Engineering workload](engineering/wl-engineering.json) | Entry point to canonical individually versioned artifacts; no centralized ledger |
+| [Framework workload](engineering/wl-engineering.json) | Entry point to Golden Path's own canonical framework state in `engineering/`; no centralized ledger |
+| `project/` | Your project's canonical state; created when your first outcome is established |
+| [Framework/project boundary decision](engineering/adr-project-state-boundary.json) | Why forks keep framework state and adopter state separate |
 | [Approved evolution decision](engineering/adr-bootstrap-minimum.json) | Why seven skills and centralized state were simplified after review |
 | [Contract schema](contracts/engineering.schema.json) | Closed, versioned record shapes |
 | [Golden Path](docs/golden-path.md) | Architectural doctrine, earned complexity, state responsibilities, traceability, authority, proof and learning |
@@ -147,33 +168,39 @@ For a change against an existing Git revision:
 npm run validate -- --base <full-40-character-base-commit-sha>
 ```
 
-The validator discovers one JSON artifact per stable ID in `engineering/`,
-rejects duplicate IDs, broken references and mirrored relationship fields, and
-derives the graph in memory. It checks significant file bindings and reports
+The validator discovers one JSON artifact per stable ID in `engineering/` and the
+optional `project/`,
+rejects duplicate IDs, broken references, cross-boundary references and mirrored
+relationship fields, and derives the graph in memory. It checks significant file
+bindings (project implementations may bind a whole directory) and reports
 incidental unbound files without requiring a registry entry for every file.
 CI compares the base revision, runs tests and audits dependencies. It cannot
 infer semantic architecture or hidden executable capability from arbitrary code.
 
 ## Maturity: V0.1 Experimental
 
-The first and only canonical workload is **engineering this repository with a
+The framework's own canonical workload is **engineering Golden Path itself with a
 human and Copilot**. It uses AI during development, not in a deployed application.
-The minimum architecture is **approved** by the human requests recorded in the
-consequential decisions. Repository implementations are **active** under that
-approval; this is not a production deployment, proof of behavior, or permission
-for future writes.
+A fresh fork has no project workload until the adopter establishes one.
+The minimum framework architecture is **approved** by the upstream human requests
+recorded in the consequential decisions. Repository implementations are **active**
+under that approval; this is not a production deployment, proof of behavior,
+permission for future writes, or approval of any adopter's project.
 
 **Demonstrated in this repository today** (structurally, by `npm run check` and CI):
 
 - Machine-readable engineering state: one typed artifact per stable ID
 - Outcome -> workload -> requirement -> decision -> capability -> implementation
   and evaluation traceability, derived rather than mirrored
+- Separate framework state (`engineering/`) and adopter project state (`project/`),
+  with structural proof that framework approvals, policies and evaluations cannot
+  authorize or satisfy project state, and that multiple project workloads coexist
 - Earned-architecture decisions recording unmet requirement, alternatives and
   simpler-option assessment, including a completed simplification of this scaffold
 - Authority semantics (READ through HIGH_IMPACT_WRITE) with write policy and
   authority-transition checks against a base revision
-- Deterministic invariant validation and file-binding inspection
-- Behavioral evaluation definitions (scenarios A-R) and evidence conventions
+- Deterministic invariant validation and file- or directory-binding inspection
+- Behavioral evaluation definitions and evidence conventions
 - A platform-neutral governed-delivery contract and read-only admission gate,
   exercised with synthetic allow/deny fixtures
 
@@ -182,6 +209,10 @@ for future writes.
 - Broad behavioral reliability. Most behavioral scenarios have not been executed;
   see the [evaluation status](evaluations/bootstrap.md) for what has actual evidence.
   One observation is never a reliability claim.
+- That a fresh agent in a clean fork reliably establishes and persists the adopter's
+  project state (scenarios W, W2 and X are defined, not executed)
+- Upstream updates into forks, and representation of agents inside the system
+  being built
 - Real physical deployment adapters and real external execution
 - Production enforcement, and external identity or authorization integration
 - Runtime independence across agent products other than GitHub Copilot in VS Code

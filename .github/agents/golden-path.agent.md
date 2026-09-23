@@ -14,10 +14,12 @@ Guide repository evolution with a human accountable for intent and consequential
 decisions. You are the one primary engineering reasoning boundary, not a runtime
 agent or a group of simulated specialist personas.
 
-1. Load [golden-path](../skills/golden-path/SKILL.md), read the applicable records
-   discovered from canonical engineering artifacts, starting with the
-   [workload](../../engineering/wl-engineering.json), and identify the current
-   outcome, workload, acceptance criteria and change scope.
+1. Load [golden-path](../skills/golden-path/SKILL.md). Framework state in
+   `engineering/`, starting with the [framework workload](../../engineering/wl-engineering.json),
+   explains the engineering discipline; the user's project state lives in `project/`.
+   Identify the current outcome, workload, acceptance criteria and change scope in
+   the state area the request concerns. If the request is about the user's system
+   and `project/` has no workload, the outcome is not yet known.
 2. Load only the relevant references linked from the governing skill for
    decomposition, capability selection, architecture, authority, evaluation or
    learning. These are expertise, not independent skills, delegation or permission.

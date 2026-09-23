@@ -21,24 +21,42 @@ export function references(value, prefix = '') {
   });
 }
 
+// Framework state lives in engineering/; optional adopter state lives in project/.
+// The owning area is derived from the file location and kept off the artifact itself.
+export const STATE_AREAS = ['engineering', 'project'];
+const stateArea = Symbol('golden-path.stateArea');
+export function stateOf(artifact) { return artifact?.[stateArea] ?? 'engineering'; }
+export function assignStateArea(artifact, area) {
+  if (!STATE_AREAS.includes(area)) throw new Error(`Unknown state area: ${area}`);
+  artifact[stateArea] = area;
+  return artifact;
+}
+
 export function loadArtifacts(root, revision) {
   let paths;
   if (revision) {
     if (!/^[a-f0-9]{40}$/.test(revision)) throw new Error('Base revision must be a full Git commit SHA');
     execFileSync('git', ['cat-file', '-e', `${revision}^{commit}`], { cwd: root });
-    paths = execFileSync('git', ['ls-tree', '-r', '-z', '--name-only', revision, '--', 'engineering/'], { cwd: root, encoding: 'utf8' }).split('\0').filter(Boolean);
+    paths = execFileSync('git', ['ls-tree', '-r', '-z', '--name-only', revision, '--', ...STATE_AREAS.map(area => `${area}/`)], { cwd: root, encoding: 'utf8' }).split('\0').filter(Boolean);
   } else {
-    paths = readdirSync(resolve(root, 'engineering'), { withFileTypes: true }).map(entry => {
-      if (!entry.isFile()) throw new Error(`Engineering artifacts must be regular files: ${entry.name}`);
-      return `engineering/${entry.name}`;
+    paths = STATE_AREAS.flatMap(area => {
+      const directory = resolve(root, area);
+      if (area === 'project' && !existsSync(directory)) return [];
+      const status = lstatSync(directory);
+      if (status.isSymbolicLink() || !status.isDirectory()) throw new Error(`${area}/ must be a regular directory`);
+      return readdirSync(directory, { withFileTypes: true }).map(entry => {
+        if (!entry.isFile()) throw new Error(`Engineering artifacts must be regular files: ${area}/${entry.name}`);
+        return `${area}/${entry.name}`;
+      });
     });
   }
   return paths.sort().map(path => {
-    if (!/^engineering\/[a-z][a-z0-9-]+\.json$/.test(path)) throw new Error(`Unexpected canonical artifact path: ${path}`);
+    const match = /^(engineering|project)\/[a-z][a-z0-9-]+\.json$/.exec(path);
+    if (!match) throw new Error(`Unexpected canonical artifact path: ${path}`);
     const text = revision ? execFileSync('git', ['show', `${revision}:${path}`], { cwd: root, encoding: 'utf8' }) : readFileSync(resolve(root, path), 'utf8');
     const artifact = JSON.parse(text);
-    if (path !== `engineering/${artifact.id}.json`) throw new Error(`${path}: filename must match stable artifact ID; aggregate ledgers are not supported`);
-    return artifact;
+    if (path !== `${match[1]}/${artifact.id}.json`) throw new Error(`${path}: filename must match stable artifact ID; aggregate ledgers are not supported`);
+    return assignStateArea(artifact, match[1]);
   });
 }
 
@@ -76,8 +94,11 @@ export function validateArtifacts(artifacts) {
   }
   if (errors.length) return errors;
   for (const artifact of artifacts) {
+    if (stateOf(artifact) === 'project' && ['agent', 'skill'].includes(artifact.kind)) fail(artifact, `project/ cannot contain ${artifact.kind} artifacts in V0.1; these kinds describe Golden Path engineering-environment customizations`);
     for (const reference of references(artifact.spec)) {
-      if (!reference.kinds.includes(byId.get(reference.id)?.kind)) fail(artifact, `invalid reference ${reference.id}; expected ${reference.kinds.join('/')}`);
+      const target = byId.get(reference.id);
+      if (!reference.kinds.includes(target?.kind)) fail(artifact, `invalid reference ${reference.id}; expected ${reference.kinds.join('/')}`);
+      else if (stateOf(target) !== stateOf(artifact)) fail(artifact, `cross-boundary reference ${reference.id}: V0.1 allows no authoritative graph edges between engineering/ and project/`);
     }
   }
   if (errors.length) return errors;
@@ -140,6 +161,8 @@ export function validateArtifacts(artifacts) {
     if (artifact.kind === 'evidence') {
       if (spec.environment === 'production' && get(spec.evaluationId).method !== 'operational') fail(artifact, 'I12 production evidence must reference an operational evaluation');
       if (Number.isNaN(Date.parse(spec.recordedAt))) fail(artifact, 'invalid evidence timestamp');
+      const locationError = evidenceLocationError(spec.location);
+      if (locationError) fail(artifact, `I18 evidence location ${locationError}`);
     }
   }
   if (ofKind('agent').filter(artifact => artifact.spec.boundary === 'primary').length > 1) errors.push('I11 only one primary boundary; additional boundaries need justification');
@@ -170,21 +193,63 @@ export function artifactPaths(artifact) {
   return [];
 }
 
+const EXCLUDED_ROOTS = new Set(['.git', 'node_modules', '.local', 'coverage']);
+
+// I18: reject only evidence locations that provably cannot be retrieved by another
+// participant. Anything the validator cannot resolve is reported, never verified.
+export function evidenceLocationError(location) {
+  const text = location.trim();
+  if (/^[A-Za-z]:[\\/]/.test(text) || /^[\\/]/.test(text) || /^~([\\/]|$)/.test(text) || /^file:/i.test(text)) return 'is machine-local and cannot be retrieved by another participant';
+  const segments = text.replace(/\\/g, '/').replace(/^(\.\/)+/, '').split('/');
+  if (segments.includes('..')) return 'points outside the repository';
+  if (segments.length > 1 && EXCLUDED_ROOTS.has(segments[0])) return `points into the ignored ${segments[0]}/ area`;
+  return null;
+}
+
+function repositoryPath(location) {
+  const path = location.trim().replace(/^(\.\/)+/, '');
+  if (!path || path.includes('\\') || path.includes(':') || posix.isAbsolute(path) || path.split('/').some(part => !part || part === '.' || part === '..')) return null;
+  return path;
+}
+
+export function summarizeEvidence(artifacts, inventory) {
+  const covered = new Set(artifacts.filter(artifact => artifact.kind === 'evidence').map(artifact => artifact.spec.evaluationId));
+  return {
+    verified: inventory.evidence.verified.length,
+    external: inventory.evidence.external.length,
+    unproven: artifacts.filter(artifact => artifact.kind === 'evaluation' && !covered.has(artifact.id)).map(artifact => artifact.id)
+  };
+}
+
 export function inspectRepository(root, artifacts) {
   const errors = [];
   const unbound = [];
   const owners = new Map();
+  const directories = new Map();
+  const ignored = EXCLUDED_ROOTS;
   for (const artifact of artifacts) {
-    for (const path of artifactPaths(artifact)) {
+    for (const binding of artifactPaths(artifact)) {
+      // A trailing slash binds a whole implementation directory (project implementations only).
+      const isDirectory = binding.endsWith('/');
+      const path = isDirectory ? binding.slice(0, -1) : binding;
       if (path.includes('\\') || path.includes(':') || posix.isAbsolute(path) || path.split('/').some(part => !part || part === '.' || part === '..')) {
-        errors.push(`${artifact.id}: unsafe repository path ${path}`);
+        errors.push(`${artifact.id}: unsafe repository path ${binding}`);
         continue;
       }
-      if (owners.has(path)) errors.push(`${path}: duplicate path authority in ${owners.get(path)} and ${artifact.id}`);
-      owners.set(path, artifact.id);
+      if (isDirectory) {
+        if (artifact.kind !== 'implementation' || stateOf(artifact) !== 'project') { errors.push(`${artifact.id}: ${binding}: only project implementations may bind a directory`); continue; }
+        const top = path.split('/')[0];
+        if (ignored.has(top) || top === '.github' || STATE_AREAS.includes(top)) { errors.push(`${artifact.id}: ${binding}: cannot bind an excluded, customization or canonical state directory`); continue; }
+      }
+      if (owners.has(path) || directories.has(path)) errors.push(`${binding}: duplicate path authority in ${owners.get(path) ?? directories.get(path)} and ${artifact.id}`);
+      (isDirectory ? directories : owners).set(path, artifact.id);
       try {
         for (let count = 1; count <= path.split('/').length; count++) {
           if (lstatSync(resolve(root, ...path.split('/').slice(0, count))).isSymbolicLink()) throw new Error('symbolic links are not authoritative artifacts');
+        }
+        if (isDirectory) {
+          if (!lstatSync(resolve(root, path)).isDirectory()) throw new Error('must identify a directory');
+          continue;
         }
         if (!lstatSync(resolve(root, path)).isFile()) throw new Error('must identify a file');
         if (['agent', 'skill'].includes(artifact.kind) && path === artifact.spec.path) {
@@ -204,18 +269,45 @@ export function inspectRepository(root, artifacts) {
             if (!artifacts.some(item => item.kind === 'agent' && item.spec.boundary !== 'primary') && (!Array.isArray(metadata.agents) || metadata.agents.length || metadata.tools.includes('agent'))) throw new Error('I10 bootstrap delegation must be disabled');
           }
         }
-      } catch (error) { errors.push(`${artifact.id}: ${path}: ${error.message}`); }
+      } catch (error) { errors.push(`${artifact.id}: ${binding}: ${error.message}`); }
     }
   }
-  const canonical = new Set(artifacts.map(artifact => `engineering/${artifact.id}.json`));
-  const ignored = new Set(['.git', 'node_modules', '.local', 'coverage']);
+  // An existing regular repository file is repository-verified evidence owned by that
+  // evidence artifact; every other valid location is external and unverified.
+  const evidence = { verified: [], external: [] };
+  for (const artifact of artifacts.filter(item => item.kind === 'evidence')) {
+    if (evidenceLocationError(artifact.spec.location)) continue;
+    const path = repositoryPath(artifact.spec.location);
+    const segments = path ? path.split('/') : [];
+    const statuses = [];
+    for (let count = 1; count <= segments.length; count++) {
+      try { statuses.push(lstatSync(resolve(root, ...segments.slice(0, count)))); } catch { break; }
+    }
+    if (!path || statuses.length < segments.length) { evidence.external.push(artifact.id); continue; }
+    const reject = message => errors.push(`${artifact.id}: ${path}: I18 ${message}`);
+    if (statuses.some(status => status.isSymbolicLink())) reject('repository evidence cannot be a symbolic link');
+    else if (!statuses.at(-1).isFile()) reject('repository evidence must be a regular file');
+    else if (STATE_AREAS.includes(segments[0])) reject('a canonical artifact cannot be its own evidence');
+    else if (owners.has(path)) reject(`duplicate path authority with ${owners.get(path)}`);
+    else { owners.set(path, artifact.id); evidence.verified.push(artifact.id); }
+  }
+  const boundDirectory = path => [...directories.keys()].find(directory => path.startsWith(`${directory}/`));
+  for (const [directory, id] of directories) {
+    const nested = boundDirectory(directory);
+    if (nested) errors.push(`${directory}/: overlapping path authority in ${directories.get(nested)} and ${id}`);
+  }
+  for (const [path, id] of owners) {
+    const directory = boundDirectory(path);
+    if (directory) errors.push(`${path}: overlapping path authority in ${directories.get(directory)} and ${id}`);
+  }
+  const canonical = new Set(artifacts.map(artifact => `${stateOf(artifact)}/${artifact.id}.json`));
   function walk(directory = '') {
     for (const entry of readdirSync(resolve(root, directory), { withFileTypes: true })) {
       if (!directory && ignored.has(entry.name)) continue;
       const path = directory ? `${directory}/${entry.name}` : entry.name;
       if (entry.isSymbolicLink()) { errors.push(`Unreviewed symbolic link: ${path}`); continue; }
       if (entry.isDirectory()) walk(path);
-      else if (!owners.has(path) && !canonical.has(path)) {
+      else if (!owners.has(path) && !canonical.has(path) && !boundDirectory(path)) {
         unbound.push(path);
         if (/\.(mjs|cjs|js|ts|py|ps1|sh)$/.test(path) || path.startsWith('.github/workflows/') || entry.name === 'SKILL.md' || entry.name.endsWith('.agent.md')) errors.push(`Unbound executable or reasoning artifact: ${path}`);
       }
@@ -223,7 +315,7 @@ export function inspectRepository(root, artifacts) {
   }
   walk();
   if (existsSync(resolve(root, 'engineering/state.json'))) errors.push('Centralized authoritative ledger must not coexist with canonical artifacts');
-  return { errors, unbound, owners };
+  return { errors, unbound, owners, evidence };
 }
 
 export function trace(artifacts, startId) {
@@ -262,8 +354,12 @@ function main() {
   if (mode === '--trace') {
     for (const edge of trace(artifacts, argument)) console.log(`${edge.from} --${edge.relation}--> ${edge.to}`);
   } else {
-    console.log(`Validated ${artifacts.length} canonical artifacts and ${deriveGraph(artifacts).edges.length} single-owner references.`);
+    const projectCount = artifacts.filter(artifact => stateOf(artifact) === 'project').length;
+    console.log(`Validated ${artifacts.length} canonical artifacts (${artifacts.length - projectCount} framework in engineering/, ${projectCount} project in project/) and ${deriveGraph(artifacts).edges.length} single-owner references.`);
+    if (!projectCount) console.log('Project state: none. No adopter outcome has been established in project/ yet.');
     console.log(`Unbound repository files: ${inventory.unbound.length}${inventory.unbound.length ? `\n${inventory.unbound.join('\n')}` : ''}`);
+    const evidence = summarizeEvidence(artifacts, inventory);
+    console.log(`Evidence: ${evidence.verified} repository-verified, ${evidence.external} external (retrievability unverified); ${evidence.unproven.length} evaluations have no evidence.`);
     console.log('Structural validity is not behavioral proof, authentic approval, or runtime authorization.');
   }
 }

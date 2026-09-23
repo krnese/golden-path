@@ -1,14 +1,32 @@
 import assert from 'node:assert/strict';
-import { mkdtempSync, writeFileSync, mkdirSync, rmSync, readFileSync, existsSync } from 'node:fs';
+import { mkdtempSync, writeFileSync, mkdirSync, rmSync, readFileSync, existsSync, symlinkSync } from 'node:fs';
 import { execFileSync } from 'node:child_process';
 import { tmpdir } from 'node:os';
 import { join, dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import test from 'node:test';
 import { parseDocument } from 'yaml';
-import { artifactPaths, deriveGraph, loadArtifacts, trace, validateArtifacts, inspectRepository, validateTransition } from '../scripts/validate.mjs';
+import { artifactPaths, deriveGraph, loadArtifacts, trace, validateArtifacts, inspectRepository, validateTransition, stateOf, assignStateArea, summarizeEvidence } from '../scripts/validate.mjs';
 
 const record = (id, kind, spec) => ({ schemaVersion: 2, id, kind, title: id, spec });
+const inProject = artifacts => artifacts.map(artifact => assignStateArea(artifact, 'project'));
+
+// The smallest valid adopter chain: an evaluation needs a capability, which needs a decision.
+function projectWorkload(name) {
+  return inProject([
+    record(`out-${name}`, 'outcome', { metric: 'Assigned equipment is accounted for', target: 'Every assignment has a known holder' }),
+    record(`wl-${name}`, 'workload', { outcomeId: `out-${name}`, owner: 'Adopter team', stage: 'design', usesAI: false, acceptance: [{ id: `ac-${name}`, metric: 'Assignment cases recorded correctly', target: 'All acceptance cases' }] }),
+    record(`req-${name}`, 'requirement', { workloadId: `wl-${name}`, acceptanceIds: [`ac-${name}`], description: 'Record which employee holds each item' }),
+    record(`adr-${name}`, 'decision', {
+      requirementIds: [`req-${name}`], status: 'proposed', unmetRequirement: 'No reliable assignment record', simplestViableOption: 'Deterministic records', selectedOption: 'Deterministic records',
+      capabilityGained: 'Accurate assignment tracking', alternatives: ['Spreadsheet'], simplerOptionAssessment: 'Spreadsheet lacks ownership checks', operationalResponsibility: 'Adopter team', rationale: 'Adopter proposal'
+    }),
+    record(`cap-${name}`, 'capability', { decisionId: `adr-${name}`, executable: true, authority: 'READ', identity: 'Adopter application', boundary: 'Read assignment records' }),
+    record(`eval-${name}`, 'evaluation', { requirementIds: [`req-${name}`], capabilityIds: [`cap-${name}`], method: 'deterministic', scenarios: ['Assign', 'Return'], passCriteria: 'All assertions', procedure: 'Adopter tests' })
+  ]);
+}
+// Framework state only: a fork's own project/ state must never collide with these fixtures.
+const frameworkArtifacts = () => loadArtifacts(fileURLToPath(new URL('../', import.meta.url))).filter(item => stateOf(item) === 'engineering');
 
 // Git-ignored personal files (for example editor settings) are never committed, so
 // they cannot become unreviewed repository state. Customization surfaces that local
@@ -324,12 +342,16 @@ test('real bootstrap has one skill, one agent, no ledger and no unbound artifact
   const inventory = inspectRepository(root, artifacts);
   assert.deepEqual(inventory.errors, []);
   assert.deepEqual(reviewableUnbound(root, inventory.unbound), []);
-  assert.equal(artifacts.filter(item => item.kind === 'skill').length, 1);
-  assert.equal(artifacts.filter(item => item.kind === 'agent').length, 1);
+  const framework = artifacts.filter(item => stateOf(item) === 'engineering');
+  const project = artifacts.filter(item => stateOf(item) === 'project');
+  assert.equal(framework.filter(item => item.kind === 'skill').length, 1);
+  assert.equal(framework.filter(item => item.kind === 'agent').length, 1);
+  assert.equal(project.some(item => ['agent', 'skill'].includes(item.kind)), false);
   assert.equal(existsSync(join(root, 'engineering/state.json')), false);
   assert.equal(spec(artifacts, 'adr-bootstrap-minimum').status, 'approved');
   const graph = deriveGraph(artifacts);
-  for (const artifact of artifacts.filter(item => item.kind !== 'outcome')) assert.deepEqual(graph.workloads(artifact.id), ['wl-engineering']);
+  for (const artifact of framework.filter(item => item.kind !== 'outcome')) assert.deepEqual(graph.workloads(artifact.id), ['wl-engineering']);
+  for (const artifact of project.filter(item => item.kind !== 'outcome')) assert.equal(graph.workloads(artifact.id).includes('wl-engineering'), false);
 });
 
 test('only Git-ignored personal files are tolerated as unbound; ignored reasoning and executable surfaces are not', context => {
@@ -349,6 +371,195 @@ test('only Git-ignored personal files are tolerated as unbound; ignored reasonin
   assert.deepEqual(reviewableUnbound(root, inventory.unbound).sort(), ['.github/instructions/local.instructions.md', '.github/skills/hidden/SKILL.md', '.gitignore', 'draft.md', 'hidden.mjs']);
   assert.match(inventory.errors.join('\n'), /Unbound executable or reasoning artifact: \.github\/skills\/hidden\/SKILL\.md/);
   assert.match(inventory.errors.join('\n'), /Unbound executable or reasoning artifact: hidden\.mjs/);
+});
+
+test('fork boundary: missing project/ is valid and one or more adopter workloads coexist with framework state', () => {
+  const framework = frameworkArtifacts();
+  assert.ok(framework.some(item => item.id === 'wl-engineering'));
+  assert.deepEqual(validateArtifacts(framework), []);
+  const project = [...projectWorkload('equipment'), ...projectWorkload('onboarding')];
+  const artifacts = [...framework, ...project];
+  assert.deepEqual(validateArtifacts(artifacts), []);
+  const graph = deriveGraph(artifacts);
+  assert.deepEqual(graph.workloads('eval-equipment'), ['wl-equipment']);
+  assert.deepEqual(graph.workloads('eval-onboarding'), ['wl-onboarding']);
+  assert.match(validateArtifacts([...framework, ...projectWorkload('equipment').slice(0, 3)]).join('\n'), /req-equipment: requirement needs an evaluation/);
+});
+
+test('fork boundary: framework approval cannot activate a project implementation', () => {
+  const artifacts = [...frameworkArtifacts(), ...projectWorkload('equipment')];
+  artifacts.push(assignStateArea(record('impl-equipment', 'implementation', { capabilityIds: ['cap-equipment'], paths: ['src/'], state: 'active' }), 'project'));
+  assert.match(validateArtifacts(artifacts).join('\n'), /impl-equipment: I15/);
+  spec(artifacts, 'cap-equipment').decisionId = 'adr-bootstrap-minimum';
+  assert.match(validateArtifacts(artifacts).join('\n'), /cap-equipment: cross-boundary reference adr-bootstrap-minimum/);
+  spec(artifacts, 'cap-equipment').decisionId = 'adr-equipment';
+  Object.assign(spec(artifacts, 'adr-equipment'), { status: 'approved', approval });
+  assert.deepEqual(validateArtifacts(artifacts), []);
+});
+
+test('fork boundary: framework policy cannot authorize a project write capability', () => {
+  const artifacts = [...frameworkArtifacts(), ...projectWorkload('equipment')];
+  Object.assign(spec(artifacts, 'cap-equipment'), { authority: 'WRITE', policyId: 'pol-engineering', authorization: { principal: 'Operator', scope: 'Assignments', enforcement: 'Application check', deniedBehavior: 'No write' } });
+  assert.match(validateArtifacts(artifacts).join('\n'), /cross-boundary reference pol-engineering/);
+  artifacts.push(assignStateArea(record('pol-equipment', 'policy', { requirementIds: ['req-equipment'], rules: ['Only assigned operators write'], approval: { mode: 'human', rationale: 'Asset records', enforcement: 'Application check' }, failureHandling: 'Deny', observability: 'Audit log' }), 'project'));
+  spec(artifacts, 'cap-equipment').policyId = 'pol-equipment';
+  assert.deepEqual(validateArtifacts(artifacts), []);
+});
+
+test('fork boundary: evaluations cannot satisfy requirements across the boundary in either direction', () => {
+  const projectToFramework = [...frameworkArtifacts(), ...projectWorkload('equipment')];
+  spec(projectToFramework, 'eval-equipment').requirementIds.push('req-procedure');
+  assert.match(validateArtifacts(projectToFramework).join('\n'), /eval-equipment: cross-boundary reference req-procedure/);
+  const frameworkToProject = [...frameworkArtifacts(), ...projectWorkload('equipment')];
+  spec(frameworkToProject, 'eval-structure').requirementIds.push('req-equipment');
+  assert.match(validateArtifacts(frameworkToProject).join('\n'), /eval-structure: cross-boundary reference req-equipment/);
+});
+
+test('fork boundary: IDs stay globally unique and project/ rejects framework agent and skill kinds', () => {
+  const duplicate = [...frameworkArtifacts(), ...projectWorkload('equipment')];
+  duplicate.push(assignStateArea(record('req-authority', 'requirement', { workloadId: 'wl-equipment', acceptanceIds: ['ac-equipment'], description: 'Colliding ID' }), 'project'));
+  assert.match(validateArtifacts(duplicate).join('\n'), /req-authority: duplicate ID/);
+  for (const [kind, extra] of [['agent', { capabilityIds: ['cap-equipment'], boundary: 'subagent', path: '.github/agents/x.agent.md' }], ['skill', { decisionId: 'adr-equipment', path: '.github/skills/x/SKILL.md', references: ['.github/skills/x/reference.md'], authority: 'NONE' }]]) {
+    const artifacts = [...frameworkArtifacts(), ...projectWorkload('equipment'), assignStateArea(record(`${kind}-equipment`, kind, extra), 'project')];
+    assert.match(validateArtifacts(artifacts).join('\n'), new RegExp(`project/ cannot contain ${kind} artifacts`));
+  }
+});
+
+test('fork boundary: project authority changes still require a new project decision', () => {
+  const before = [...frameworkArtifacts(), ...projectWorkload('equipment')];
+  const after = [...frameworkArtifacts(), ...projectWorkload('equipment')];
+  after.push(assignStateArea(record('pol-equipment', 'policy', { requirementIds: ['req-equipment'], rules: ['Scoped writes'], approval: { mode: 'human', rationale: 'Asset records', enforcement: 'Application check' }, failureHandling: 'Deny', observability: 'Audit log' }), 'project'));
+  Object.assign(spec(after, 'cap-equipment'), { authority: 'WRITE', policyId: 'pol-equipment', authorization: { principal: 'Operator', scope: 'Assignments', enforcement: 'Application check', deniedBehavior: 'No write' } });
+  assert.match(validateTransition(before, after).join('\n'), /cap-equipment: authority change needs a new governing decision/);
+  const decision = assignStateArea(structuredClone(after.find(item => item.id === 'adr-equipment')), 'project');
+  decision.id = 'adr-equipment-write';
+  decision.spec.authorityChanges = [{ capabilityId: 'cap-equipment', from: 'READ', to: 'WRITE', reason: 'Operators record assignments' }];
+  after.push(decision);
+  spec(after, 'cap-equipment').decisionId = 'adr-equipment-write';
+  assert.deepEqual(validateArtifacts(after), []);
+  assert.deepEqual(validateTransition(before, after), []);
+});
+
+test('fork boundary: discovery reads optional project/ from the working tree and a base revision', context => {
+  const root = scratch(context);
+  mkdirSync(join(root, 'engineering'));
+  for (const artifact of fixture()) writeFileSync(join(root, 'engineering', `${artifact.id}.json`), JSON.stringify(artifact));
+  assert.equal(loadArtifacts(root).every(item => stateOf(item) === 'engineering'), true);
+  mkdirSync(join(root, 'project'));
+  for (const artifact of projectWorkload('equipment')) writeFileSync(join(root, 'project', `${artifact.id}.json`), JSON.stringify(artifact));
+  const loaded = loadArtifacts(root);
+  assert.deepEqual(validateArtifacts(loaded), []);
+  assert.equal(loaded.filter(item => stateOf(item) === 'project').length, 6);
+  assert.deepEqual(inspectRepository(root, loaded).unbound, []);
+  writeFileSync(join(root, 'project/README.md'), 'Not canonical');
+  assert.throws(() => loadArtifacts(root), /Unexpected canonical artifact path: project\/README\.md/);
+  rmSync(join(root, 'project/README.md'));
+  mkdirSync(join(root, 'project/nested'));
+  assert.throws(() => loadArtifacts(root), /must be regular files: project\/nested/);
+  rmSync(join(root, 'project/nested'), { recursive: true });
+  writeFileSync(join(root, 'project/wl-renamed.json'), JSON.stringify(projectWorkload('other')[1]));
+  assert.throws(() => loadArtifacts(root), /filename must match stable artifact ID/);
+  rmSync(join(root, 'project/wl-renamed.json'));
+  execFileSync('git', ['init', '--quiet'], { cwd: root });
+  const git = args => execFileSync('git', args, { cwd: root, encoding: 'utf8' }).trim();
+  git(['add', 'engineering', 'project']);
+  git(['-c', 'user.name=Fixture', '-c', 'user.email=fixture@example.invalid', '-c', 'commit.gpgsign=false', 'commit', '--quiet', '-m', 'Synthetic fork snapshot']);
+  const previous = loadArtifacts(root, git(['rev-parse', 'HEAD']));
+  assert.deepEqual(previous.map(item => `${stateOf(item)}/${item.id}`), loaded.map(item => `${stateOf(item)}/${item.id}`));
+});
+
+test('fork boundary: project implementations bind a directory without enumerating files, and overlap stays invalid', context => {
+  const root = scratch(context);
+  mkdirSync(join(root, 'scripts'));
+  writeFileSync(join(root, 'scripts/validate.mjs'), 'export {};');
+  mkdirSync(join(root, 'src/app/lib'), { recursive: true });
+  for (const file of ['src/app/index.mjs', 'src/app/lib/util.mjs', 'src/app/README.md']) writeFileSync(join(root, file), 'export {};');
+  const base = [...fixture(), ...projectWorkload('equipment')];
+  const implementation = paths => assignStateArea(record('impl-equipment', 'implementation', { capabilityIds: ['cap-equipment'], paths, state: 'draft' }), 'project');
+  let inventory = inspectRepository(root, [...base, implementation(['src/app/'])]);
+  assert.deepEqual(inventory.errors, []);
+  assert.deepEqual(inventory.unbound, []);
+  assert.deepEqual(validateArtifacts([...base, implementation(['src/app/'])]), []);
+  inventory = inspectRepository(root, [...base]);
+  assert.match(inventory.errors.join('\n'), /Unbound executable or reasoning artifact: src\/app\/index\.mjs/);
+  const nested = assignStateArea(record('impl-nested', 'implementation', { capabilityIds: ['cap-equipment'], paths: ['src/app/lib/'], state: 'draft' }), 'project');
+  assert.match(inspectRepository(root, [...base, implementation(['src/app/']), nested]).errors.join('\n'), /overlapping path authority/);
+  assert.match(inspectRepository(root, [...base, implementation(['scripts/'])]).errors.join('\n'), /scripts\/validate\.mjs: overlapping path authority in impl-equipment and impl-test/);
+  assert.match(inspectRepository(root, [...base, implementation(['src/app/', 'src/app/'])]).errors.join('\n'), /duplicate path authority/);
+  const frameworkDirectory = fixture();
+  spec(frameworkDirectory, 'impl-test').paths = ['scripts/'];
+  assert.match(inspectRepository(root, frameworkDirectory).errors.join('\n'), /only project implementations may bind a directory/);
+  for (const directory of ['.github/', 'project/', 'engineering/', 'node_modules/', '.local/']) {
+    assert.match(inspectRepository(root, [...base, implementation([directory])]).errors.join('\n'), /cannot bind an excluded, customization or canonical state directory/);
+  }
+  assert.match(inspectRepository(root, [...base, implementation(['src/missing/'])]).errors.join('\n'), /src\/missing\/: /);
+  assert.match(inspectRepository(root, [...base, implementation(['src/app/index.mjs/'])]).errors.join('\n'), /must identify a directory/);
+  assert.match(inspectRepository(root, [...base, implementation(['../outside/'])]).errors.join('\n'), /unsafe repository path/);
+});
+
+test('I18: provably machine-local or ignored evidence locations are rejected', () => {
+  for (const location of ['C:\\evidence\\run.txt', 'D:/runs/run.json', '/tmp/run.log', '\\\\host\\share\\run.md', '~/run.log', 'file:///tmp/run.log', '../outside/run.md', '.local/evidence/w.json', '.local\\evidence\\w.json', 'node_modules/tool/out.txt', 'coverage/lcov.info', '.git/HEAD']) {
+    const artifacts = fixture();
+    addEvidence(artifacts);
+    spec(artifacts, 'ev-test').location = location;
+    assert.match(validateArtifacts(artifacts).join('\n'), /ev-test: I18 evidence location/, location);
+  }
+});
+
+test('I18: external identifiers, URIs, missing paths and session output are accepted but unverified', context => {
+  const root = scratch(context);
+  const candidateWLocation = 'Local Copilot session command output for node --test app\\equipment.test.mjs, npm run check, npm run validate -- --base 062e7e41a03fb57c32ae9f45549a93519464d720, API probe and browser inspection';
+  for (const location of ['https://example.invalid/run/1', 'ci-run:12345', 'trace 7f3a in the Contoso monitor', 'records/missing-run.md', candidateWLocation]) {
+    const artifacts = fixture();
+    addEvidence(artifacts);
+    spec(artifacts, 'ev-test').location = location;
+    assert.deepEqual(validateArtifacts(artifacts), [], location);
+    const inventory = inspectRepository(root, artifacts);
+    assert.deepEqual(inventory.evidence, { verified: [], external: ['ev-test'] }, location);
+    assert.deepEqual(summarizeEvidence(artifacts, inventory), { verified: 0, external: 1, unproven: [] });
+  }
+});
+
+test('I18: an existing repository file is verified evidence owned by that artifact, with invalid bindings rejected', context => {
+  const root = scratch(context);
+  mkdirSync(join(root, 'scripts'));
+  writeFileSync(join(root, 'scripts/validate.mjs'), 'export {};');
+  mkdirSync(join(root, 'records'));
+  writeFileSync(join(root, 'records/run.md'), 'Redacted run record');
+  const artifacts = fixture();
+  addEvidence(artifacts);
+  spec(artifacts, 'ev-test').location = './records/run.md';
+  let inventory = inspectRepository(root, artifacts);
+  assert.deepEqual(inventory.errors, []);
+  assert.deepEqual(inventory.unbound, []);
+  assert.deepEqual(inventory.evidence, { verified: ['ev-test'], external: [] });
+  assert.equal(inventory.owners.get('records/run.md'), 'ev-test');
+  assert.deepEqual(summarizeEvidence(artifacts, inventory), { verified: 1, external: 0, unproven: [] });
+  const second = structuredClone(artifacts.find(item => item.id === 'ev-test'));
+  second.id = 'ev-second';
+  assert.match(inspectRepository(root, [...artifacts, second]).errors.join('\n'), /ev-second: records\/run\.md: I18 duplicate path authority with ev-test/);
+  spec(artifacts, 'impl-test').paths = ['scripts/validate.mjs', 'records/run.md'];
+  assert.match(inspectRepository(root, artifacts).errors.join('\n'), /ev-test: records\/run\.md: I18 duplicate path authority with impl-test/);
+  spec(artifacts, 'impl-test').paths = ['scripts/validate.mjs'];
+  spec(artifacts, 'ev-test').location = 'records';
+  assert.match(inspectRepository(root, artifacts).errors.join('\n'), /I18 repository evidence must be a regular file/);
+  mkdirSync(join(root, 'engineering'));
+  writeFileSync(join(root, 'engineering/wl-test.json'), '{}');
+  spec(artifacts, 'ev-test').location = 'engineering/wl-test.json';
+  assert.match(inspectRepository(root, artifacts).errors.join('\n'), /I18 a canonical artifact cannot be its own evidence/);
+  try {
+    symlinkSync(join(root, 'records/run.md'), join(root, 'records/link.md'));
+  } catch {
+    return context.skip('symbolic links unavailable in this environment');
+  }
+  spec(artifacts, 'ev-test').location = 'records/link.md';
+  assert.match(inspectRepository(root, artifacts).errors.join('\n'), /I18 repository evidence cannot be a symbolic link/);
+});
+
+test('I18: the evidence summary derives unproven evaluations from missing evidence', context => {
+  const root = scratch(context);
+  const artifacts = fixture();
+  assert.deepEqual(summarizeEvidence(artifacts, inspectRepository(root, artifacts)), { verified: 0, external: 0, unproven: ['eval-test'] });
 });
 
 test('canonical scaffold documentation links resolve without obsolete skill or ledger links', () => {

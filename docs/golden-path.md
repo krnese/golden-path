@@ -31,9 +31,10 @@ outcomes that still need human review or operational evidence.
 
 ## Purpose and Principles
 
-The repository itself is the reference implementation. The initial workload is
-human-accountable repository engineering, not a business application architecture.
-Future workloads can be deterministic, AI-assisted, or agentic only as earned.
+The repository itself is the reference implementation. The framework's own workload,
+recorded in `engineering/`, is human-accountable engineering of Golden Path itself,
+not a business application architecture. Adopters record their own workloads in
+`project/`; they can be deterministic, AI-assisted, or agentic only as earned.
 
 1. **Outcome before implementation.** Determine benefit and workload before
    choosing technology; nouns such as "agent" do not justify architecture.
@@ -223,10 +224,54 @@ semantic guarantees as a product feature.
 ## Contracts and Traceability
 
 The closed [schema](../contracts/engineering.schema.json) defines eleven artifact
-kinds. Each file in `engineering/` contains one artifact and is named for its
-stable `id`; `schemaVersion` is 2. Discover files deterministically without a
+kinds. Each file in `engineering/` or `project/` contains one artifact and is named
+for its stable `id`; `schemaVersion` is 2. Discover files deterministically without a
 manifest. Git commits version the coherent set; there is no graph database,
 central ledger, automatic repair or committed authoritative index.
+
+### Framework State and Project State
+
+A fork or clone of this repository is the V0.1 distribution mechanism: the fork
+becomes the engineering environment for the adopter's own project. Two flat
+directories hold canonical state, distinguished only by location:
+
+| Directory | Owner | Explains and governs |
+| --- | --- | --- |
+| `engineering/` | Golden Path framework maintainers | Why the framework exists and how engineering is performed in this environment |
+| `project/` (optional) | The adopter who forked or cloned it | What the adopter is building, why, with what authority and proof |
+
+**A fresh fork contains the engineering discipline but no assumptions about what
+the adopter is building.** A missing `project/` means no adopter outcome is
+established yet. Both directories use the same schema and invariants; `project/`
+may hold zero or more workloads. IDs are unique across both.
+
+**Framework provenance must not become adopter authority.** Decisions in
+`engineering/` record upstream framework decisions and their approvals by the
+upstream repository owner at the recorded dates; they are preserved unchanged and
+never approve project decisions. To guarantee this, V0.1 permits **no
+authoritative graph references across the boundary**, in either direction:
+framework requirements, decisions, approvals, policies, evaluations and evidence
+cannot satisfy project authority or traceability, and project state cannot alter
+framework traceability. This is a V0.1 isolation rule, not a claim that the two
+can never be related; typed conformance or governance relationships may be earned
+later. Project decisions may cite Golden Path doctrine in prose.
+
+`project/` cannot contain `agent` or `skill` artifacts in V0.1, because those kinds
+describe this environment's Copilot customizations. How to represent agents that
+participate in engineering versus agents inside the system being engineered is an
+open question, not a settled decision. The
+[boundary decision](../engineering/adr-project-state-boundary.json) records the
+alternatives and what remains deferred.
+
+Adopter implementation keeps its own manifests, scripts, dependencies and tool
+configuration inside its bound implementation directory, in whatever ecosystem it
+uses. Framework-owned files, including the root `package.json`, `package-lock.json`,
+`.gitignore`, `README.md` and `.github/`, are not edited for adopter needs; a
+genuinely required change there is a framework change the user must approve.
+Framework tooling and adopter implementation must not silently take ownership of
+each other's files. Whether dependency folders nested inside an adopter directory
+(for example symbolic links created by package managers on Linux) pass repository
+inspection is not yet proven.
 
 Relationship ownership is part of the contract:
 
@@ -236,7 +281,7 @@ Relationship ownership is part of the contract:
 | Requirement | `workloadId`, workload-local `acceptanceIds` | Workload's requirements and evaluated criteria |
 | Decision | `requirementIds`; optional supporting `evidenceIds` | Governing workload and requirements' decisions |
 | Capability | `decisionId`; applicable `policyId` | Requirements/workload; policy's capabilities |
-| Implementation | `capabilityIds`, exact file paths | Governing decisions/requirements/workload |
+| Implementation | `capabilityIds`, exact file paths (project implementations may also bind a directory) | Governing decisions/requirements/workload |
 | Evaluation | Requirements it tests and capabilities it exercises | Capability/requirement evaluation coverage and workload |
 | Evidence | `evaluationId` | Workload/outcome and evaluation's observed runs |
 | Policy | Requirements it constrains | Workload and consuming capabilities |
@@ -258,14 +303,21 @@ Reverse navigation does not require storing reverse links. Connectedness is
 not proof of causal correctness.
 
 Create outcome/workload and requirements, then decisions, capabilities and
-evaluation plans before implementation. Unfinished proposals may fail full
+evaluation plans before implementation. The smallest valid chain is outcome,
+workload, requirement, decision (which may remain `proposed`), capability and
+evaluation. Unfinished proposals may fail full
 validation while being edited; complete typed references before review/merge.
 Use the schema as the shape reference. Never copy synthetic test evidence or
 fixture approvals into authoritative artifacts.
 
 Significant files have a single implementation/agent/skill binding. Canonical
-artifact files identify themselves and need no separate registry. Missing paths,
-duplicate path owners, unsafe paths, unbound recognized executables, workflows,
+artifact files identify themselves and need no separate registry. Engineering
+state should explain implementation boundaries, not inventory every source file:
+a project implementation may bind a directory with a trailing `/`, which owns
+every file beneath it. Directory bindings cannot overlap each other or any file
+binding, and cannot target `.github/`, `engineering/`, `project/` or excluded
+directories; no pattern language is supported. Missing paths,
+duplicate or overlapping path owners, unsafe paths, unbound recognized executables, workflows,
 agents and skills fail validation. Other unbound files are reported for review,
 not automatically forbidden. A binding demonstrates traceability, not necessity.
 Excluded root directories are `.git`, `node_modules`, `.local`, `coverage`.
@@ -399,9 +451,16 @@ generic deployment scaffold exists until a deployment requirement earns one.
 `active` is a declared engineering state, not evidence that a release occurred.
 
 Evidence artifacts contain evaluation ID, subject revision, UTC timestamp,
-result, environment, observations and an accessible retained location. That may
-be a reviewed repository file or a durable review/CI URL; no hosted service is
-required. Keep raw transcripts/results there, not mirrored into intent fields.
+result, environment, observations and a location from which another participant
+can retrieve the observation independently. That may be a committed repository
+file, which the evidence artifact then owns, or a durable external identifier in
+whatever form its system uses; no hosted service or URI format is required.
+`observations` summarizes the evidence and is not the proof. Session output,
+machine-local files and ignored working folders are not evidence. The validator
+rejects provably machine-local or ignored locations, verifies and binds existing
+repository files, and reports all other locations as external with retrievability
+unverified; V0.1 does not verify external sources.
+Keep raw transcripts/results there, not mirrored into intent fields.
 Record redacted input/output, model/configuration where relevant and reviewer
 assessment. When uncommitted files are tested, record a content/diff hash that
 includes untracked files; HEAD alone does not identify the tested subject.

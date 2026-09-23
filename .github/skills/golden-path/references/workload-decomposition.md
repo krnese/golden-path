@@ -23,7 +23,8 @@ This reference supplies expertise, never authority.
    proof. Do not select technology before deriving the capability need.
 
 Use [the schema](../../../../contracts/engineering.schema.json). A workload
-requiring no judgment should remain deterministic.
+requiring no judgment should remain deterministic. The user's workloads are
+recorded in `project/`; `engineering/` holds Golden Path's own framework workload.
 
 ## Discover Intent Progressively
 
@@ -49,22 +50,73 @@ ledger. Use canonical artifacts for durable intent when needed; keep tentative
 understanding in session context. Apply existing contracts and review rules
 proportionately without inventing architecture for a small task.
 
+### Persist the Adopter's Project State
+
+The user's project state belongs in `project/`, one JSON artifact per stable ID
+using the same schema as `engineering/`. At the early intent threshold below,
+persist the smallest valid chain so another session can reconstruct it: outcome,
+workload, requirement, a `proposed` decision, a logical capability and the
+evaluation that will prove it. This initial state is a working understanding that
+becomes more precise as requirements and evidence emerge; it does not wait for
+future design concerns to be resolved. Record assumptions as assumptions, never as
+approved architecture. Handle these artifacts yourself and describe what you
+recorded in plain language; the user should not need to know the artifact types.
+The canonical engineering model is a persistence model, not an interaction model:
+repository completeness must not become conversational completeness.
+Keep the adopter's manifests, scripts, dependencies and tool configuration inside
+its bound implementation directory. Do not edit framework-owned files (root
+`package.json`, `package-lock.json`, `.gitignore`, `README.md`, `.github/`) for the
+adopter's needs; if a change there is genuinely required, say so and treat it as a
+framework change the user must approve. Record evidence only for observations
+another participant can retrieve; session output is not evidence (see the
+[evaluation design](evaluation-design.md) reference).
+Never mark a project decision
+`approved` without the user's explicit approval, and never cite framework decisions,
+policies, requirements or evaluations from project artifacts: framework provenance
+is not project authority. Bind implementation by directory (for example `src/`)
+rather than listing every file. V0.1 cannot represent project-owned `agent` or
+`skill` artifacts; if the system being built contains agents, record them as
+capabilities and implementation for now and name this limitation.
+
 ### Ask the Next Material Question
+
+**Questions are just-in-time dependencies of engineering decisions, not an intake
+checklist.** Ask when the answer can materially change the next engineering
+decision, safety or authority, handling of sensitive data, external effects,
+significant cost or another consequential or irreversible choice. Otherwise prefer
+a reasonable reversible assumption, state it briefly when useful, and continue.
+The test is consequence and decision dependency, not topic: access control or a
+data source can be immediately material for one workload and safely assumed for
+another. A necessary question is better than a bad assumption.
 
 1. Reuse answers already given and safely inspect relevant repository context.
    Do not ask the user for facts available through authorized, low-risk discovery.
-2. Distinguish facts, explicit constraints and provisional assumptions. Infer
-   routine reversible details from established conventions; surface uncertainty
-   when it changes behavior, scope, risk or acceptance.
+2. Distinguish facts, explicit constraints and provisional assumptions. Surface
+   uncertainty when it changes behavior, scope, risk or acceptance.
    A named technology, service, region or request to deploy is not by itself a
    workload outcome. When the problem and intended users are unknown, establish
    them before asking the user to choose implementation or delivery mechanics.
-3. Select the unresolved choice with the greatest effect on correctness, scope or
+3. Establish what success means early for the user or business, proposing a
+   measurable criterion when the user has not stated one. Keep that success
+   distinct from derived system acceptance criteria, which may refine or
+   operationalize it but must not silently redefine it. Once the outcome, the
+   primary user or beneficiary, success and enough of the immediate deliverable
+   are understood, summarize that working understanding in plain language. If it
+   rests on a success criterion you inferred, or substantial implementation would
+   follow and the requested deliverable is materially ambiguous, ask the user to
+   confirm or correct it in that same message; otherwise continue. Then persist it
+   before continuing into design questions. This is not a checklist: infer what
+   the request already says, assume where safe, and ask only for what prevents a
+   useful next step. "Build me a working local prototype", "help me design..." and
+   "explain how I could..." are clear; "I want to build..." may not be, before
+   substantial implementation.
+4. Select the unresolved choice with the greatest effect on correctness, scope or
    risk that blocks the next useful step. Ask one focused question in plain
-   language; explain the consequence or offer a recommended option when helpful.
-4. Incorporate the answer, preserve settled decisions and proceed with clear,
+   language, with a recommended option when helpful. Explain why only when that
+   helps the user decide, never in Golden Path terminology.
+5. Incorporate the answer, preserve settled decisions and proceed with clear,
    authorized work. Defer questions that only affect a later stage.
-5. Before substantial implementation or external execution, briefly state the
+6. Before substantial implementation or external execution, briefly state the
    agreed deliverable, important exclusions and proof. Do not request repeated
    approval for unchanged, already authorized work.
 

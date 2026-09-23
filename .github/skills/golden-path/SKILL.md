@@ -12,7 +12,10 @@ The [approved bootstrap decision](../../../engineering/adr-bootstrap-minimum.jso
 explains why there is one skill and no centralized authoritative ledger.
 
 1. **Identify:** Name the affected outcome and workload. Start with business
-   benefit and constraints, not the requested technology.
+   benefit and constraints, not the requested technology. Framework state in
+   `engineering/` governs how engineering is done; the adopter's project state
+   lives in `project/`. If the request concerns the user's system and `project/`
+   has no workload, the outcome is unknown: discover it, never adopt the framework's.
 2. **Understand:** Read intended behavior, scenarios, failures and measurable
    acceptance criteria. Surface missing decisions before proposing architecture.
 3. **Detect change:** Identify the new or changed requirement and its ID.

@@ -12,9 +12,18 @@ or data-access authority.
    criteria and procedure. Do not duplicate coverage on the targets. Add repeat
    counts and statistical thresholds only when a reliability requirement earns them.
 5. Evidence owns its evaluation link, subject revision/content hash, timestamp,
-   result, environment, observations and accessible location. Preserve redacted
-   input/output, exposed model/configuration versions and human scoring at that
-   location. Local reviewed files are valid; never invent a hosted URL.
+   result, environment, observations and location. `location` identifies where
+   another participant can retrieve the observation independently; `observations`
+   only summarizes it and is not the proof. Use either a committed repository file,
+   which the evidence artifact then owns, or a durable external identifier such as
+   a run, trace, evaluation or deployment record in another system, in whatever
+   form that system uses. Session output, files on one machine and ignored working
+   folders such as `.local/` are not evidence: keep them as working notes until the
+   observation exists in a retrievable source. The validator rejects provably
+   machine-local or ignored locations, verifies repository files and reports every
+   other location as external with retrievability unverified; V0.1 cannot verify
+   external sources. Preserve redacted input/output, exposed model/configuration
+   versions and human scoring at that location. Never invent a hosted URL.
 6. An operational evaluation owns signal, operator and retention. Derive workload
    and outcome from its requirements; evidence inherits that scope via the evaluation.
 7. Separate planned from executed proof. Failures/inconclusive results remain
