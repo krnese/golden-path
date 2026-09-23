@@ -5,8 +5,29 @@ not a sample application or another static reference architecture. The repositor
 implements the discipline it describes: beginning with an outcome, deriving the
 simplest justified architecture, preserving intent, and evaluating results.
 
-**New here? [Start with your problem, not the architecture](docs/getting-started.md).**
-Describe what you need in normal language; no architecture vocabulary is required.
+> **Status: V0.1 experimental.** Golden Path is an experimental executable
+> engineering system for deriving, governing, proving and evolving software
+> architecture from workload intent. It is ready for engineers to try with their
+> own workloads; it is not a proven or production-ready product. See
+> [Maturity](#maturity-v01-experimental) for what is demonstrated and what is not.
+
+## Quick Start
+
+1. Clone this repository and open its root folder in VS Code (or a Codespace).
+2. Sign in to GitHub Copilot and start a new chat in **Agent** mode with the
+   default agent. No custom agent, extension, cloud account or setup script is needed.
+3. Describe the outcome you want in your own words, for example:
+
+> I want to build [describe the outcome and who it helps]. Start from the outcome
+> and use the engineering system in this repository to determine the requirements
+> and simplest justified architecture. Do not assume technologies, agents, skills,
+> tools, workflows or platforms unless the workload earns them.
+
+**Don't architect your prompt.** You do not need to know whether you need an
+agent, skill, MCP server, workflow, model, database or cloud service. Expect
+questions about the problem before any technology choice. The
+[Getting Started guide](docs/getting-started.md) covers account access, workspace
+trust, Codespaces and examples.
 
 **AI-assisted coding helps humans produce software. Governed agentic engineering
 enables humans to direct software-producing agents within an engineering system
@@ -54,25 +75,21 @@ separation does not automatically require agent separation. See
 ## Begin with an Outcome
 
 Choose [local VS Code](docs/getting-started.md#use-local-vs-code) or
-[browser-based Codespaces](docs/getting-started.md#use-codespaces-in-your-browser).
-With the repository open and Copilot ready, describe your problem in a new
-**Agent** session using the default Copilot agent:
-
-> I want to build something that helps our support engineers resolve complex
-> customer issues faster.
+[browser-based Codespaces](docs/getting-started.md#use-codespaces-in-your-browser),
+then use the [Quick Start](#quick-start) prompt in a new default **Agent** session.
+Even a single sentence such as "I want to build something that helps our support
+engineers resolve complex customer issues faster" is a valid start.
 
 You do not need to choose technology or fill in a technical template first.
-The [Getting Started guide](docs/getting-started.md) covers account access,
-workspace trust, examples for other kinds of work, and how to describe changes
-as your needs evolve. Copilot access and Codespaces usage are separate;
-neither grants permission to change customer systems.
+Copilot access and Codespaces usage are separate; neither grants permission to
+change customer systems.
 
 The repository provides the engineering instructions and the governing
-`golden-path` skill with selectively loaded supporting references. A specialized
-**Golden Path Engineer** is also available as an explicit entry point, not a
-prerequisite. The discipline belongs to the engineering environment: versioned
-intent, procedures, contracts, validation and review, not just a custom agent's
-prompt.
+`golden-path` skill with selectively loaded supporting references; the generic
+default Agent is the canonical entry point. A specialized **Golden Path Engineer**
+agent is also available as an optional, focused entry point, not a prerequisite.
+The discipline belongs to the engineering environment: versioned intent,
+procedures, contracts, validation and review, not a custom agent's prompt.
 
 For local repository checks, use Node 24 LTS and Git. These are validation tools,
 not a runtime choice for future workloads:
@@ -137,21 +154,39 @@ incidental unbound files without requiring a registry entry for every file.
 CI compares the base revision, runs tests and audits dependencies. It cannot
 infer semantic architecture or hidden executable capability from arbitrary code.
 
-## Bootstrap Status
+## Maturity: V0.1 Experimental
 
-The first workload is **engineering this repository with a human and Copilot**.
-It uses AI during development, not in a deployed application. The minimum
-architecture is **approved** by the human request recorded in the consequential
-decision. Repository implementations are **active** under that approval; this is
-not a production deployment, proof of behavior, or permission for future writes.
-Behavioral evaluations remain **defined, not executed**. No results are fabricated.
+The first and only canonical workload is **engineering this repository with a
+human and Copilot**. It uses AI during development, not in a deployed application.
+The minimum architecture is **approved** by the human requests recorded in the
+consequential decisions. Repository implementations are **active** under that
+approval; this is not a production deployment, proof of behavior, or permission
+for future writes.
 
-The repository now defines a **platform-neutral governed-delivery contract** and
-a read-only admission gate. Synthetic tests cover missing authority and fully
-bound admission, including consequence-based WRITE versus HIGH_IMPACT_WRITE and
-adapter authority ceilings. There is still no physical deployment adapter,
-external write capability or real deployment evidence; those require a concrete
-workload, identity, enforcement boundary, policy and separate approval.
+**Demonstrated in this repository today** (structurally, by `npm run check` and CI):
+
+- Machine-readable engineering state: one typed artifact per stable ID
+- Outcome -> workload -> requirement -> decision -> capability -> implementation
+  and evaluation traceability, derived rather than mirrored
+- Earned-architecture decisions recording unmet requirement, alternatives and
+  simpler-option assessment, including a completed simplification of this scaffold
+- Authority semantics (READ through HIGH_IMPACT_WRITE) with write policy and
+  authority-transition checks against a base revision
+- Deterministic invariant validation and file-binding inspection
+- Behavioral evaluation definitions (scenarios A-R) and evidence conventions
+- A platform-neutral governed-delivery contract and read-only admission gate,
+  exercised with synthetic allow/deny fixtures
+
+**Unproven or intentionally absent:**
+
+- Broad behavioral reliability. Most behavioral scenarios have not been executed;
+  see the [evaluation status](evaluations/bootstrap.md) for what has actual evidence.
+  One observation is never a reliability claim.
+- Real physical deployment adapters and real external execution
+- Production enforcement, and external identity or authorization integration
+- Runtime independence across agent products other than GitHub Copilot in VS Code
+- Multi-engineer collaboration at scale, including configured branch protection
+- Business-outcome evidence from adopter workloads
 
 The first Golden Path evolution is the review of this scaffold: one skill with
 references replaced seven independent skills; canonical artifacts and derived
@@ -163,7 +198,10 @@ Only four top-level exclusions are outside the file inventory: `.git`,
 `node_modules`, `.local`, and `coverage`. Do not put authoritative code there.
 Use ignored `.local/` for temporary transcripts and working notes; no temporary
 reasoning automatically becomes engineering doctrine. Do not store secrets or
-sensitive production payloads in Git or evaluation transcripts.
+sensitive production payloads in Git or evaluation transcripts. The inspector
+still reports Git-ignored personal files such as `.vscode/settings.json`; the
+repository test tolerates them only when they are not scripts, `.github/`
+customizations or agent instruction files.
 
 There are deliberately no application, deployment, infrastructure, MCP, runtime
 agent, database, orchestration, hook, or autonomous-improvement directories.
@@ -172,18 +210,22 @@ and reasoning surfaces have one binding owner. Canonical artifacts own their
 identities and relationships directly; no manifest or duplicate file registry
 is maintained. Empty architecture directories are unnecessary.
 
-## Smallest Next Experiment
+## Trying It with Your Own Workload
 
-Run Scenario A from the behavioral evaluation with the primary agent in a fresh
-session, requesting a proposal only. Verify it derives a deterministic design
-without runtime AI. Do not execute the experiment as part of scaffolding.
-After that future run, capture the redacted transcript and reviewer assessment
-in a reviewed file or durable review URL; propose evidence linked only to
-`eval-behavior`. Workload and outcome are derived. If it fails, identify the root-cause artifact and add a
-regression before changing that artifact. Review the resulting diff normally.
-The [Golden Loop](docs/golden-path.md#golden-loop) promotes evidence-backed
-learning through engineering artifacts and review, not uncontrolled runtime
-self-modification.
+External trials are the purpose of V0.1. Bring an end-to-end engineering problem
+we did not anticipate, start from the [Quick Start](#quick-start) in a fresh
+default Agent session, and observe whether the repository alone guides you from
+outcome to requirements, simplest justified design, implementation and proof.
+Use fictional or redacted data and no production credentials.
+
+Useful observations include where it asked the right or wrong first question,
+where it assumed technology or architecture the work had not earned, where it
+stopped or continued inappropriately at an authority boundary, and what you had
+to explain that the repository should already have known. Share them through a
+GitHub issue or pull request with the repository revision and a redacted
+transcript. A failure is evidence: it starts the
+[Golden Loop](docs/golden-path.md#golden-loop) and should change the owning
+artifact through review, not silently rewrite expected behavior.
 
 Before relying on CI as a merge gate, a repository administrator must configure
 required status checks and reviewer protections, especially for governance,

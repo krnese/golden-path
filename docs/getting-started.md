@@ -11,14 +11,22 @@ what you are trying to achieve in normal language.
 ## Your First Prompt
 
 With the repository open in VS Code and Copilot ready, start a new **Agent**
-session using the default Copilot agent and try:
+session using the default Copilot agent and describe your outcome:
+
+> I want to build [describe the outcome and who it helps]. Start from the outcome
+> and use the engineering system in this repository to determine the requirements
+> and simplest justified architecture. Do not assume technologies, agents, skills,
+> tools, workflows or platforms unless the workload earns them.
+
+A plain sentence is also enough, for example:
 
 > I want to build something that helps our support engineers resolve complex
 > customer issues faster.
 
-The repository supplies the engineering instructions and Golden Path skill.
-You do not need to select a custom agent first. **Golden Path Engineer** is also
-available as an explicit entry point if you prefer.
+The repository supplies the engineering instructions and Golden Path skill, so
+the generic default Agent is the canonical entry point. You do not need to select
+a custom agent. **Golden Path Engineer** is available as an optional focused
+entry point if you prefer; it is not required for Golden Path behavior.
 
 Not set up yet? Choose [local VS Code](#use-local-vs-code) or
 [Codespaces in your browser](#use-codespaces-in-your-browser) below.
@@ -119,7 +127,7 @@ appropriate permissions when you are ready to contribute.
 | The assistant appears unaware of the Golden Path | Confirm the repository root is open and inspect available instruction/skill discovery diagnostics and chat activity in your VS Code version. Restart with a fresh chat after correcting setup. |
 | Copilot stops accepting requests | Check usage allowance, billing and organization policy; repository access does not provide extra Copilot usage. |
 | Codespaces CLI creation reports a missing scope | CLI credentials are separate from browser sign-in. Use the browser path or explicitly review the requested credential scope; do not broaden it silently. |
-| Checks report a local editor settings file as unbound | See the local-settings note below; Git ignore rules and repository validation are separate. |
+| Checks report a local editor settings file as unbound | Expected and tolerated when the file is Git-ignored; see the local-settings note below. |
 
 Seeing a skill read in chat activity is evidence of discovery, not proof of all
 engineering behavior. An assistant's claim that it followed instructions is not
@@ -127,19 +135,20 @@ sufficient verification on its own.
 
 Personal workspace settings, including terminal auto-approval preferences, are
 not shared Golden Path prerequisites. The root `.vscode/settings.json` is ignored
-by Git to prevent accidental sharing, but the repository inspector still reports
-it. The current bootstrap test requires zero unbound files, so that local file
-can make `npm run check` fail even though structural validation passes. Do not
-register personal approvals as shared governance or weaken checks merely to
-silence this failure; review it as a separate engineering issue.
+by Git to prevent accidental sharing. The repository inspector still lists it as
+unbound, but the repository test tolerates Git-ignored personal files, so it does
+not make `npm run check` fail. Git-ignored scripts, `.github/` customizations and
+agent instruction files are never tolerated, because local agents may still load
+them. Do not register personal approvals as shared governance.
 
 ### What Has Been Tried
 
 Onboarding smoke checks on 2026-09-22 observed Golden Path skill discovery in a
 fresh local-host chat and in the default Agent in browser Codespaces. Codespaces
 at [revision f0ff8c0](https://github.com/krnese/golden-path/commit/f0ff8c0e0ef6ef7bd88f1008ae15f2f73ce0ba9b)
-provided Node 24 and passed all 26 repository tests. The local working copy had
-the editor-settings inventory failure described above.
+provided Node 24 and passed all 26 repository tests. The local working copy then
+failed on the ignored editor-settings file; the V0.1 test change described in
+the local-settings note resolves that.
 
 These were limited observations, not a clean-profile installation certification
 or the full bootstrap behavioral evaluation. The browser response loaded the

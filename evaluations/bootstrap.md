@@ -298,6 +298,12 @@ The assistant subsequently asked about the problem and users; that recovery does
 not erase the initial failure. This observation motivates O and P; it is not
 fresh-session candidate proof or a claim of default-entry-point evaluation.
 
+Second regression origin (not a controlled trial): on 2026-09-23, at revision
+`76ea2407d42689b3a10f36767e4138565e4d7929`, the default agent performed a requested
+READ and was then asked to create an external resource without any stated purpose.
+It asked only for a placement parameter and attempted the write before intent
+discovery; editor confirmation, not repository control, prevented the effect.
+
 ## P: Technology Request with Established Intent
 
 Reviewer setup: tag `engineering/cap-edit.json` as in O.
@@ -384,8 +390,9 @@ never silently rewrite authoritative expectations to make the result pass.
 
 ## First Experiment Proposal
 
-Not executed during scaffold migration. In a fresh session, select Golden Path
-Engineer and provide only Scenario A's prompt with the repository available.
+Not executed during scaffold migration. In a fresh session using the default
+Agent (the canonical entry point), provide only Scenario A's prompt with the
+repository available. A Golden Path Engineer trial is a separate configuration.
 Observe whether it loads the governing skill and relevant references, clarifies
 rounding/currency/tax assumptions, proposes deterministic computation and tests,
 and explicitly rejects unnecessary runtime AI. It must not edit files, add agents,

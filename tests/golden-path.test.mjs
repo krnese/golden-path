@@ -9,6 +9,22 @@ import { parseDocument } from 'yaml';
 import { artifactPaths, deriveGraph, loadArtifacts, trace, validateArtifacts, inspectRepository, validateTransition } from '../scripts/validate.mjs';
 
 const record = (id, kind, spec) => ({ schemaVersion: 2, id, kind, title: id, spec });
+
+// Git-ignored personal files (for example editor settings) are never committed, so
+// they cannot become unreviewed repository state. Customization surfaces that local
+// agents may still load are never tolerated, even when ignored.
+const localReasoningSurface = /^\.github\/|(^|\/)(AGENTS|CLAUDE|GEMINI)\.md$|\.(instructions|prompt|chatmode)\.md$|\.(mjs|cjs|js|ts|py|ps1|sh)$/;
+function reviewableUnbound(root, unbound) {
+  const candidates = unbound.filter(path => !localReasoningSurface.test(path));
+  if (!candidates.length) return unbound;
+  let ignored = [];
+  try {
+    ignored = execFileSync('git', ['check-ignore', '-z', '--stdin'], { cwd: root, encoding: 'utf8', input: candidates.join('\0') + '\0' }).split('\0').filter(Boolean);
+  } catch (error) {
+    if (error.status !== 1) throw error;
+  }
+  return unbound.filter(path => !ignored.includes(path));
+}
 const spec = (artifacts, id) => artifacts.find(item => item.id === id).spec;
 const approval = { reviewer: 'Fixture reviewer', date: '2026-09-22', source: 'Synthetic test', statement: 'Fixture approval only', scope: 'Test only' };
 
@@ -307,13 +323,32 @@ test('real bootstrap has one skill, one agent, no ledger and no unbound artifact
   assert.deepEqual(validateArtifacts(artifacts), []);
   const inventory = inspectRepository(root, artifacts);
   assert.deepEqual(inventory.errors, []);
-  assert.deepEqual(inventory.unbound, []);
+  assert.deepEqual(reviewableUnbound(root, inventory.unbound), []);
   assert.equal(artifacts.filter(item => item.kind === 'skill').length, 1);
   assert.equal(artifacts.filter(item => item.kind === 'agent').length, 1);
   assert.equal(existsSync(join(root, 'engineering/state.json')), false);
   assert.equal(spec(artifacts, 'adr-bootstrap-minimum').status, 'approved');
   const graph = deriveGraph(artifacts);
   for (const artifact of artifacts.filter(item => item.kind !== 'outcome')) assert.deepEqual(graph.workloads(artifact.id), ['wl-engineering']);
+});
+
+test('only Git-ignored personal files are tolerated as unbound; ignored reasoning and executable surfaces are not', context => {
+  const root = scratch(context);
+  execFileSync('git', ['init', '--quiet'], { cwd: root });
+  mkdirSync(join(root, '.vscode'));
+  mkdirSync(join(root, '.github/instructions'), { recursive: true });
+  mkdirSync(join(root, '.github/skills/hidden'), { recursive: true });
+  writeFileSync(join(root, '.gitignore'), '/.vscode/settings.json\n/notes.md\n/.github/instructions/\n/.github/skills/hidden/\n/hidden.mjs\n');
+  writeFileSync(join(root, '.vscode/settings.json'), '{}');
+  writeFileSync(join(root, 'notes.md'), 'Ignored personal notes');
+  writeFileSync(join(root, 'draft.md'), 'Untracked but not ignored');
+  writeFileSync(join(root, '.github/instructions/local.instructions.md'), 'Ignored local instruction');
+  writeFileSync(join(root, '.github/skills/hidden/SKILL.md'), '---\nname: hidden\ndescription: hidden\n---\n');
+  writeFileSync(join(root, 'hidden.mjs'), 'export {};');
+  const inventory = inspectRepository(root, []);
+  assert.deepEqual(reviewableUnbound(root, inventory.unbound).sort(), ['.github/instructions/local.instructions.md', '.github/skills/hidden/SKILL.md', '.gitignore', 'draft.md', 'hidden.mjs']);
+  assert.match(inventory.errors.join('\n'), /Unbound executable or reasoning artifact: \.github\/skills\/hidden\/SKILL\.md/);
+  assert.match(inventory.errors.join('\n'), /Unbound executable or reasoning artifact: hidden\.mjs/);
 });
 
 test('canonical scaffold documentation links resolve without obsolete skill or ledger links', () => {
