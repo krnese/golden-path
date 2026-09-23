@@ -273,8 +273,8 @@ Useful observations include where it asked the right or wrong first question,
 where it assumed technology or architecture the work had not earned, where it
 stopped or continued inappropriately at an authority boundary, and what you had
 to explain that the repository should already have known. Share them through a
-GitHub issue or pull request with the repository revision and a redacted
-transcript. A failure is evidence: it starts the
+**Trial report** issue; [CONTRIBUTING.md](CONTRIBUTING.md) explains what is most
+useful, how to share evidence safely and how reports are used. A failure is evidence: it starts the
 [Golden Loop](docs/golden-path.md#golden-loop) and should change the owning
 artifact through review, not silently rewrite expected behavior.
 

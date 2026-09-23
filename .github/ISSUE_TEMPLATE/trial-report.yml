@@ -1,0 +1,78 @@
+name: Trial report
+description: Tell us what happened when you used Golden Path on real work, whether it failed, worked or surprised you.
+title: "Trial: "
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for trying Golden Path. Failures are as valuable as successes: a well-evidenced failed trial often teaches us more than a feature request.
+        Plain language is fine. You do not need to know how the repository works internally. Please use fictional or redacted data.
+  - type: textarea
+    id: intent
+    attributes:
+      label: What were you trying to accomplish?
+      description: The outcome you wanted, in your own words.
+    validations:
+      required: true
+  - type: textarea
+    id: observed
+    attributes:
+      label: What happened?
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: What did you expect instead?
+    validations:
+      required: true
+  - type: textarea
+    id: reproduction
+    attributes:
+      label: What did you type, and what did you answer?
+      description: Your prompts and answers in order, as closely as you can, so someone else could try the same thing.
+  - type: textarea
+    id: unexpected-effects
+    attributes:
+      label: Did the agent change files, run commands or contact services you did not expect?
+  - type: input
+    id: revision
+    attributes:
+      label: Repository revision
+      description: The output of `git rev-parse HEAD`, and whether you had uncommitted changes. "Not sure" is fine.
+    validations:
+      required: true
+  - type: input
+    id: runtime
+    attributes:
+      label: Agent, runtime and model
+      description: For example "VS Code, default Agent, model shown in the picker". "Not sure" is fine.
+    validations:
+      required: true
+  - type: textarea
+    id: evidence
+    attributes:
+      label: Evidence
+      description: Attach or link a redacted chat export, command output or repository that someone else can open. Say which parts are verbatim and which are summarized.
+  - type: dropdown
+    id: about
+    attributes:
+      label: This is mostly about
+      options:
+        - The agent's behavior
+        - The repository checks
+        - The docs or setup
+        - My project's result
+        - A way to simplify
+        - Something else
+  - type: textarea
+    id: fix-idea
+    attributes:
+      label: Idea for a fix (optional)
+  - type: checkboxes
+    id: redaction
+    attributes:
+      label: Safety
+      options:
+        - label: I removed secrets, credentials, customer data and internal details from everything I shared.
+          required: true

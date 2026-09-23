@@ -335,6 +335,17 @@ test('CI retains pinned actions, read-only source permissions and required gates
   assert.ok(steps.find(step => step.env?.BASE_SHA).run.includes('npm run validate -- --base "$BASE_SHA"'));
 });
 
+test('trial report issue form keeps its stable plain-language contract', () => {
+  const document = parseDocument(readFileSync(new URL('../.github/ISSUE_TEMPLATE/trial-report.yml', import.meta.url), 'utf8'));
+  assert.deepEqual(document.errors, []);
+  const form = document.toJS();
+  const fields = new Map(form.body.filter(item => item.id).map(item => [item.id, item]));
+  for (const id of ['intent', 'observed', 'expected', 'revision', 'runtime']) assert.equal(fields.get(id)?.validations?.required, true, id);
+  for (const id of ['reproduction', 'unexpected-effects', 'evidence', 'about', 'fix-idea']) assert.ok(fields.has(id), id);
+  assert.equal(fields.get('redaction').attributes.options.every(option => option.required === true), true);
+  assert.doesNotMatch(JSON.stringify(form), /workload|requirement|capabilit|\bADR\b|decision ID|authority class|HIGH_IMPACT|project\//i);
+});
+
 test('real bootstrap has one skill, one agent, no ledger and no unbound artifacts', () => {
   const root = fileURLToPath(new URL('../', import.meta.url));
   const artifacts = loadArtifacts(root);
