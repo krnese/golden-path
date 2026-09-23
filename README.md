@@ -41,6 +41,17 @@ you are building.** Canonical engineering state lives in two places:
   establishes your outcome, it records your workloads, requirements, decisions,
   capabilities, implementation boundaries, evaluations and evidence there, using
   the same schema and checks. You can have more than one workload.
+- Your code lives in your own implementation directories (for example `app/`),
+  each bound once from `project/`. Keep your application's own manifests,
+  dependencies, scripts, tool configuration and README inside that directory
+  (for example `app/package.json` or `app/pyproject.toml`). Do not edit the root
+  `package.json`, `package-lock.json`, `.gitignore` or `README.md` for your
+  project's needs: those belong to Golden Path's own tooling.
+
+`npm run check` validates your `project/` state together with the framework and
+runs any Node test files it finds; tests in other ecosystems run with their own
+tooling. Its output reports your project artifact count and how your evidence is
+classified. `npm run trace -- <your-workload-id>` shows your project's links.
 
 **Framework provenance must not become adopter authority.** Decisions in
 `engineering/` were approved by the upstream Golden Path maintainers for the
@@ -118,6 +129,9 @@ npm ci --ignore-scripts
 npm run check
 npm run trace -- wl-engineering
 ```
+
+`wl-engineering` is Golden Path's own framework workload; trace your own workload
+ID from `project/` to see your project's links.
 
 Verify instruction and skill discovery in your installed VS Code version.
 No editor extension or model is pinned by this repository.
@@ -210,9 +224,13 @@ permission for future writes, or approval of any adopter's project.
   see the [evaluation status](evaluations/bootstrap.md) for what has actual evidence.
   One observation is never a reliability claim.
 - That a fresh agent in a clean fork reliably establishes and persists the adopter's
-  project state (scenarios W, W2 and X are defined, not executed)
-- Upstream updates into forks, and representation of agents inside the system
-  being built
+  project state. W has one unscored baseline run recorded as a regression origin;
+  W2 and X have not been run.
+- Adopter implementations with installed dependencies inside their own directory
+  (for example `app/node_modules`) on Linux or Codespaces: package managers create
+  symbolic links there, which repository inspection may reject. Not yet tested.
+- Upstream updates into forks, a project-owned landing README, and representation
+  of agents inside the system being built
 - Real physical deployment adapters and real external execution
 - Production enforcement, and external identity or authorization integration
 - Runtime independence across agent products other than GitHub Copilot in VS Code
@@ -234,9 +252,11 @@ still reports Git-ignored personal files such as `.vscode/settings.json`; the
 repository test tolerates them only when they are not scripts, `.github/`
 customizations or agent instruction files.
 
-There are deliberately no application, deployment, infrastructure, MCP, runtime
-agent, database, orchestration, hook, or autonomous-improvement directories.
-Add them only when a workload requirement earns them. Significant implementation
+The framework itself deliberately has no application, deployment, infrastructure,
+MCP, runtime agent, database, orchestration, hook, or autonomous-improvement
+directories; it adds them only when a framework requirement earns them. Your own
+project's implementation directories are expected, and are bound from `project/`.
+Significant implementation
 and reasoning surfaces have one binding owner. Canonical artifacts own their
 identities and relationships directly; no manifest or duplicate file registry
 is maintained. Empty architecture directories are unnecessary.

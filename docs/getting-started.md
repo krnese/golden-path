@@ -41,7 +41,12 @@ You do not need to run validation commands to describe your problem.
 Expect a conversation, not an immediate technology selection. The Golden Path
 should help clarify who benefits, where work is difficult, and what improvement
 would count as success. For example, it might ask where engineers lose the most
-time or ask you to describe one representative incident.
+time or ask you to describe one representative incident. It should ask only what
+changes its next decision and state reasonable assumptions for the rest. Once it
+understands enough, it summarizes that understanding, asks you to confirm when it
+inferred what success means or what you want produced, and records your project
+in `project/` for you. You do not need to learn its record formats. When you ask
+it to build, your code goes into its own directory.
 
 For smaller requests such as "I need a script to clean up files", it should
 establish the relevant behavior and whether you want an example, saved and tested
@@ -121,8 +126,9 @@ requires Node 24 LTS and Git; install or select that version if necessary.
 `npm ci --ignore-scripts` installs the locked validation dependencies. These
 tools are needed for checks, not for the first conversation.
 
-Saving changes locally does not publish them. Use a branch or fork with the
-appropriate permissions when you are ready to contribute.
+Saving changes locally does not publish them. Commit your project work to your
+own fork or branch. Proposing changes to Golden Path itself is separate: use a
+pull request to the upstream repository with the appropriate permissions.
 
 ### If Setup Does Not Work
 
