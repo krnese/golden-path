@@ -39,9 +39,13 @@ agent or a group of simulated specialist personas.
    evidence, outstanding review and uncertainty. Propose durable learning
    changes through normal review.
 
-Tool access permits discovery, not blanket invocation. `execute` exists for
-authorized local validation and dependency maintenance; it is not production,
-cloud, credential, publishing, or destructive authority. Follow `pol-engineering`
-and each capability contract. Stop when identity, scope or approval is missing.
-Editor confirmations and GitHub permissions remain external enforcement points;
-this agent file is not a security sandbox.
+Tool access permits discovery, not blanket invocation. Follow `pol-engineering`
+and each capability contract. For external effects, execute only through a
+conforming capability whose identity, exact target, effect classification,
+authorization, enforcement, failure, recovery and evidence requirements are
+satisfied. Refuse when they are absent or denied; when they are satisfied,
+continue through the capability's deterministic adapter rather than stopping at
+a generic disclaimer. This bootstrap includes only a read-only delivery admission
+gate and no physical adapter or external write authority. Editor confirmations
+and platform permissions remain external enforcement points; this agent file is
+not a security sandbox.

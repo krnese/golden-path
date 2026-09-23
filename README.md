@@ -146,6 +146,13 @@ decision. Repository implementations are **active** under that approval; this is
 not a production deployment, proof of behavior, or permission for future writes.
 Behavioral evaluations remain **defined, not executed**. No results are fabricated.
 
+The repository now defines a **platform-neutral governed-delivery contract** and
+a read-only admission gate. Synthetic tests cover missing authority and fully
+bound admission, including consequence-based WRITE versus HIGH_IMPACT_WRITE and
+adapter authority ceilings. There is still no physical deployment adapter,
+external write capability or real deployment evidence; those require a concrete
+workload, identity, enforcement boundary, policy and separate approval.
+
 The first Golden Path evolution is the review of this scaffold: one skill with
 references replaced seven independent skills; canonical artifacts and derived
 relationships replaced the ledger and mirrored links. The decision preserves

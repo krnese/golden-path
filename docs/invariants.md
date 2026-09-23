@@ -21,6 +21,7 @@ not proof that a runtime control exists or that an approver is genuine.
 | I13 Codified learning | No automatic codification claim; normal schema/tests apply to changed artifacts | Human reviews root cause, justified retention or change, proof, approval and preserved historical rationale; no parallel learning registry |
 | I14 Observations cannot silently redefine intent | Read-only validator, no state-writing automation; nonmutation regression; contents-read CI token | Human review of evidence promotion; external tools and privileges remain outside this scaffold |
 | I15 Proposed != approved | Separate statuses; approval attribution required; active implementations require approved derived decisions; changed authority surface needs a new decision | Genuine independent approval, GitHub protections and complete semantic drift detection |
+| I16 Governed delivery admission | Typed delivery records, exact candidate/plan/operation/target binding, authorization validity, approval presence, adapter support and authority ceiling, unresolved-value denial and synthetic allow/deny regressions | Correct semantic effect classification, authentic identity/approval, real policy enforcement, adapter correctness and actual deployment/recovery evidence |
 
 ## Gate Boundaries
 
@@ -38,6 +39,10 @@ not proof that a runtime control exists or that an approver is genuine.
   reference changes for stable capability IDs. It cannot detect renamed/deleted
   capabilities, policy-body effects or arbitrary semantic drift. Historical
   artifacts are discovered from the Git tree without a ledger compatibility layer.
+- The governed-delivery gate is read-only. It validates supplied records and
+  returns allow or deny; it does not authenticate principals, issue authorization,
+  invoke an adapter or observe an external result. An allow result is contract
+  admission, not deployment evidence.
 - The six scenario regression tests are synthetic policy tests. The manual
   behavioral evaluation has no claimed result until a human runs and reviews it.
 - CI tests and dependency audit are the initial security checks. Threat modeling,
@@ -53,10 +58,10 @@ are roots of justification, not components that need circular self-justification
 Existing evidence kinds and future operational rules have tests, but no runtime
 collector, production workload or fabricated evidence record is installed.
 
-All fifteen invariants retain semantic or external limits. I1-I9, I11-I12 and
-I15 have deterministic structural checks; I10 and I14 have bounded structural
-safeguards; I13 depends on human diff review. No claim of complete enforcement
-is made for any principle merely because its fields are present.
+All sixteen invariants retain semantic or external limits. I1-I9, I11-I12 and
+I15-I16 have deterministic structural checks; I10 and I14 have bounded structural
+safeguards; I13 depends on human diff review. No claim of complete enforcement is
+made for any principle merely because its fields are present.
 
 ## Required External Setup
 

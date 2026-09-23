@@ -1,0 +1,14 @@
+{
+  "$schema": "../contracts/engineering.schema.json",
+  "schemaVersion": 2,
+  "id": "cap-delivery-gate",
+  "kind": "capability",
+  "title": "Validate governed-delivery execution admission without effects",
+  "spec": {
+    "decisionId": "adr-governed-delivery-contract",
+    "executable": true,
+    "authority": "READ",
+    "identity": "Local developer or CI validation process",
+    "boundary": "Read supplied governed-delivery records and return allow or deny with reasons; never authenticate a principal, grant authority, invoke an adapter or mutate an external target"
+  }
+}

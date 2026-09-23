@@ -1,0 +1,12 @@
+{
+  "$schema": "../contracts/engineering.schema.json",
+  "schemaVersion": 2,
+  "id": "req-delivery-adapter",
+  "kind": "requirement",
+  "title": "Require explicit conformance from physical delivery adapters",
+  "spec": {
+    "workloadId": "wl-engineering",
+    "acceptanceIds": ["ac-delivery-adapter"],
+    "description": "A future physical adapter must declare supported target types and operations, authority ceiling, identity and enforcement mechanism, idempotency behavior, timeouts, retries, partial-failure behavior, recovery support and evidence outputs. Reject operations outside that declaration or above its authority ceiling. No adapter, platform identity or external WRITE capability is supplied by this requirement."
+  }
+}

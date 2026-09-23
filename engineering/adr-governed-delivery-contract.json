@@ -1,0 +1,32 @@
+{
+  "$schema": "../contracts/engineering.schema.json",
+  "schemaVersion": 2,
+  "id": "adr-governed-delivery-contract",
+  "kind": "decision",
+  "title": "Add a platform-neutral governed-delivery contract before physical adapters",
+  "spec": {
+    "requirementIds": ["req-delivery-contract", "req-delivery-authority", "req-delivery-adapter"],
+    "status": "approved",
+    "unmetRequirement": "The bootstrap can safely refuse unauthorized external effects but cannot represent and deterministically admit a fully authorized delivery operation, so it optimizes for stopping rather than governed continuation.",
+    "simplestViableOption": "Add typed platform-neutral delivery records, a pure fail-closed admission gate, synthetic allow/deny regressions and agent guidance that continues only through a future conforming adapter. Reuse the existing workload, primary agent, skill, validator dependencies and evaluation surfaces.",
+    "selectedOption": "Implement the minimum contract and admission gate without a physical deployment adapter. Keep effect assessment explicit and consequence-based. The gate validates supplied authorization and adapter declarations but neither grants authority nor invokes external systems. Preserve both safe refusal and safe continuation as required behavior.",
+    "capabilityGained": "Deterministic validation of delivery lifecycle bindings and a platform-neutral allow/deny boundary that future adapters can satisfy without weakening authority controls or selecting a platform prematurely.",
+    "alternatives": [
+      "Prose-only guidance: rejected because plan, target, candidate, expiry and adapter-ceiling mismatches would remain structurally untestable.",
+      "Implement a cloud or deployment product now: rejected because no concrete adopter workload has earned a platform, identity system, infrastructure language, runtime or operational topology.",
+      "Add a separate delivery agent or skill: rejected because the existing reasoning boundary and governing procedure are sufficient; the new invariant control is deterministic.",
+      "Classify every external development write as HIGH_IMPACT_WRITE: rejected because authority must reflect consequence, reversibility, environment and blast radius.",
+      "Require human approval for every external write: rejected because a future policy may authorize bounded reversible WRITE within enforced limits, while HIGH_IMPACT_WRITE still cannot omit approval control."
+    ],
+    "simplerOptionAssessment": "The existing engineering artifact schema can represent the new requirement, decision, read-only capability and evaluations, so it needs no new artifact kind or authority enum. A separate delivery schema is required for runtime records. A pure gate is required because JSON Schema cannot enforce equality and authority-ceiling relationships across records. No policy artifact is added because no external write capability, identity or enforcement point exists yet.",
+    "operationalResponsibility": "Golden Path maintainers own the delivery contract version, deterministic gate and synthetic regressions. Future adapter owners must define real identity, policy, enforcement, failure handling, recovery and evidence and obtain a separate reviewed authority decision before activation.",
+    "rationale": "The user clarified that the product must support governed build and deployment, then required separation of logical delivery semantics from physical platform realization. On 2026-09-22 the user approved exactly the minimum platform-neutral contract, gate, synthetic proof and guidance change while explicitly deferring physical adapters and external authority. This decision records that scope; synthetic contract success is not real deployment evidence.",
+    "approval": {
+      "reviewer": "Human repository owner requesting this change in the Copilot conversation",
+      "date": "2026-09-22",
+      "source": "Copilot conversation 64758128-aafb-4d20-8246-a8891a3e1315; explicit approval on 2026-09-22",
+      "statement": "Approved. Implement exactly the minimum change set you proposed.",
+      "scope": "Platform-neutral governed-delivery records, read-only deterministic admission gate, synthetic tests, canonical engineering state, agent guidance and evaluation definitions. Excludes every physical deployment platform, adapter, external write capability, identity integration and real deployment."
+    }
+  }
+}

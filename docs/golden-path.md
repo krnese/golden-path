@@ -327,6 +327,43 @@ define exact actions, identity, scope, policy approval, fail-closed denial,
 idempotency, timeouts, partial-failure handling, recovery and auditable results
 at the actual execution boundary. Model confidence is not authorization.
 
+## Governed Delivery Contract
+
+The Golden Path core defines a platform-neutral delivery sequence:
+
+```text
+specification -> candidate -> candidate verification -> change plan
+  -> effect assessment -> authorization -> admission
+  -> adapter execution -> deployed-result verification
+  -> recovery when needed -> evidence
+```
+
+The core owns the record shapes, binding rules and admission semantics. A physical
+adapter owns real identity, target enforcement, execution, recovery and provider
+evidence. An admission result never authenticates an identity, grants authority
+or proves deployment.
+
+Externality alone does not make an operation `HIGH_IMPACT_WRITE`. Classification
+must consider environment, resource scope, reversibility, data consequence,
+security consequence, blast radius and operational consequence. A reversible,
+isolated development operation over synthetic data may be bounded `WRITE`; a
+production, shared, privileged, destructive, sensitive-data or broad-scope effect
+may require `HIGH_IMPACT_WRITE`. The applicable policy remains responsible for
+the classification and approval rule at the real enforcement boundary.
+
+Every physical adapter must declare supported operations and target types,
+authority ceiling, identity and enforcement mechanism, idempotency, timeout,
+retry, partial-failure behavior, recovery and evidence outputs. The admission
+gate denies mismatched, stale, expired, revoked, unresolved or out-of-ceiling
+requests. When the records are valid, the gate admits invocation of the named
+adapter instead of imposing a universal refusal. The adapter still requires its
+own approved capability, policy and runtime authorization.
+
+The current repository implements only the delivery record schema and read-only
+admission gate with synthetic fixtures. It contains no physical adapter or
+external write authority. Synthetic allow/deny tests establish contract behavior,
+not real deployment, recovery, operational correctness or business outcome.
+
 ## Prove, Release and Run
 
 **Evaluate evidence, not confidence.** Define proof before building, and keep

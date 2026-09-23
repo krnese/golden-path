@@ -29,6 +29,8 @@ explains why there is one skill and no centralized authoritative ledger.
    and evidence or reasoning. No justification means no branch.
 7. **Determine authority:** Compare before/after classifications, identities,
    resource scope, approval and policy enforcement. Escalation is consequential.
+   Missing or denied authority requires safe refusal; satisfied authority is not
+   a reason to stop when an approved conforming capability can continue.
 8. **Determine evidence:** Define a falsifiable proof before implementation:
    tests, behavioral evaluations, security/policy checks and operating signals.
 9. **Record decisions:** Update contracts, proposed decisions and change reports.
@@ -36,6 +38,8 @@ explains why there is one skill and no centralized authoritative ledger.
    separate change registry. Keep human approval explicit; never self-approve.
 10. **Implement:** Make the smallest authorized change. Bind significant new
     implementation surfaces once; derive their workload and decision ancestry.
+    Use deterministic adapters for known external sequences, within their
+    declared authority ceiling, and preserve their actual result as evidence.
 11. **Prove:** Run focused checks then required repository gates. Report failed,
     inconclusive and unrun evaluations honestly.
 12. **Report:** Explain what changed, why/requirement, artifacts, architecture,

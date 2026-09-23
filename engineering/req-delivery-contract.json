@@ -1,0 +1,12 @@
+{
+  "$schema": "../contracts/engineering.schema.json",
+  "schemaVersion": 2,
+  "id": "req-delivery-contract",
+  "kind": "requirement",
+  "title": "Define a platform-neutral governed-delivery lifecycle",
+  "spec": {
+    "workloadId": "wl-engineering",
+    "acceptanceIds": ["ac-delivery-contract"],
+    "description": "Define versioned runtime-neutral records for delivery request, immutable candidate, candidate verification, change plan, effect assessment, authorization decision, execution request and result, deployed-result verification, recovery and evidence. Preserve exact candidate, plan, operation and target bindings across the lifecycle. Contract validation is synthetic engineering proof, not evidence that any application was deployed."
+  }
+}

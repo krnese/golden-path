@@ -1,0 +1,12 @@
+{
+  "$schema": "../contracts/engineering.schema.json",
+  "schemaVersion": 2,
+  "id": "req-delivery-authority",
+  "kind": "requirement",
+  "title": "Admit delivery only with valid consequence-based authority",
+  "spec": {
+    "workloadId": "wl-engineering",
+    "acceptanceIds": ["ac-delivery-authority"],
+    "description": "Classify delivery effects by environment, resource scope, reversibility, data consequence, security consequence, blast radius and operational consequence rather than externality alone. Require authenticated-principal reference, exact target and action scope, immutable candidate and plan binding, applicable policy, approval evidence when required, enforcement reference, validity period and revocation status. Deny without effects when any precondition is absent, denied, expired, revoked, stale or mismatched; admit a fully bound request without treating admission as authorization authenticity or execution evidence. HIGH_IMPACT_WRITE cannot use approval mode none, while bounded WRITE does not universally require per-operation human approval."
+  }
+}
