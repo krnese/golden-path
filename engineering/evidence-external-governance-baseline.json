@@ -1,0 +1,16 @@
+{
+  "$schema": "../contracts/engineering.schema.json",
+  "schemaVersion": 2,
+  "id": "evidence-external-governance-baseline",
+  "kind": "evidence",
+  "title": "Unprotected main branch before GitHub governance remediation",
+  "spec": {
+    "evaluationId": "eval-external-governance",
+    "subjectRevision": "6280a88b940a7c6a04ce4a6bc0df663aac0a4a09",
+    "recordedAt": "2026-09-24T11:30:14Z",
+    "result": "fail",
+    "location": "evaluations/evidence/external-governance-baseline-2026-09-24.json",
+    "environment": "development",
+    "observations": "Read-only GitHub observations before remediation: main reported protected=false and required checks off; ruleset and effective branch-rule responses were empty. The validate check from GitHub Actions succeeded at the subject revision but was not required. The authenticated observer krnese_microsoft had pull-only repository permissions. Legacy protection returned 404, which is not independent proof of absence; Actions permissions returned 403. Administrative settings, retention and merge-blocking behavior remain unverified. No GitHub configuration or resources were changed. Failure describes the missing governance controls, not a failed baseline capture. The capture identifies the pre-edit source revision and external observation window, not a test of subsequently added files. This evidence file and its observation are prepared for Git review; independent retrieval requires committing/publishing them through separately authorized review."
+  }
+}

@@ -1,0 +1,133 @@
+{
+  "description": "Point-in-time external-governance baseline, captured before local evidence edits or any GitHub remediation.",
+  "observationWindowUtc": {
+    "startedAt": "2026-09-24T11:29:14Z",
+    "closedAt": "2026-09-24T11:30:14Z"
+  },
+  "repository": "krnese/golden-path",
+  "branch": "main",
+  "subjectRevision": "6280a88b940a7c6a04ce4a6bc0df663aac0a4a09",
+  "initialWorktree": "git status --short returned no entries",
+  "tool": "gh version 2.100.0 (2026-09-03)",
+  "captureMethod": "Transcribed JSON responses and explicitly identified projections from read-only CLI output. JSON whitespace is normalized. No credentials, headers, commit messages or author email addresses are retained. This is attributed observation, not a signed GitHub attestation.",
+  "requests": [
+    {
+      "command": "gh api user --jq '{login: .login, id: .id}'",
+      "exitCode": 0,
+      "responseProjection": {
+        "id": 111613632,
+        "login": "krnese_microsoft"
+      }
+    },
+    {
+      "command": "gh api repos/krnese/golden-path --jq '{full_name: .full_name, default_branch: .default_branch, visibility: .visibility, permissions: .permissions}'",
+      "exitCode": 0,
+      "responseProjection": {
+        "default_branch": "main",
+        "full_name": "krnese/golden-path",
+        "permissions": {
+          "admin": false,
+          "maintain": false,
+          "pull": true,
+          "push": false,
+          "triage": false
+        },
+        "visibility": "public"
+      }
+    },
+    {
+      "command": "gh api repos/krnese/golden-path/branches/main",
+      "exitCode": 0,
+      "projectionNote": "Only branch name, commit SHA and protection fields retained from the full response.",
+      "responseProjection": {
+        "name": "main",
+        "commit": {
+          "sha": "6280a88b940a7c6a04ce4a6bc0df663aac0a4a09"
+        },
+        "protected": false,
+        "protection": {
+          "enabled": false,
+          "required_status_checks": {
+            "enforcement_level": "off",
+            "contexts": [],
+            "checks": []
+          }
+        }
+      }
+    },
+    {
+      "command": "gh api repos/krnese/golden-path/rulesets",
+      "exitCode": 0,
+      "response": []
+    },
+    {
+      "command": "gh api repos/krnese/golden-path/rules/branches/main",
+      "exitCode": 0,
+      "response": []
+    },
+    {
+      "command": "gh api repos/krnese/golden-path/commits/6280a88b940a7c6a04ce4a6bc0df663aac0a4a09/check-runs --jq '{total_count: .total_count, check_runs: [.check_runs[] | {name: .name, status: .status, conclusion: .conclusion, head_sha: .head_sha, details_url: .details_url, app: {id: .app.id, slug: .app.slug}}]}'",
+      "exitCode": 0,
+      "responseProjection": {
+        "check_runs": [
+          {
+            "app": {
+              "id": 15368,
+              "slug": "github-actions"
+            },
+            "conclusion": "success",
+            "details_url": "https://github.com/krnese/golden-path/actions/runs/35870775872/job/107213972042",
+            "head_sha": "6280a88b940a7c6a04ce4a6bc0df663aac0a4a09",
+            "name": "validate",
+            "status": "completed"
+          }
+        ],
+        "total_count": 1
+      }
+    },
+    {
+      "command": "gh api repos/krnese/golden-path/branches/main/protection",
+      "exitCode": 1,
+      "response": {
+        "message": "Not Found",
+        "documentation_url": "https://docs.github.com/rest/branches/branch-protection#get-branch-protection",
+        "status": "404"
+      },
+      "stderr": "gh: Not Found (HTTP 404)"
+    },
+    {
+      "command": "gh api repos/krnese/golden-path/actions/permissions",
+      "exitCode": 1,
+      "response": {
+        "message": "You must have repository read permissions or have the repository Actions policies fine-grained permission.",
+        "documentation_url": "https://docs.github.com/rest/actions/permissions#get-github-actions-permissions-for-a-repository",
+        "status": "403"
+      },
+      "stderr": "gh: You must have repository read permissions or have the repository Actions policies fine-grained permission. (HTTP 403)"
+    }
+  ],
+  "interpretation": {
+    "baselineResult": "fail",
+    "reason": "The branch response and effective-rule responses show no required-check or required-review enforcement on main at the observed time.",
+    "ciIsNotMergeEnforcement": "The successful validate check establishes a completed check at the subject SHA, not a mandatory integration gate.",
+    "observerLimit": "Repository permissions identify this observer as pull-only. No account switching, credential-scope expansion or external mutation was attempted.",
+    "legacyProtectionLimit": "The 404 response alone does not distinguish absence from inaccessible information.",
+    "administrativeLimit": "Actions policy inspection was denied; retention settings and administrative bypass behavior were not verified.",
+    "probeStatus": "No PR or merge-blocking probe was performed.",
+    "publicationStatus": "Prepared as repository evidence for review, not yet committed or independently published by this task."
+  },
+  "evidenceLayers": {
+    "discovery": "Not exercised: no instruction or hook discovery trial.",
+    "reasoningBehavior": "Not scored: no model-behavior acceptance trial.",
+    "proposedInvocation": "No experimental agent action was proposed; the listed CLI calls are observation commands.",
+    "deterministicControl": "No hook or runtime admission experiment was executed.",
+    "execution": "Read-only observation commands only; no external configuration changes.",
+    "agentContinuation": "Not exercised.",
+    "externalGovernance": "Observed configuration and access limits above; behavioral enforcement remains untested."
+  },
+  "captureLimitations": [
+    "The initial follow-up timestamp command used Get-Date -AsUTC, unsupported by this PowerShell. That command failed before its API reads; it was retried using DateTime.UtcNow. No missing output was treated as evidence.",
+    "This is a point-in-time baseline, not a live configuration mirror, continuous monitor or proof against administrator changes.",
+    "The observation does not establish portable runtime behavior, hook interception, genuine approval or the business outcome."
+  ]
+}

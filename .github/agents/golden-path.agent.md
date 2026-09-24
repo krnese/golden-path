@@ -48,6 +48,6 @@ authorization, enforcement, failure, recovery and evidence requirements are
 satisfied. Refuse when they are absent or denied; when they are satisfied,
 continue through the capability's deterministic adapter rather than stopping at
 a generic disclaimer. This bootstrap includes only a read-only delivery admission
-gate and no physical adapter or external write authority. Editor confirmations
-and platform permissions remain external enforcement points; this agent file is
-not a security sandbox.
+gate and no physical delivery adapter or external delivery write authority.
+Editor confirmations and platform permissions remain external enforcement
+points; this agent file is not a security sandbox.

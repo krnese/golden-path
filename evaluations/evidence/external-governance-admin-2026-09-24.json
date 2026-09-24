@@ -1,0 +1,171 @@
+{
+  "description": "Separate read-only administrator observation following the user's explicit CLI identity change and browser sign-in; not a correction or replacement of the earlier baseline.",
+  "observationWindowUtc": {
+    "startedAt": "2026-09-24T11:44:27Z",
+    "closedAt": "2026-09-24T11:46:56Z"
+  },
+  "repository": "krnese/golden-path",
+  "branch": "main",
+  "subjectRevision": "6280a88b940a7c6a04ce4a6bc0df663aac0a4a09",
+  "localContext": "The prior track-one evidence, evaluation, proposal and coverage edits were uncommitted. No local candidate was used to infer GitHub settings.",
+  "captureMethod": "Transcribed read-only CLI JSON responses with whitespace normalized and queries identifying projections. Browser observations quote only relevant controls from the accessibility snapshot. No credentials or token values are retained. This is attributed observation, not a signed platform attestation. Publication clarification: earlierObservationIntegrity identifies the original serialized files at observation time, retained unchanged in local capture provenance; those hashes are not checksums of the LF-normalized durable repository copies.",
+  "earlierObservationIntegrity": {
+    "algorithm": "SHA256",
+    "files": {
+      "evaluations/evidence/external-governance-baseline-2026-09-24.json": "E7E9B2F04A770F3747BE60EAC550C266768DCC349F2C36FC370B9D0FF6BA6B08",
+      "engineering/evidence-external-governance-baseline.json": "0B0B9ECCBBB59EA9D024AE732F98F4D875787874048A3CE1DC6E0EC15CBD2887"
+    }
+  },
+  "requests": [
+    {
+      "command": "gh api user --jq '{login: .login, id: .id}'",
+      "exitCode": 0,
+      "responseProjection": { "id": 12991708, "login": "krnese" }
+    },
+    {
+      "command": "gh api repos/krnese/golden-path --jq '{full_name: .full_name, default_branch: .default_branch, visibility: .visibility, permissions: .permissions, allow_auto_merge: .allow_auto_merge, allow_merge_commit: .allow_merge_commit, allow_rebase_merge: .allow_rebase_merge, allow_squash_merge: .allow_squash_merge, delete_branch_on_merge: .delete_branch_on_merge, archived: .archived}'",
+      "exitCode": 0,
+      "responseProjection": {
+        "allow_auto_merge": false,
+        "allow_merge_commit": true,
+        "allow_rebase_merge": true,
+        "allow_squash_merge": true,
+        "archived": false,
+        "default_branch": "main",
+        "delete_branch_on_merge": false,
+        "full_name": "krnese/golden-path",
+        "permissions": { "admin": true, "maintain": true, "pull": true, "push": true, "triage": true },
+        "visibility": "public"
+      }
+    },
+    {
+      "command": "gh api repos/krnese/golden-path/branches/main --jq '{name: .name, sha: .commit.sha, protected: .protected, protection: .protection}'",
+      "exitCode": 0,
+      "responseProjection": {
+        "name": "main",
+        "protected": false,
+        "protection": {
+          "enabled": false,
+          "required_status_checks": { "checks": [], "contexts": [], "enforcement_level": "off" }
+        },
+        "sha": "6280a88b940a7c6a04ce4a6bc0df663aac0a4a09"
+      }
+    },
+    {
+      "command": "gh api --method GET 'repos/krnese/golden-path/rulesets?includes_parents=true&per_page=100' --paginate",
+      "exitCode": 0,
+      "response": []
+    },
+    {
+      "command": "gh api repos/krnese/golden-path/rules/branches/main",
+      "exitCode": 0,
+      "response": []
+    },
+    {
+      "command": "gh api repos/krnese/golden-path/branches/main/protection",
+      "exitCode": 1,
+      "response": {
+        "message": "Branch not protected",
+        "documentation_url": "https://docs.github.com/rest/branches/branch-protection#get-branch-protection",
+        "status": "404"
+      },
+      "stderr": "gh: Branch not protected (HTTP 404)"
+    },
+    {
+      "command": "gh api repos/krnese/golden-path/actions/permissions",
+      "exitCode": 0,
+      "response": { "enabled": true, "allowed_actions": "all", "sha_pinning_required": false }
+    },
+    {
+      "command": "gh api repos/krnese/golden-path/actions/permissions/workflow",
+      "exitCode": 0,
+      "response": { "default_workflow_permissions": "read", "can_approve_pull_request_reviews": false }
+    },
+    {
+      "command": "gh api repos/krnese/golden-path/actions/permissions/artifact-and-log-retention",
+      "exitCode": 0,
+      "response": { "days": 90, "maximum_allowed_days": 90 }
+    },
+    {
+      "command": "gh api --method GET 'repos/krnese/golden-path/collaborators?affiliation=all&per_page=100' --paginate --jq '.[] | {login: .login, role_name: .role_name, permissions: .permissions}'",
+      "exitCode": 0,
+      "projectedItems": [
+        {
+          "login": "krnese",
+          "permissions": { "admin": true, "maintain": true, "pull": true, "push": true, "triage": true },
+          "role_name": "admin"
+        }
+      ]
+    },
+    {
+      "command": "gh api --method GET 'repos/krnese/golden-path/invitations?per_page=100' --paginate --jq '[.[] | {id: .id, invitee: .invitee.login, permissions: .permissions, expired: .expired}]'",
+      "exitCode": 0,
+      "responseProjection": []
+    },
+    {
+      "command": "gh api repos/krnese/golden-path/commits/6280a88b940a7c6a04ce4a6bc0df663aac0a4a09/check-runs --jq '{total_count: .total_count, check_runs: [.check_runs[] | {name: .name, status: .status, conclusion: .conclusion, head_sha: .head_sha, details_url: .details_url, app: {id: .app.id, slug: .app.slug}}]}'",
+      "exitCode": 0,
+      "responseProjection": {
+        "check_runs": [
+          {
+            "app": { "id": 15368, "slug": "github-actions" },
+            "conclusion": "success",
+            "details_url": "https://github.com/krnese/golden-path/actions/runs/35870775872/job/107213972042",
+            "head_sha": "6280a88b940a7c6a04ce4a6bc0df663aac0a4a09",
+            "name": "validate",
+            "status": "completed"
+          }
+        ],
+        "total_count": 1
+      }
+    }
+  ],
+  "browserObservation": {
+    "url": "https://github.com/krnese/golden-path/settings/actions",
+    "pageTitle": "Actions settings \u00b7 krnese/golden-path",
+    "method": "Read-only accessibility snapshot after the user's browser sign-in; no form controls changed or Save buttons used.",
+    "observedControls": [
+      { "label": "Allow all actions and reusable workflows", "checked": true },
+      { "label": "Require actions to be pinned to a full-length commit SHA", "checked": false },
+      { "label": "Artifact and log retention", "value": 90, "unit": "days", "maximum": 90 },
+      { "label": "Require approval for first-time contributors", "checked": true },
+      { "label": "Read repository contents and packages permissions", "checked": true },
+      { "label": "Allow GitHub Actions to create and approve pull requests", "checked": false }
+    ],
+    "distinction": "Approval to run a contributor's workflow is not approval of their change for merge."
+  },
+  "assessment": {
+    "result": "fail",
+    "reason": "Required review and CI integration gates are still absent, independently confirmed with administrative visibility.",
+    "resolvedUnknowns": [
+      "Effective observer permissions now include admin and push.",
+      "Legacy branch protection explicitly reports Branch not protected.",
+      "Actions policies and workflow token defaults are now readable.",
+      "Repository artifact/log retention is 90 days, independently visible through API and browser."
+    ],
+    "operationalBlocker": "Only krnese is listed as a collaborator and no invitations are pending. A krnese-authored PR has no currently identified eligible independent approver. Do not grant access or weaken the one-review requirement implicitly.",
+    "unchangedScope": "No GitHub setting, collaborator grant, branch, PR, push or merge was performed. Administrative capability is not authority to apply the proposal.",
+    "remainingUnknowns": [
+      "Actual post-remediation review/check blocking, stale dismissal and positive continuation have not been tested.",
+      "No isolated-target rejection probes for direct updates, force pushes or deletion have run.",
+      "Configured retention does not prove historical log availability, future retrieval or immutability.",
+      "Human review quality and future administrator changes cannot be inferred from settings."
+    ],
+    "publicationStatus": "Saved locally for review; independent commit/publication remains separately authorized."
+  },
+  "evidenceLayers": {
+    "discovery": "No instruction or hook discovery trial.",
+    "reasoningBehavior": "No model-behavior scoring.",
+    "proposedInvocation": "No experimental agent action; listed requests are observation commands.",
+    "deterministicControl": "No hook or delivery-admission trial.",
+    "execution": "Read-only API and browser observations; no external mutation.",
+    "agentContinuation": "Not exercised.",
+    "externalGovernance": "Configuration, access and reviewer-availability observations only; behavioral enforcement untested."
+  },
+  "limitations": [
+    "An initially unauthenticated browser showed a sign-in/404 page. Only the post-sign-in settings snapshot is used for administrative conclusions.",
+    "A search suggestion for a retention documentation URL returned 404 and was not used as evidence. The successful read uses the endpoint verified in official Actions permissions documentation.",
+    "The first retention tool attempt was interrupted; only the completed read is recorded as a result.",
+    "This observation concerns GitHub state at the recorded revision/time, not validation of the uncommitted local proposal or proof of runtime interchangeability."
+  ]
+}

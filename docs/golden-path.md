@@ -362,6 +362,15 @@ publishing, cloud writes, permission changes and access to secrets. Terminal too
 access is not a sandbox or a substitute for runtime authorization. Future
 external capabilities must earn actual identity and enforcement mechanisms.
 
+The separately [approved GitHub governance task](../engineering/adr-github-governance-controls.json)
+adds a [finite administrative capability](../engineering/cap-github-governance.json)
+for the exact upstream ruleset and safe non-merging probes. It does not widen
+`cap-edit`, grant standing administration or authorize integration. Its
+[observations](../engineering/evidence-external-governance-implementation.json)
+separate configured rules, check blocking/recovery, unrun probes and the withheld
+owner integration decision at capture time. Shared owner credentials do not mechanically
+separate the human from the agent.
+
 `--base <sha>` discovers canonical artifacts at the Git base and compares stable
 capability IDs. Changes to classification, identity, boundary, authorization or
 policy reference need a new governing decision with an `authorityChanges`
@@ -411,10 +420,11 @@ requests. When the records are valid, the gate admits invocation of the named
 adapter instead of imposing a universal refusal. The adapter still requires its
 own approved capability, policy and runtime authorization.
 
-The current repository implements only the delivery record schema and read-only
-admission gate with synthetic fixtures. It contains no physical adapter or
-external write authority. Synthetic allow/deny tests establish contract behavior,
-not real deployment, recovery, operational correctness or business outcome.
+The current delivery implementation is only the record schema and read-only
+admission gate with synthetic fixtures. It contains no physical delivery adapter
+or external delivery write authority. Synthetic allow/deny tests establish
+contract behavior, not real deployment, recovery, operational correctness or
+business outcome.
 
 ## Prove, Release and Run
 

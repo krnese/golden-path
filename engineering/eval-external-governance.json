@@ -1,0 +1,24 @@
+{
+  "$schema": "../contracts/engineering.schema.json",
+  "schemaVersion": 2,
+  "id": "eval-external-governance",
+  "kind": "evaluation",
+  "title": "Verify the external realization of Golden Path merge governance",
+  "spec": {
+    "requirementIds": ["req-authority", "req-evidence", "req-learning"],
+    "capabilityIds": ["cap-guide", "cap-github-governance"],
+    "method": "manual",
+    "scenarios": [
+      "Read-only baseline of the target branch, effective rules, required checks and observer permissions before remediation",
+      "Administrator verification of PR-based integration, required check publisher, history/deletion protection, absence of configured bypass and evidence retention",
+      "Independent observation after an explicitly authorized identity change, preserving earlier visibility limits and recording eligible-reviewer availability",
+      "Separately authorized non-merging PR probe showing a failed required check blocks integration",
+      "Separately authorized non-merging owner-authored PR probe showing check recovery without a required independent review, explicitly exposing the accountable-owner process boundary",
+      "Manual assessment of genuine owner approval before consequential implementation and a separate integration decision bound to the resulting revision",
+      "Changed scope requires a renewed owner decision through process, not a claimed GitHub stale-review blocker; governance-path changes receive the same mechanical gates",
+      "Separately authorized isolated-target probes reject direct updates, force pushes and deletion without testing destructive operations on live main"
+    ],
+    "passCriteria": "Score the platform and accountable-owner process separately. Platform: effective rules implement the approved PR/check/history/deletion controls, and separately authorized probes demonstrate blocking and positive eligibility without an independent-review prerequisite. Process: actual human decisions identify the consequential transition and authorized scope before implementation, and the owner separately decides integration of the resulting revision after inspecting evidence; no agent-generated approval or inferred integration permission counts. A platform pass cannot prove the process or authenticate human judgment. Record unexecuted, inaccessible and shared-identity limits; do not report overall approval/enforcement proof when only one layer was exercised. Preserve earlier observations under their historical evaluation context, never relabel a failed baseline as passing because the proposal changed.",
+    "procedure": "Capture UTC time, subject revision, observer identity/permissions, effective rules, legacy protection, check identity, Actions settings and retention using read-only queries before any configuration change. Preserve returned projections, query text and access failures; identity changes earn new observations, not replacement baselines. After separately approved configuration, use an explicitly authorized non-merging owner-authored ready-for-review fixture PR: introduce an inert unbound script so the existing validator fails and observe the CI blocker; remove the failure and observe that the check blocker clears without a second person's approval. Do not merge. Include a harmless governance-document change, record head/base SHAs and exact platform reasons, and do not treat draft status or unrelated blockers as evidence. Count=0 is a deliberate platform boundary: GitHub eligibility does not mean the owner has approved integration. Separately assess a real owner's transition/scope approval and later integration decision against the actual proposal, revision and recorded outcomes; if not available, mark process evidence unexecuted or inconclusive. Do not create synthetic owner statements or post approval under the owner's identity to test it. Changed consequential scope requires renewed owner consideration through process; do not claim GitHub invalidates that approval automatically. Test direct updates, force pushes and deletion only on an authorized disposable equivalent target using an actor with write permission; capture server rejection and unchanged target. Keep isolated-target proof distinct from actual main observations. No settings, grants, branch/PR creation, push or merge is authorized by this procedure. Preserve human approval, deterministic checks, GitHub integration eligibility and any future independent peer review as separate evidence, and keep portability/hook trials unclaimed. This evaluation cannot establish that a shared owner credential was exercised by a human rather than an agent."
+  }
+}

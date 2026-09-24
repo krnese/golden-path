@@ -1,0 +1,16 @@
+{
+  "$schema": "../contracts/engineering.schema.json",
+  "schemaVersion": 2,
+  "id": "evidence-external-governance-implementation",
+  "kind": "evidence",
+  "title": "Applied ruleset and non-merging required-check failure/recovery probe",
+  "spec": {
+    "evaluationId": "eval-external-governance",
+    "subjectRevision": "6280a88b940a7c6a04ce4a6bc0df663aac0a4a09; synthetic failure f56c3616240c1cc300a11cc404b3eb2fe04671b3; synthetic recovery 7cea860b63049ef1acaf09d4d6e598f9a8de2e9b",
+    "recordedAt": "2026-09-24T12:14:04Z",
+    "result": "inconclusive",
+    "location": "evaluations/evidence/external-governance-implementation-2026-09-24.json",
+    "environment": "development",
+    "observations": "Owner-approved ruleset 23936296 was created and read back with the four approved effective rules, zero required reviews, no bypass and unchanged main SHA. Safe probe PR #1 was conflict-free and non-draft: the deliberately unbound inert script caused both required validate runs to fail and GitHub reported BLOCKED. Removing only that failure produced successful required checks and CLEAN eligibility with zero submitted reviews. The PR was then closed without merging; its synthetic branch is retained. Unrelated settings were verified unchanged. Configuration and tested check behavior passed; the aggregate evaluation remains inconclusive because direct-update/force-push/deletion rejection was not exercised on an isolated equivalent target and final integration is expressly not approved. Shared-identity human judgment is not mechanically proved. Two local preflight/readback array-handling errors were preserved; neither was hidden by changing GitHub controls. GitHub supplied an inactive extra-approval default when review count is zero. Earlier failed evidence is unchanged. No portable-entry-point or hook trial ran; the local governance diff was not published. This local evidence file remains pending separately authorized review/publication."
+  }
+}

@@ -1,0 +1,16 @@
+{
+  "$schema": "../contracts/engineering.schema.json",
+  "schemaVersion": 2,
+  "id": "evidence-external-governance-admin-observation",
+  "kind": "evidence",
+  "title": "Administrator observation after explicit GitHub identity change",
+  "spec": {
+    "evaluationId": "eval-external-governance",
+    "subjectRevision": "6280a88b940a7c6a04ce4a6bc0df663aac0a4a09",
+    "recordedAt": "2026-09-24T11:46:56Z",
+    "result": "fail",
+    "location": "evaluations/evidence/external-governance-admin-2026-09-24.json",
+    "environment": "development",
+    "observations": "New read-only observation under user-selected krnese confirms admin/push access, no rulesets or effective main rules, and explicit Branch not protected from the legacy endpoint. The validate check remains successful but optional. Actions are enabled with all actions allowed and no platform SHA-pinning requirement; workflow defaults are read and Actions PR approval is disabled. API and authenticated browser show 90-day retention. Browser shows workflow-run approval for first-time contributors. Only krnese is listed as a collaborator; no invitations are pending. An eligible independent reviewer for a krnese-authored PR is not identified. Missing merge gates still fail governance; resolving visibility does not remediate them. No GitHub settings were changed and no blocker probes ran. The earlier observer-specific baseline is preserved byte-for-byte. Subject revision identifies observed GitHub source, not the uncommitted local proposal. Evidence is prepared for review; independent publication remains separately authorized."
+  }
+}
