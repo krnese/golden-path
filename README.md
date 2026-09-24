@@ -1,9 +1,14 @@
 # From AI-Assisted Coding to Governed Agentic Engineering
 
-The **Executable Microsoft AI Golden Path** is an executable engineering system,
-not a sample application or another static reference architecture. The repository
-implements the discipline it describes: beginning with an outcome, deriving the
-simplest justified architecture, preserving intent, and evaluating results.
+The **Executable Microsoft AI Golden Path** is a **repository-based engineering
+environment**, currently adopted by forking or cloning it. The repository provides
+the engineering contract, agent guidance and procedures, machine-readable
+engineering state, deterministic validation and governance structure.
+
+Application architecture is derived from workload requirements, not prescribed
+by Golden Path. V0.1 **does prescribe an engineering-state model and repository
+organization**. Attaching Golden Path to an existing application repository is
+not currently a solved capability.
 
 > **Status: V0.1 experimental.** Golden Path is an experimental executable
 > engineering system for deriving, governing, proving and evolving software
@@ -29,6 +34,25 @@ agent, skill, MCP server, workflow, model, database or cloud service. Expect
 questions about the problem before any technology choice. The
 [Getting Started guide](docs/getting-started.md) covers account access, workspace
 trust, Codespaces and examples.
+
+You are not expected to understand or manually maintain Golden Path record formats:
+
+- **You bring:** the outcome, constraints, domain knowledge, judgment, challenge
+  and approval. You remain accountable for reviewing decisions and results.
+- **The engineering agent is expected to:** maintain the records, trace decisions,
+  run deterministic validation, and surface where additional evidence or human
+  judgment is required.
+
+**Intended progression, not demonstrated adopter success:**
+describe an outcome -> clarify only what is necessary -> derive the workload and
+requirements -> choose the simplest justified architecture -> build a useful
+increment -> prove it against the agreed requirement.
+
+For example, an equipment-tracking increment could record an assignment and show
+who holds the item, then test that behavior against the requirement. The useful
+result is working behavior with evidence, not just valid engineering records.
+The [detailed mechanisms](#repository-map) remain inspectable, not prerequisites
+for starting.
 
 ## Your Fork Is Your Engineering Environment
 
@@ -75,11 +99,13 @@ judgment, authority, evidence, and deciding which learning becomes durable.
 The developer becomes the director and accountable engineer of this
 software-production system.
 
-Governance does not mean adding human approval to every operation. It means
-enabling fast, increasingly autonomous work within explicit, enforced boundaries.
-**Agents reason. Policy constrains. Evidence validates. Humans remain accountable.**
-This is the model explored here, not a claim of unrestricted autonomy or complete
-runtime enforcement.
+Governance does not mean adding human approval to every operation. Instructions
+and procedures guide agent reasoning; engineering state records what must remain
+true. Deterministic validators enforce a defined structural subset, and GitHub
+controls govern integration where configured. Generalized execution-time
+**Action Admission remains experimental and unproven**, including interception
+through the current Copilot Agent Host repository-hook path. See
+[invariant coverage](docs/invariants.md) for the enforcement limits.
 
 ## Complexity Must Be Earned
 
