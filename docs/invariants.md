@@ -77,3 +77,5 @@ or approval identities are scaffolded. Branch protection is not installed by YAM
 
 Approvals and passing test records can be forged as text. Merge controls and
 review are essential; this repository does not claim tamper-proof enforcement.
+
+<!-- Non-merging governance fixture: required-check failure and recovery; no approval or integration claim. -->
