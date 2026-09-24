@@ -1,0 +1,21 @@
+{
+  "$schema": "../contracts/engineering.schema.json",
+  "schemaVersion": 2,
+  "id": "cap-github-governance",
+  "kind": "capability",
+  "title": "Apply the owner-approved GitHub ruleset and safe non-merging probes",
+  "spec": {
+    "decisionId": "adr-github-governance-controls",
+    "executable": true,
+    "authority": "HIGH_IMPACT_WRITE",
+    "identity": "GitHub CLI authenticated as krnese for the explicitly approved 2026-09-24 governance task",
+    "boundary": "GitHub REST API for krnese/golden-path only: create the exact Golden Path main ruleset approved in adr-github-governance-controls after fresh checks; read back the ruleset and effective main rules; create synthetic fixture commits, one isolated governance-probe topic branch and a non-merging probe PR; fast-forward only that probe branch for the recovery case; close the probe without merging. No change to main contents, other settings, other repositories, collaborators or bypass; no live destructive probe, integration of the local diff or physical deployment adapter. This is a finite task-scoped boundary, not standing autonomous administration.",
+    "policyId": "pol-engineering",
+    "authorization": {
+      "principal": "Accountable owner explicitly approving this transition in the 2026-09-24T14:03:05.767+02:00 user message",
+      "scope": "The selected ruleset fields and previously defined safe PR-based CI probes only; all repository integration remains with the owner.",
+      "enforcement": "Explicit human task approval plus tool confirmation; commands bind the exact repository, main base SHA, verified check publisher and probe ref. GitHub enforces authenticated repository permissions and installed rules. Fresh read-before-write and exact post-write comparison detect drift. Bounded requests have no automatic mutation retries; re-read after ambiguous outcomes. The API does not authenticate the human approval statement or distinguish human and agent use of shared owner credentials.",
+      "deniedBehavior": "Stop without the requested mutation when identity, scope, approval or preconditions are absent or mismatched. Preserve API errors and partial success; no implicit alternate identity, privilege escalation, bypass, merge, rollback or weakening of controls."
+    }
+  }
+}

@@ -218,6 +218,12 @@ permission for future writes, or approval of any adopter's project.
 - A platform-neutral governed-delivery contract and read-only admission gate,
   exercised with synthetic allow/deny fixtures
 
+Separately, an [owner-approved upstream governance trial](engineering/evidence-external-governance-implementation.json)
+records applied GitHub integration rules and a non-merging required-check
+failure/recovery probe. This is platform evidence, not a result of `npm run check`,
+proof of human judgment or automatic protection for forks. Final integration of
+the governance change remains an owner decision.
+
 **Unproven or intentionally absent:**
 
 - Broad behavioral reliability. Most behavioral scenarios have not been executed;
@@ -231,10 +237,10 @@ permission for future writes, or approval of any adopter's project.
   symbolic links there, which repository inspection may reject. Not yet tested.
 - Upstream updates into forks, a project-owned landing README, and representation
   of agents inside the system being built
-- Real physical deployment adapters and real external execution
+- Real physical deployment adapters and real external delivery execution
 - Production enforcement, and external identity or authorization integration
 - Runtime independence across agent products other than GitHub Copilot in VS Code
-- Multi-engineer collaboration at scale, including configured branch protection
+- Multi-engineer collaboration at scale and independent peer-review operation
 - Business-outcome evidence from adopter workloads
 
 The first Golden Path evolution is the review of this scaffold: one skill with
