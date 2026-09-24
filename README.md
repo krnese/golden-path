@@ -1,20 +1,25 @@
-# From AI-Assisted Coding to Governed Agentic Engineering
+# Golden Path
 
-The **Executable Microsoft AI Golden Path** is a **repository-based engineering
-environment**, currently adopted by forking or cloning it. The repository provides
-the engineering contract, agent guidance and procedures, machine-readable
-engineering state, deterministic validation and governance structure.
+**An experimental engineering environment for building software with coding agents.**
 
-Application architecture is derived from workload requirements, not prescribed
-by Golden Path. V0.1 **does prescribe an engineering-state model and repository
-organization**. Attaching Golden Path to an existing application repository is
-not currently a solved capability.
+For developers and architects who want to start with something they need to
+build—not a fully specified technical solution.
 
-> **Status: V0.1 experimental.** Golden Path is an experimental executable
-> engineering system for deriving, governing, proving and evolving software
-> architecture from workload intent. It is ready for engineers to try with their
-> own workloads; it is not a proven or production-ready product. See
-> [Maturity](#maturity-v01-experimental) for what is demonstrated and what is not.
+Coding agents make implementation increasingly cheap. Golden Path explores how
+intent, requirements, architecture decisions, authority and evidence can remain
+explicit and durable as agents produce more of the code.
+
+This repository gives your coding agent an engineering environment with guidance,
+durable project records and deterministic structural checks. The aim is to preserve
+what you are building, why decisions were made, what actions are authorized and how
+results are evaluated—not leave that context only in a conversation.
+
+**You bring the intent. The engineering system carries the discipline.**
+The agent is expected to maintain the records and run checks; you bring domain
+knowledge, constraints, judgment and approval.
+
+> **V0.1 experimental:** intended for trials on real work, not a proven or
+> production-ready product. See [Maturity](#maturity-v01-experimental).
 
 ## Quick Start
 
@@ -22,17 +27,16 @@ not currently a solved capability.
    Codespace). Your fork becomes the engineering environment for your own project.
 2. Sign in to GitHub Copilot and start a new chat in **Agent** mode with the
    default agent. No custom agent, extension, cloud account or setup script is needed.
-3. Describe the outcome you want in your own words, for example:
+3. Describe something you genuinely want to build, for example:
 
-> I want to build [describe the outcome and who it helps]. Start from the outcome
-> and use the engineering system in this repository to determine the requirements
-> and simplest justified architecture. Do not assume technologies, agents, skills,
-> tools, workflows or platforms unless the workload earns them.
+> I want to build a tool that helps our IT team track equipment assigned to
+> employees. Help me build a useful first version.
 
-**Don't architect your prompt.** You do not need to know whether you need an
-agent, skill, MCP server, workflow, model, database or cloud service. Expect
-questions about the problem before any technology choice. The
-[Getting Started guide](docs/getting-started.md) covers account access, workspace
+**Don't architect your prompt.** Start with the problem and who it helps.
+You do not need to choose the technology first. Expect questions where your
+answers matter to the next engineering decision.
+
+The [Getting Started guide](docs/getting-started.md) covers account access, workspace
 trust, Codespaces and examples.
 
 You are not expected to understand or manually maintain Golden Path record formats:
@@ -55,6 +59,11 @@ The [detailed mechanisms](#repository-map) remain inspectable, not prerequisites
 for starting.
 
 ## Your Fork Is Your Engineering Environment
+
+Application architecture is derived from workload requirements, not prescribed
+by Golden Path. V0.1 **does prescribe an engineering-state model and repository
+organization**. Attaching Golden Path to an existing application repository is
+not currently a solved capability.
 
 **A fresh fork contains the engineering discipline but no assumptions about what
 you are building.** Canonical engineering state lives in two places:
