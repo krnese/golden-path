@@ -1,0 +1,42 @@
+Selected verbatim excerpts from the retained transition experiment command logs.
+Headings and source-log names below are editorial. This is not the complete run.
+All base checks used synthetic baseline 39a3953833e2da387c45fb5863c75ba1c35d11a0
+in the disposable Golden Path repository, not the canonical repository baseline.
+
+B-gp-base.json: exit 1, stderr
+cap-invoice-export: authority change needs a new governing decision with explicit before/after classification and reason
+
+C-gp-base.json: exit 0, stdout
+Validated 47 canonical artifacts (36 framework in engineering/, 11 project in project/) and 104 single-owner references.
+Unbound repository files: 0
+Evidence: 4 repository-verified, 0 external (retrievability unverified); 3 evaluations have no evidence.
+Structural validity is not behavioral proof, authentic approval, or runtime authorization.
+
+N-gp-base.json: exit 0, stdout
+Validated 45 canonical artifacts (36 framework in engineering/, 9 project in project/) and 99 single-owner references.
+Unbound repository files: 1
+evidence/invoice-candidate.json
+Evidence: 4 repository-verified, 0 external (retrievability unverified); 3 evaluations have no evidence.
+Structural validity is not behavioral proof, authentic approval, or runtime authorization.
+
+failed-evidence-gp-base.json: exit 0, stdout
+Validated 47 canonical artifacts (36 framework in engineering/, 11 project in project/) and 104 single-owner references.
+Unbound repository files: 0
+Evidence: 4 repository-verified, 0 external (retrievability unverified); 3 evaluations have no evidence.
+Structural validity is not behavioral proof, authentic approval, or runtime authorization.
+
+contradictory-report-body-gp-base.json: exit 0, stdout
+Validated 47 canonical artifacts (36 framework in engineering/, 11 project in project/) and 104 single-owner references.
+Unbound repository files: 0
+Evidence: 4 repository-verified, 0 external (retrievability unverified); 3 evaluations have no evidence.
+Structural validity is not behavioral proof, authentic approval, or runtime authorization.
+
+evidence-candidate-gp-acceptance.json: exit 0, TAP summary excerpt
+1..8
+# tests 8
+# suites 0
+# pass 8
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
