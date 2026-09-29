@@ -1,0 +1,71 @@
+{
+  "version": 1,
+  "purpose": "Falsify reusable intent-contract-candidate-proof-acceptance semantics in existing Golden Path, not coding-agent quality.",
+  "canonicalRepository": "C:\\Users\\krnese\\Documents\\GitHub\\golden-path",
+  "canonicalRevision": "c32b4aca3af0e7c8c6e7f300e275700ff0937da7",
+  "scope": "Disposable copies and experiment-only fixtures, scripts, synthetic Git commits, reports. No canonical or remote writes. Existing Golden Path validator/schema unchanged.",
+  "workload": {
+    "name": "Offline invoice export for a finance payment handoff",
+    "outcome": "Produce an exact, deterministic approved-invoice handoff without altering the source batch or including unapproved invoices.",
+    "requirements": [
+      "Unique invoice identities, safe positive integer cents, approved-only selection, deterministic sorting and exact totals.",
+      "Immutable source input and no default write effects. Candidate adds only explicit creation of a new caller-selected local receipt file, refusing overwrite."
+    ],
+    "baseline": "Active READ capability, approved synthetic governing decision, one deterministic evaluation covering both requirements, actual baseline evaluation output and a subject fingerprint.",
+    "candidate": "Add --record <new receipt file> while preserving ordinary stdout reporting. No external services, real finance data, production execution or live authorization."
+  },
+  "identity": {
+    "subjectRevision": "sha256 of an ordered path/content manifest of app/, acceptance/ and current project contract records other than evidence; conventional arm substitutes release-policy.json excluding evidence.",
+    "excluded": "Evidence records/reports avoid recursive self-hashing; unchanged Golden Path framework has its own recorded source revision/hash manifest.",
+    "meaning": "Experiment observation of candidate identity only. Golden Path is not changed to compute, interpret or enforce this convention.",
+    "gitBase": "A synthetic accepted-baseline commit in each disposable repository supplies the existing --base interface. No canonical Git commits."
+  },
+  "states": [
+    {"id": "A", "description": "Accepted baseline with freshly executed evaluation evidence."},
+    {"id": "B", "description": "Locally correct WRITE candidate, valid WRITE authorization/policy shapes, old governing decision and no explicit authority transition. Baseline evidence retained."},
+    {"id": "C", "description": "Same implementation; new approved READ-to-WRITE governing decision, old decision superseded. Baseline evidence deliberately retained."},
+    {"id": "D", "description": "Same application and governing contract as C; execute evaluation and update evidence subject/result/location to observed candidate."},
+    {"id": "N", "description": "Candidate WRITE implementation with baseline READ engineering declarations and baseline evidence unchanged."}
+  ],
+  "controls": {
+    "documentationAndTests": "Equivalent baseline/change rationale in conventional documentation; identical app sources, unit and acceptance tests. Ordinary unit-test job for every state.",
+    "smallConventionalPolicy": "One component release-policy JSON and a dependency-free CI checker for the demonstrated path binding, approved governing state, declared authority transition, write authorization/policy and evaluation coverage. Containment avoids unnecessary graph registries.",
+    "conventionalProof": "Run required acceptance tests directly in the candidate CI job at every state, rather than treating old stored results as current proof. Report this additional existing conventional protection separately from policy parity.",
+    "fairness": "Do not claim full framework equivalence from one component. Preserve equivalent substantive facts in docs. Do not weaken normal CI to reproduce Golden Path evidence gaps."
+  },
+  "additionalProbes": [
+    "B with authorization/policy absent",
+    "C with active governing decision proposed and approval removed",
+    "C with implementation binding removed",
+    "C with required evaluation and its evidence removed",
+    "C with evaluation detached from one governing requirement",
+    "C with missing evidence only",
+    "C with evidence result fail",
+    "C with evidence result inconclusive",
+    "C with arbitrary subjectRevision",
+    "C with evidence report body contradicting its pass record",
+    "C with nonretrievable evidence location",
+    "C with machine-local evidence location",
+    "C with incorrect authority transition from/to",
+    "C without --base"
+  ],
+  "measurements": [
+    "Application-test exit/count, independently observed receipt effect and immutable input",
+    "Unmodified CLI exit and complete diagnostics with/without base",
+    "Existing API schema/graph, repository inventory, transition errors and evidence summary, correctly checking returned arrays",
+    "Stored-evidence versus observed subject identity, with no admission enforcement added",
+    "Conventional policy exit and fresh acceptance execution",
+    "Project record, scalar field and changed-record counts",
+    "Per-field consumer/removal classification, distinguishing shape requirements from consequential predicates",
+    "Exact retained fixtures, source hashes, reports and harness deviations"
+  ],
+  "acceptanceBoundary": "Local CI-equivalent process exit only; no GitHub settings changed or live merge probe. Prior remote blocking evidence is separate.",
+  "interpretation": {
+    "pass": "Only the named supplied-declaration predicate passed, not authentic approval, truthful effects or complete admission.",
+    "proof": "Observed deterministic suite execution is bounded synthetic application evidence, not business-outcome or production proof.",
+    "commonContract": "Require demonstrated common candidate identity, obligation applicability, proof interpretation and acceptance semantics; shared references alone do not establish the whole chain.",
+    "finalLabels": ["Surviving kernel demonstrated", "Promising but not differentiated", "Equivalent to conventional policy-as-code", "Current Golden Path abstraction not justified"]
+  },
+  "failureHandling": "Preserve failed setup/scored outputs; identify fixes as harness fixes, never repair candidate observations to improve results. No new Golden Path invariant.",
+  "limits": "One deterministic component and one READ-to-WRITE transition; author-written fixtures; synthetic approval attribution; local runner/checker trust; no actor-comparison or arbitrary effect detection claim."
+}

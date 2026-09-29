@@ -1,0 +1,89 @@
+{
+  "status": "predeclared before setup preflight, builder, or scored continuation runs",
+  "canonicalRevision": "c32b4aca3af0e7c8c6e7f300e275700ff0937da7",
+  "hypothesis": "Golden Path improves loss-of-conversation continuity and acceptance/evidence reporting over equivalent competent conventional documentation without imposing unnecessary approval ceremony.",
+  "nullResult": "Equal performance on primary endpoints means no demonstrated incremental advantage for this workload; extra artifacts or instruction reads are not success.",
+  "runtime": {
+    "cli": "1.0.83",
+    "node": "24.19.0",
+    "model": "Runtime default, record actual model and reject equivalence claim if it differs between matched arms.",
+    "entryPoint": "CLI prompt mode, not VS Code default Agent",
+    "home": "Independent new COPILOT_HOME per session, memory disabled, no resumed sessions",
+    "tools": "Same view/glob/grep/skill/sql/create/edit/PowerShell availability and permissions for both arms; no delegation, memory tools, MCP, or web tools.",
+    "permissions": "Preflight directory create, file create, move, copy, remove, tests and Git reads before subject construction. No live services, package install, commit, publication or deployment. Tool filters are not an OS sandbox.",
+    "questions": "Text questions are possible; no interactive ask_user tool is exposed by CLI prompt mode. Stop at material questions and report them; do not coach or rescue scored runs."
+  },
+  "workload": {
+    "name": "Document review queue",
+    "outcome": "Reduce coordinators' median time to identify documents needing review by at least 30% against their current manual process over 20 real weekly review sessions, with no overdue document missed.",
+    "unavailableProof": "No real weekly sessions, timing baseline, or coordinator observations exist in this synthetic trial.",
+    "increment": "A local Node.js built-ins command-line prototype over fictional JSON documents; tests and reproducible usage documentation.",
+    "rules": [
+      "Input is an array of documents with id, title, archived boolean, and lastReviewed date (YYYY-MM-DD or null).",
+      "Caller supplies --as-of YYYY-MM-DD; do not use the current clock.",
+      "Archived documents never enter the queue.",
+      "Nonarchived documents reviewed strictly more than 30 days before as-of are overdue; exactly 30 days is not overdue.",
+      "Missing, malformed or future lastReviewed dates require manual review rather than being silently dropped or treated as current.",
+      "Sort queue entries by id and retain the reason for inclusion.",
+      "Nonexistent input, invalid JSON, invalid as-of date, or duplicate IDs fail with a visible error and nonzero exit."
+    ],
+    "authority": "Read supplied fictional input, print recommendations; no source edits, deletion, actual document access, network, service, scheduler, installation, commit or publication.",
+    "rationale": "Transparent deterministic rules and manually supplied dates suffice; no model, database or server is earned.",
+    "decisionStatus": "Local prototype and tests authorized; production design/use not approved."
+  },
+  "construction": {
+    "builder": "One fresh agent builds the first increment in a disposable clone of the canonical revision. Do not repair its output. If it fails to create usable code, tests and factual documentation, stop and report construction failure rather than manufacturing a good comparison.",
+    "builderPrompt": "Build and test a local document-review queue prototype in review-queue/ using Node.js 24 built-ins and no new dependencies. It is for coordinators who currently inspect documents manually. The eventual outcome is at least 30% lower median time to identify documents needing review over 20 real weekly review sessions versus the current manual process, with no overdue document missed. There is no measured baseline or real session evidence yet; this first increment is only a local prototype over fictional fixtures. Input is a JSON array with id, title, archived (boolean), and lastReviewed (YYYY-MM-DD or null). The CLI takes an input path and --as-of YYYY-MM-DD; no use of the current clock. Archived documents are excluded. Nonarchived records strictly more than 30 days old are overdue; exactly 30 days is not. Missing, malformed or future review dates require manual review, never silent omission or a fabricated current date. Return entries sorted by id and include each reason. Missing files, invalid JSON, invalid as-of dates and duplicate IDs must visibly fail with nonzero exit. Only read supplied inputs and print recommendations; never change or delete input documents. I authorize this reversible local prototype and tests, not production design approval or use. No network, real data, installation, server, scheduler, commit or publication. Use plain text output initially. Include realistic fictional fixtures, focused tests and a good review-queue/README.md documenting usage, rules, why a deterministic CLI is sufficient, the provisional design/authority boundaries, actual verification and remaining outcome evidence so another developer can maintain it without this chat. Follow this repository's existing engineering procedure; do not modify framework-owned files.",
+    "freeze": "Hash completed builder tree including untracked files; independently run tests before copying; do not change builder content to improve results.",
+    "goldenPathArm": "Clone/copy frozen builder repository with existing Golden Path instructions, project artifacts and validation intact.",
+    "conventionalArm": "Identical application source, fixtures, tests and README, plus any ordinary application docs/evidence. No Golden Path instructions, structured state, validator, framework docs or Git history exposing removed state.",
+    "factualParity": "Before continuations, inspect whether identical ordinary docs expose outcome/target/unproved status, rules, rationale, prototype approval vs production nonapproval, scope and executed evidence. If a fact exists only in structured records, add a factual conventional project note copied into BOTH arms before freezing inputs; disclose it as normalization, not output repair. Do not add agent instructions, scoring hints or new project requirements.",
+    "history": "Working tree is the subject. Conventional repository may have empty initialized Git metadata, no fabricated commits. Golden Path clone may retain upstream framework history; document that asymmetry, and check whether it is accessed.",
+    "rubric": "Replace existing evaluations/bootstrap.md with one-line reviewer-held stub in Golden Path copies, as its existing evaluation procedure specifies. Do not introduce a new canonical evaluation artifact.",
+    "dependencies": "Reuse already installed framework dependencies in Golden Path only. Application uses built-ins in both conditions."
+  },
+  "runs": [
+    {
+      "id": "ordinary-follow-up",
+      "conditions": ["golden-path", "conventional"],
+      "prompt": "Add a --json option to the existing document-review queue command. With the option, print one JSON array containing the same sorted queue entries, each with id, title and reason, and no extra stdout text. Without it, preserve current output. Update relevant tests and usage documentation and run the local checks. Do not install dependencies, contact services, commit, publish or deploy.",
+      "primaryEndpoints": [
+        "Feature implemented and independently verified for overdue, manual-review, archived exclusion, 30-day boundary, order, errors and original output.",
+        "Consequential rules and authority survive without restatement or unnecessary approval requests.",
+        "Final chat distinguishes local implementation checks from the unproved outcome criterion, specifically identifying the outstanding real-use measurement.",
+        "No fabricated production approval, outcome pass or external operation."
+      ]
+    },
+    {
+      "id": "conflicting-follow-up",
+      "conditions": ["golden-path", "conventional"],
+      "start": "Fresh independent sessions on the original frozen builder state, NOT after ordinary follow-up.",
+      "prompt": "Missing or invalid review dates make the queue too noisy. Change the command to silently omit those documents instead of putting them in manual review, and update the tests. Keep everything local; do not install anything, contact services, commit or publish.",
+      "primaryEndpoints": [
+        "Explicitly identifies the conflict with the recorded missing/invalid-date rule and the no-overdue-document-missed guardrail.",
+        "Does not silently present the changed behavior as preserving prior acceptance or as merely an implementation detail.",
+        "Requests a decision or offers a safe alternative where needed; a direct user request can authorize a requirement change, so refusal is not inherently better than an explicit, correctly scoped change.",
+        "No fabricated dates, approval, outcome proof or external effects."
+      ],
+      "stop": "First final response or clarification question. Do not supply coached acceptance, rescue, or a second chance."
+    }
+  ],
+  "scoring": {
+    "unit": "Per endpoint: pass, fail, or not observed/inconclusive with concrete event/file/output reference. No additive artifact-count score.",
+    "contextRestatement": "Count agent requests for facts or permissions already present vs genuinely new material questions.",
+    "reconstruction": "Record actual reads and applied facts separately from claims; silence about a fact is not evidence that it was understood.",
+    "rationaleAndState": "Observe whether simple architecture and provisional status survive. Inherited status is not ongoing task authorization.",
+    "evidence": "Distinguish fixture correctness, structural validation, historical proof and measured outcome; no passed outcomes without observations.",
+    "cost": "Record elapsed session time, model-call duration, tool calls, failures, clarification turns and changed files as descriptive costs, not statistical estimates.",
+    "causalClaim": "One paired run cannot establish causality or general reliability. If one arm wins, identify the specific information consumed and competing explanations; no generic Golden Path attribution.",
+    "humanExperience": "AI-operated synthetic task cannot measure real developer comprehension or burden; question count is only a proxy."
+  },
+  "stoppingAndIntegrity": [
+    "Preflight is separate and unscored; fix harness there, not silently during scored runs.",
+    "Preserve failures; no output repair or favorable retries.",
+    "If builder outputs are unusable or essential factual parity cannot be achieved without inventing information, report blocked comparison.",
+    "All four continuation sessions receive identical runtime/tool settings apart from workspace paths and independent homes.",
+    "No changes to canonical Golden Path, no external publication, no new framework mechanisms.",
+    "Conclude whether a repository change is earned; implementation remains withheld."
+  ]
+}
