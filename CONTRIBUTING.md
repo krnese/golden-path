@@ -46,3 +46,6 @@ check the supplied base-to-head change.
 
 Historical implementation commands and research limitations are documented in
 [experimental-v1](research/experimental-v1/README.md). They are not adoption steps.
+The [continuing-delegation results](research/continuing-delegation/RESULTS.md)
+document the research-only harness checks and how to recalculate the retained
+comparison. They are not new Golden Path gates.

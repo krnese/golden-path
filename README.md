@@ -1,69 +1,76 @@
 # Golden Path
 
-**A lightweight engineering method for delegating software development to
-increasingly autonomous agents.**
+**Implementation throughput can exceed accountable human supervision.**
 
-Implementation throughput can exceed accountable human supervision. Golden Path
-helps establish what has been delegated, lets agents engineer broadly inside that
-boundary, and brings human judgment back when consequences materially change.
+Golden Path explores a deliberately small engineering method for delegating work
+to agents without silently expanding what has been accepted:
 
 **Understand → Bound → Engineer → Prove → Report**
 
-**Delegate broadly. Escalate consequential change. Prove using the systems that
-own the truth.**
+**Delegate implementation broadly within accepted boundaries. Escalate
+consequential change. Prove using systems that own truth.**
 
-## Try it in your existing project
+## What it asks you to do
 
-1. Give your coding agent the [canonical skill](.github/skills/golden-path/SKILL.md)
-   and [method](METHOD.md), or read them yourself. No package installation,
-   custom agent or project reorganization is required.
-2. Describe the outcome and current change. Use existing issues, ADRs, design
-   documents and policies to establish the working agreement.
-3. Let the agent investigate and implement within that agreement, use your
-   existing checks, and report what was established and what remains uncertain.
+Understand the intended result and existing system. Establish the delegated work,
+constraints and permitted effects using existing issues, designs and policies.
+Let the agent make implementation choices within those boundaries. If a
+consequential change appears necessary, pause the affected action and surface the
+decision to the appropriate owner; continue separable permitted work.
 
-For native skill discovery, install the skill and its linked method together in
-a location supported by your runtime, preserving or updating their relative link.
-This repository uses `.github/skills/golden-path/SKILL.md`; automatic discovery
-varies by runtime. Explicitly supplying both documents is the fallback.
-
-The optional [engineering agreement template](templates/ENGINEERING.md) helps
-when the necessary information is missing. **Do not create another agreement
-when equivalent authoritative information already exists.**
-
-## Two behaviors
-
-- **WITHIN DELEGATION:** proceed autonomously inside the established boundary,
-  subject to existing repository and platform controls.
-- **DELEGATION CHANGE:** surface a consequential change rather than silently
-  redefining the assignment. Explain the consequence and the decision needed.
-
-See [work within delegation](examples/within-delegation.md) and
-[a delegation change](examples/delegation-change.md). These examples illustrate
-intended behavior, not proven reliability.
+Use existing tests, review, CI and operating evidence. Report what changed, what
+the evidence establishes and what remains uncertain. Humans remain accountable;
+the method does not guarantee recognition of consequential change.
 
 ## What this is not
 
-Golden Path is a **reference implementation of an engineering method**, not a
-platform, control plane or authorization system. Git, review, tests, evaluations,
-CI/CD, identity, security, deployment, provenance and observability systems remain
-authoritative. Existing mandatory review still applies.
+Golden Path is **not** an agent runtime, orchestration framework, agent
+architecture, governance platform, state machine, policy engine or new system
+of record. It does not replace Git, CI/CD, IAM, deployment systems, telemetry or
+existing engineering practice. Those systems retain their authority and controls,
+including mandatory review.
 
-There is no required engineering graph, evidence ledger or Golden Path approval
-state. The skill grants no authority, does not guarantee detection of consequential
-changes, and does not prove outcome success.
+There are no required Golden Path records, graphs, approval states or ledgers.
+The skill grants no permissions, and implementation success is not outcome proof.
 
-## Try it and challenge it
+## Evidence, not promises
 
-This packaging has **not demonstrated incremental value over competent existing
-engineering practice**. The question is whether it improves consequential
-engineering behavior without adding material ceremony.
+This project is intentionally experimental and falsification-driven. Claims must
+be compared with **competent conventional engineering practice**, not a weak
+baseline. If Golden Path adds no incremental value, **NO CHANGE** is the correct
+result.
 
-[Report what happened](CONTRIBUTING.md), including unnecessary questions, missed
-consequences and cases where ordinary practice worked equally well.
-[The research history](research/experimental-v1/README.md) explains why the
-earlier structured-state architecture was not retained.
+- Earlier structured-state experiments did not earn their complexity; the
+  architecture was retired. [History and limitations](research/experimental-v1/README.md).
+- The lightweight method's continuing-delegation experiment returned **NO CHANGE**:
+  both groups handled 12/12 consequential cases and 6/6 benign cases correctly.
+  Golden Path made uncertainty more explicit but did not improve boundary
+  behavior; median total elapsed cost was 13.9% higher.
+  [Results and limitations](research/continuing-delegation/RESULTS.md).
 
-This repository's required `validate` check now checks Git patch whitespace only.
-It does not validate engineering correctness, delegation, authority, evidence or
-acceptance.
+These small synthetic experiments do not establish general reliability or
+business-outcome improvement. The method's incremental value remains unproved.
+Keep what helps; do not add machinery to preserve a hypothesis that failed.
+
+## Start here
+
+Read [METHOD.md](METHOD.md), or supply it and the
+[canonical skill](.github/skills/golden-path/SKILL.md) to your coding agent.
+Describe real work using your existing authoritative sources and checks.
+No package installation, custom agent or project reorganization is required.
+
+The skill is a portable procedure, not a runtime integration. For native
+discovery, install the skill and method together in a supported location,
+preserving their relative link; discovery varies by runtime. Supplying both
+documents explicitly is the fallback.
+
+| Find | Where |
+| --- | --- |
+| Current proposal | [Method](METHOD.md) and [skill](.github/skills/golden-path/SKILL.md) |
+| Practical illustrations, not evidence | [Examples](examples/README.md); [optional agreement template](templates/ENGINEERING.md), only when existing guidance is insufficient |
+| Research designs and reproduction | [Continuing-delegation protocol](research/continuing-delegation/PROTOCOL.md); [retired experiments](research/experimental-v1/README.md) |
+| Observed evidence and limitations | [Continuing-delegation results](research/continuing-delegation/RESULTS.md); [earlier results](research/experimental-v1/RESULTS.md) |
+
+[Report failures, unnecessary escalation and equal results](CONTRIBUTING.md).
+This repository's `validate` CI job checks patch whitespace only, not engineering
+correctness, authority, evidence or acceptance.

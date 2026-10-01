@@ -91,6 +91,8 @@ does not preserve the retired guarantees or prove engineering correctness,
 delegation, authority, evidence or acceptance. Required-check enforcement and
 human judgment are distinct; shared human/agent credentials remain a limitation.
 
-The next hypothesis is only whether packaging the method improves consequential
+The surviving hypothesis is whether packaging the method improves consequential
 engineering behavior without material ceremony over competent existing practice.
-That has not been tested. The active examples are illustrations, not results.
+The subsequent [continuing-delegation experiment](../continuing-delegation/RESULTS.md)
+tested the lightweight method and returned **NO CHANGE** for that workload.
+The active examples remain illustrations, not results.
