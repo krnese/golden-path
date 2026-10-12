@@ -47,6 +47,12 @@ result.
   Golden Path made uncertainty more explicit but did not improve boundary
   behavior; median total elapsed cost was 13.9% higher.
   [Results and limitations](research/continuing-delegation/RESULTS.md).
+- Later investigations did not establish incremental engineering value. Existing
+  release checks prevented every tested bad deployment; a capable agent recognized
+  an invalidated architectural assumption using ordinary artifacts. Both CSV
+  smoke-test implementations passed, but canonical Golden Path loading was not
+  demonstrated in treatment, leaving that comparison inconclusive.
+  [Consolidated findings and limitations](research/README.md).
 
 These small synthetic experiments do not establish general reliability or
 business-outcome improvement. The method's incremental value remains unproved.
@@ -68,8 +74,15 @@ documents explicitly is the fallback.
 | --- | --- |
 | Current proposal | [Method](METHOD.md) and [skill](.github/skills/golden-path/SKILL.md) |
 | Practical illustrations, not evidence | [Examples](examples/README.md); [optional agreement template](templates/ENGINEERING.md), only when existing guidance is insufficient |
-| Research designs and reproduction | [Continuing-delegation protocol](research/continuing-delegation/PROTOCOL.md); [retired experiments](research/experimental-v1/README.md) |
-| Observed evidence and limitations | [Continuing-delegation results](research/continuing-delegation/RESULTS.md); [earlier results](research/experimental-v1/RESULTS.md) |
+| Observed evidence and limitations | [Research summary](research/README.md) and retained historical Markdown reports |
+| Reproduction material | [Archive index](research/ARCHIVE.md): source snapshots, tests, protocols and raw evidence |
+
+The active project is the method, canonical skill and discovery pointer, with
+ordinary repository maintenance. Experimental runners, application fixtures,
+tests and the optional contract/verifier pilot have been archived and removed
+from the active checkout. Historical Markdown is retained, including uncommitted
+investigation notes; it is not an additional instruction source or a supported
+runtime. No installation or test harness is required to use the method.
 
 [Report failures, unnecessary escalation and equal results](CONTRIBUTING.md).
 This repository's `validate` CI job checks patch whitespace only, not engineering
