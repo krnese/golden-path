@@ -34,7 +34,7 @@ dependencies or automation without a concrete unmet requirement.
 
 ## Checks and review
 
-There is no package installation or Golden Path validator in the active method.
+There is no package installation or mandatory validator in the method.
 Run `git diff --check` for tracked edits; also inspect new files, relative links,
 skill discovery and examples. The examples are illustrative, not test results.
 
@@ -44,8 +44,12 @@ delegation, authority, evidence or acceptance validation. A passing job does not
 authorize integration. Manual-only runs check the latest commit; PR/push runs
 check the supplied base-to-head change.
 
-Historical implementation commands and research limitations are documented in
-[experimental-v1](research/experimental-v1/README.md). They are not adoption steps.
-The [continuing-delegation results](research/continuing-delegation/RESULTS.md)
-document the research-only harness checks and how to recalculate the retained
-comparison. They are not new Golden Path gates.
+The optional contract/verifier pilot and experimental runners are retired from
+the active checkout. Their Markdown reports remain historical documentation, not
+installation instructions. The [research summary](research/README.md) distinguishes
+observed outcomes from unproved claims; the [archive index](research/ARCHIVE.md)
+identifies the preserved source, tests, protocols and raw evidence.
+
+Do not interpret old reproduction commands or source links in historical reports
+as active tools. Restore the corresponding archive when reproducing an experiment.
+There is no active contract-test job, package installation or Golden Path runtime.
