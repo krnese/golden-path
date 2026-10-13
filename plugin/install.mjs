@@ -15,6 +15,7 @@
 //
 //   node install.mjs --target REPO --level 1
 //   node install.mjs --target REPO --check "npm test"        # level 2 (first install)
+//   node install.mjs --target REPO --level 1 --with-local-models  # optional local-model skill (any level)
 //   node install.mjs --target REPO --uninstall [--force] [--purge]
 import { createHash } from "node:crypto";
 import fs from "node:fs";
@@ -35,7 +36,7 @@ function walk(dir) {
     e.isDirectory() ? walk(path.join(dir, e.name)) : [path.join(dir, e.name)]);
 }
 
-export function plannedFiles({ reviewer = false, ci = false, agent = false, level = 2 } = {}) {
+export function plannedFiles({ reviewer = false, ci = false, agent = false, localModels = false, level = 2 } = {}) {
   const files = {};
   const skill = path.join(KIT, "skills", "golden-path");
   for (const src of walk(skill)) files[".github/skills/golden-path/" + path.relative(skill, src).split(path.sep).join("/")] = read(src);
@@ -43,6 +44,10 @@ export function plannedFiles({ reviewer = false, ci = false, agent = false, leve
     files[".github/hooks/golden-path/gate.mjs"] = read(path.join(KIT, "scripts", "gate.mjs"));
     files[".github/hooks/golden-path-loop.json"] = read(path.join(KIT, "com.github.copilot", "hooks", "hooks.json"))
       .replaceAll("${PLUGIN_ROOT}/scripts/", ".github/hooks/golden-path/");
+  }
+  if (localModels) { // optional, separately discoverable skill; never part of the core method
+    const lm = path.join(KIT, "optional", "skills", "golden-path-local-models");
+    for (const src of walk(lm)) files[".github/skills/golden-path-local-models/" + path.relative(lm, src).split(path.sep).join("/")] = read(src);
   }
   if (agent) files[".github/agents/golden-path.agent.md"] = read(path.join(KIT, "optional", "agents", "golden-path.agent.md"));
   if (reviewer && level >= 2) files[".github/agents/golden-path-reviewer.agent.md"] = read(path.join(KIT, "optional", "agents", "golden-path-reviewer.agent.md"));
@@ -107,7 +112,8 @@ export function install(target, o = {}) {
   }
   const has = (rel) => rel in manifest.files;
   const files = plannedFiles({ reviewer: o.reviewer || has(".github/agents/golden-path-reviewer.agent.md"),
-    ci: o.ci || has(".github/workflows/golden-path-check.yml"), agent: o.agent || has(".github/agents/golden-path.agent.md"), level });
+    ci: o.ci || has(".github/workflows/golden-path-check.yml"), agent: o.agent || has(".github/agents/golden-path.agent.md"),
+    localModels: o.localModels || has(".github/skills/golden-path-local-models/SKILL.md"), level });
   const conflicts = [], actions = [];
   for (const [rel, content] of Object.entries(files)) {
     const p = path.join(target, rel);
@@ -171,7 +177,8 @@ export function uninstall(target, force = false, purge = false) {
   }
   fs.rmSync(manPath);
   if (purge) fs.rmSync(path.join(target, CONFIG), { force: true });
-  for (const d of [".github/skills/golden-path/references", ".github/skills/golden-path", ".github/hooks/golden-path", ".github/hooks",
+  for (const d of [".github/skills/golden-path-local-models/references", ".github/skills/golden-path-local-models",
+    ".github/skills/golden-path/references", ".github/skills/golden-path", ".github/hooks/golden-path", ".github/hooks",
     ".github/agents", ".github/prompts", ".github/skills", ".github/workflows", ".golden-path", ".github"]) {
     const p = path.join(target, d);
     if (exists(p) && fs.statSync(p).isDirectory() && !fs.readdirSync(p).length) fs.rmdirSync(p);
@@ -182,7 +189,7 @@ export function uninstall(target, force = false, purge = false) {
 
 const FLAGS = { "--target": "target", "--level": "level", "--check": "check", "--test-file-command": "testFileCommand",
   "--acceptance-owner": "acceptanceOwner", "--acceptance-command": "acceptanceCommand" };
-const BOOLS = { "--with-agent-preset": "agent", "--with-reviewer": "reviewer", "--with-ci": "ci", "--dry-run": "dryRun",
+const BOOLS = { "--with-agent-preset": "agent", "--with-reviewer": "reviewer", "--with-ci": "ci", "--with-local-models": "localModels", "--dry-run": "dryRun",
   "--uninstall": "uninstall", "--force": "force", "--purge": "purge" };
 
 export function main(argv) {

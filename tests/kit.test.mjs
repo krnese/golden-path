@@ -12,6 +12,7 @@ import path from "node:path";
 import { after, before, beforeEach, afterEach, describe, test } from "node:test";
 import { fileURLToPath } from "node:url";
 import * as gate from "../plugin/scripts/gate.mjs";
+import { plannedFiles } from "../plugin/install.mjs";
 
 const REPO = path.dirname(path.dirname(fileURLToPath(import.meta.url)));
 const KIT = path.join(REPO, "plugin");
@@ -89,6 +90,18 @@ describe("plugin format", () => {
     assert.equal(fm.name, "golden-path");
     assert.ok(fm.description);
     assert.ok(fs.existsSync(path.join(KIT, "skills/golden-path/references/METHOD.md")));
+  });
+  test("local-model skill: separate, named like its dir, recommends only, labelled references", () => {
+    const dir = path.join(KIT, "optional/skills/golden-path-local-models");
+    const fm = frontmatter(path.join(dir, "SKILL.md"));
+    assert.equal(fm.name, "golden-path-local-models");
+    const body = rd(dir, "SKILL.md");
+    assert.match(body, /No automatic cloud fallback/);
+    assert.match(body, /cannot switch the model in a running conversation/);
+    assert.match(body, /no router/i);
+    assert.match(rd(dir, "references/windows.md"), /API-verified, client verification pending/);
+    assert.match(rd(dir, "references/macos.md"), /not yet verified/);
+    assert.doesNotMatch(rd(KIT, "skills/golden-path/SKILL.md") + rd(KIT, "skills/golden-path/references/METHOD.md"), /local-models/);
   });
   test("agents are optional presets; reviewer is read-only", () => {
     assert.ok(!fs.existsSync(path.join(KIT, "com.github.copilot", "agents")));
@@ -252,6 +265,18 @@ describe("installer", () => {
     const b = tree(d);
     assert.equal(install(d).status, 2);
     assert.deepEqual(tree(d), b);
+  });
+  test("local-model skill is optional: core installs exclude it unless chosen", () => {
+    for (const lvl of ["1", "2", "3"]) assert.ok(!Object.keys(plannedFiles({ level: Number(lvl) })).some((f) => f.includes("local-models")), lvl);
+    install(d, "--check", CHECK);
+    assert.ok(!Object.keys(tree(d)).some((f) => f.includes("local-models")));
+    assert.ok(!/local.model/i.test(rd(d, ".github/skills/golden-path/SKILL.md") + rd(d, ".github/copilot-instructions.md")));
+    assert.equal(install(d, "--with-local-models").status, 0);
+    const t = tree(d);
+    for (const f of ["SKILL.md", "references/windows.md", "references/macos.md"]) assert.ok(`.github/skills/golden-path-local-models/${f}` in t, f);
+    assert.match(install(d).stdout, /nothing changed/);
+    assert.equal(install(d, "--uninstall").status, 0);
+    assert.ok(!fs.existsSync(path.join(d, ".github/skills/golden-path-local-models")));
   });
   test("reinstall preserves optional components", () => {
     install(d, "--check", CHECK, "--with-reviewer");
