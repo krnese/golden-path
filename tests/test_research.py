@@ -66,8 +66,8 @@ class LearnTests(unittest.TestCase):
 
 
 class DemoEndToEndTests(unittest.TestCase):
-    """Level 2 demo plus the scripted refusal scenario, then level 3 research tools with the RIGGED
-    simulator. Proves plumbing and measurement only, never an effect."""
+    """Level 3 research tools on the demo repo with the RIGGED simulator. Proves plumbing and
+    measurement only, never an effect. (Level 2 demo behaviour is tested in tests/kit.test.mjs.)"""
 
     @classmethod
     def setUpClass(cls):
@@ -83,40 +83,8 @@ class DemoEndToEndTests(unittest.TestCase):
         git(cls.d, "worktree", "prune")
         rm(cls.base)
 
-    def gate(self, *a):
-        return sh([sys.executable, os.path.join(self.d, ".github/hooks/golden-path/gate.py"), *a], self.d)
-
     def research(self, *a):
         return sh(CLI + list(a), self.d)
-
-    def test_1_baseline(self):
-        self.assertIn("frozen tasks and acceptance examples verified", self.make_out)
-        py = sorted(os.path.relpath(os.path.join(dp, f), self.d) for dp, _, fs in os.walk(self.d)
-                    if ".git" not in dp.split(os.sep) for f in fs if f.endswith(".py"))
-        self.assertEqual(py, [".github/hooks/golden-path/gate.py", "acceptance/test_acceptance.py", "invoice.py",
-                              "simulator/refusal_scenario.py", "tests/test_invoice.py"])
-        r = self.gate("check")  # T01 acceptance is enabled but not implemented yet: honestly red
-        self.assertNotEqual(r.returncode, 0)
-        res = {x["name"]: x["ok"] for x in json.loads(r.stdout)["results"]}
-        self.assertEqual(res, {"check": True, "acceptance": False, "test-integrity": True, "acceptance-integrity": True})
-        for t in ("T01", "T02", "T03", "T04"):
-            self.assertNotEqual(sh(f"python3 -m unittest acceptance.test_acceptance.{t}", self.d).returncode, 0, t)
-        cfg = json.load(open(os.path.join(self.d, ".golden-path/config.json")))
-        self.assertEqual(cfg["acceptance"]["paths"], ["acceptance/**"])
-        self.assertFalse(cfg["research"]["enabled"])
-        self.assertFalse(os.path.exists(os.path.join(self.d, ".github/agents/golden-path.agent.md")))
-        self.assertNotEqual(self.research("summary").returncode, 0)  # research is opt-in
-
-    def test_2_refusal_scenario(self):
-        env = dict(os.environ, GOLDEN_PATH_SESSION="refusal-1")
-        r = subprocess.run([sys.executable, "simulator/refusal_scenario.py"], cwd=self.d, env=env,
-                           capture_output=True, text=True)
-        self.assertEqual(r.returncode, 0, r.stdout + r.stderr)
-        self.assertIn("RESULT: as expected", r.stdout)
-        ev = [x["event"] for x in ledger(self.d) if x.get("session") == "refusal-1"]
-        self.assertEqual(ev.count("guard_deny"), 2)
-        self.assertIn("acceptance_change_attempt", ev)
-        self.assertEqual(sh("git status --porcelain acceptance", self.d).stdout.strip(), "")
 
     def test_3_research_gp_vs_plain_and_lessons(self):
         p = os.path.join(self.d, ".golden-path/config.json")
@@ -150,6 +118,18 @@ class DemoEndToEndTests(unittest.TestCase):
         self.assertEqual(ab["primary_golden_path_vs_plain"]["acceptance_rate_delta"], 1)
         self.assertEqual(ab["secondary_lessons"]["lessons-off"]["iterations_saved"], 1)
         self.assertIn("PASSED", s["ledger"]["outcomes"])
+        self.assertTrue(all(len(x["baseline_sha"]) == 40 for x in rows))
+
+    def test_4_scoring_uses_the_fixed_baseline_not_the_subject_head(self):
+        # a "subject" that rewrites the acceptance test to match a buggy result and COMMITS it
+        cheat = ("sed -i 's/90[.]00/100.00/' acceptance/test_acceptance.py && "
+                 "git -c user.name=s -c user.email=s@s commit -qam cheat")
+        r = self.research("ab", "--tasks", "T01", "--arms", "plain", "--agent-cmd", cheat)
+        self.assertEqual(r.returncode, 0, r.stderr)
+        row = json.loads(r.stdout)[0]
+        self.assertNotEqual(row["baseline_sha"], row["subject_head_sha"], "precondition: the subject committed")
+        self.assertTrue(row["acceptance_tests_changed"])
+        self.assertFalse(row["accepted"])  # scored with the expert's tests from the baseline commit
 
 
 class LedgerReportTests(unittest.TestCase):
@@ -166,9 +146,10 @@ class LedgerReportTests(unittest.TestCase):
             r = sh(CLI + ["summary", "--json"], d)
             s = json.loads(r.stdout)["ledger"]
             self.assertEqual(s["outcomes"], {"PASSED": 0, "FAILED": 1, "RED": 0, "UNVERIFIED": 1})
-            self.assertEqual(s["failed_sessions"][0]["escalated_to"], "Finance: Ingrid")
+            self.assertEqual(s["failed_sessions"][0]["requires_owner_review"], "Finance: Ingrid")
             text = sh(CLI + ["summary"], d).stdout
-            self.assertIn("FAILED (escalated) 1", text)
+            self.assertIn("FAILED (requires owner review) 1", text)
+            self.assertNotIn("escalat", text.lower())
             self.assertIn("UNVERIFIED (no gate record) 1", text)
         finally:
             rm(d)

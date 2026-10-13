@@ -8,7 +8,7 @@ import tempfile
 REPO = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 KIT = os.path.join(REPO, "plugin")
 SCRIPTS = os.path.join(KIT, "scripts")
-INSTALL = os.path.join(KIT, "install.py")
+NODE = os.environ.get("NODE", "node")  # the kit's hook script is Node.js (>= 22)
 
 
 def sh(cmd, cwd, **kw):
@@ -39,13 +39,13 @@ def write_config(d, **cfg):
         json.dump(cfg, f)
 
 
-GATE = os.path.join(SCRIPTS, "gate.py")
+GATE = os.path.join(SCRIPTS, "gate.mjs")
 CMD = {"gate.py": ["stop"], "session_start.py": ["start"], "guard.py": ["guard"], "reviewer_usage.py": ["subagent", "start"]}
 
 
 def hook(d, script, payload, env=None):
     """Run the one hook script with the subcommand for this hook (names kept readable in tests)."""
-    p = subprocess.run([sys.executable, GATE, *CMD.get(script, script.split())], input=json.dumps(payload),
+    p = subprocess.run([NODE, GATE, *CMD.get(script, script.split())], input=json.dumps(payload),
                        capture_output=True, text=True, cwd=d, env=dict(os.environ, **(env or {})))
     assert p.returncode == 0, p.stderr
     return json.loads(p.stdout or "{}")

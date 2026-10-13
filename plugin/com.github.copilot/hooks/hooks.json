@@ -4,24 +4,24 @@
     "sessionStart": [
       {
         "type": "command",
-        "bash": "python3 \"${PLUGIN_ROOT}/scripts/gate.py\" start",
-        "powershell": "python \"${PLUGIN_ROOT}/scripts/gate.py\" start",
+        "bash": "node \"${PLUGIN_ROOT}/scripts/gate.mjs\" start",
+        "powershell": "node \"${PLUGIN_ROOT}/scripts/gate.mjs\" start",
         "timeoutSec": 15
       }
     ],
     "preToolUse": [
       {
         "type": "command",
-        "bash": "python3 \"${PLUGIN_ROOT}/scripts/gate.py\" guard",
-        "powershell": "python \"${PLUGIN_ROOT}/scripts/gate.py\" guard",
+        "bash": "node \"${PLUGIN_ROOT}/scripts/gate.mjs\" guard",
+        "powershell": "node \"${PLUGIN_ROOT}/scripts/gate.mjs\" guard",
         "timeoutSec": 10
       }
     ],
     "agentStop": [
       {
         "type": "command",
-        "bash": "python3 \"${PLUGIN_ROOT}/scripts/gate.py\" stop",
-        "powershell": "python \"${PLUGIN_ROOT}/scripts/gate.py\" stop",
+        "bash": "node \"${PLUGIN_ROOT}/scripts/gate.mjs\" stop",
+        "powershell": "node \"${PLUGIN_ROOT}/scripts/gate.mjs\" stop",
         "timeoutSec": 120
       }
     ],
@@ -29,16 +29,16 @@
       {
         "type": "command",
         "matcher": "golden-path-reviewer",
-        "bash": "python3 \"${PLUGIN_ROOT}/scripts/gate.py\" subagent start",
-        "powershell": "python \"${PLUGIN_ROOT}/scripts/gate.py\" subagent start",
+        "bash": "node \"${PLUGIN_ROOT}/scripts/gate.mjs\" subagent start",
+        "powershell": "node \"${PLUGIN_ROOT}/scripts/gate.mjs\" subagent start",
         "timeoutSec": 10
       }
     ],
     "subagentStop": [
       {
         "type": "command",
-        "bash": "python3 \"${PLUGIN_ROOT}/scripts/gate.py\" subagent stop",
-        "powershell": "python \"${PLUGIN_ROOT}/scripts/gate.py\" subagent stop",
+        "bash": "node \"${PLUGIN_ROOT}/scripts/gate.mjs\" subagent stop",
+        "powershell": "node \"${PLUGIN_ROOT}/scripts/gate.mjs\" subagent stop",
         "timeoutSec": 10
       }
     ]

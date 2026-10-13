@@ -1,7 +1,7 @@
 ---
-description: 'Run a task on the Golden Path (skill; stop gate at level 2).'
+description: 'Run a task on the Golden Path (golden-path skill).'
 ---
 
 Use the golden-path skill for this task: ${input:task:Describe the task or give a task file path}
 
-Prove with the repository checks (at level 2 the stop gate blocks while they are red). Do not weaken tests or change protected acceptance tests.
+Prove the result with the repository's checks. Do not weaken tests, and do not change acceptance tests owned by the business-context expert.

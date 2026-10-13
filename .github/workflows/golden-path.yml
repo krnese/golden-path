@@ -37,10 +37,35 @@ jobs:
             git show --format= --check HEAD
           fi
 
-  # Golden Path v3 kit: the one hook script, installer levels (scratch repos incl. conflicts),
-  # plugin format, protected acceptance tests, the scripted refusal scenario, and research tools
-  # (rigged simulator; plumbing only, not evidence).
+  # Golden Path v3.1 kit: the one Node.js hook script and installer (node --test, built-ins only),
+  # on the supported LTS lines and on Windows (CRLF, PowerShell path); research tools in Python.
   kit-tests:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+        node: ["22", "24"]
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 15
+    steps:
+      - name: Check out source
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          persist-credentials: false
+      - name: Set up Node.js
+        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: ${{ matrix.node }}
+      - name: Kit tests (node --test)
+        shell: bash
+        run: node --test tests/kit.test.mjs
+      - name: Demo smoke (adopter install, frozen hashes, scripted refusal scenario)
+        if: runner.os == 'Linux'
+        run: |
+          bash examples/make-demo.sh "$RUNNER_TEMP/golden-path-demo"
+          cd "$RUNNER_TEMP/golden-path-demo" && node simulator/refusal_scenario.mjs
+
+  research-tests:
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
@@ -48,9 +73,9 @@ jobs:
         uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
         with:
           persist-credentials: false
-      - name: Unit and integration tests (python3 stdlib only)
+      - name: Set up Node.js (the demo's hook script)
+        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: "22"
+      - name: Research tool tests (python3 stdlib only; rigged simulator, plumbing only)
         run: python3 -m unittest discover -s tests -t tests -v
-      - name: Demo smoke (adopter install, frozen hashes, scripted refusal scenario)
-        run: |
-          bash examples/make-demo.sh "$RUNNER_TEMP/golden-path-demo"
-          cd "$RUNNER_TEMP/golden-path-demo" && python3 simulator/refusal_scenario.py

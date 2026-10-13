@@ -1,5 +1,8 @@
 # Results: continuity mechanism untested; skill pilot inconclusive
 
+> **Correction (13 Oct 2026):** the "existing test file edited" guard below misclassified legitimate test
+> additions. Under the corrected rule no subject tampered with tests. See [CORRECTION.md](CORRECTION.md).
+
 **Recommendation: REVISE the continuity claim and the next experiment.**
 Do not claim that the current Golden Path direction has demonstrated durable
 engineering continuity. Do not introduce a mandatory contract on this evidence.
