@@ -3,7 +3,7 @@
 **A better way of working with the agents you already have, not another system.**
 
 The business-context expert owns two things: the **intent**, and the **acceptance** of the result.
-The agent and the existing harness (Copilot, its hooks, your CI) do the execution.
+The agent and the controls you already use (Copilot, your CI, branch protection, review) do the rest.
 
 | Step | Business-context expert | Agent (+ developer) |
 |---|---|---|
@@ -13,9 +13,8 @@ The agent and the existing harness (Copilot, its hooks, your CI) do the executio
 | Acceptance | Writes business examples; approves the executable tests made from them | Makes them pass **without changing them** |
 | Report | Decides on delegation changes | Reports evidence, unknowns and any delegation change |
 
-**Protected acceptance tests.** The examples become tests under paths listed in
-`.golden-path/config.json` (`acceptance.paths`). The agent cannot edit them (preToolUse guard), and the stop
-gate fails if any of them changed versus the session's base commit. Changing one is a decision for the owner.
+**Acceptance tests owned by the expert.** The examples become executable tests that the expert reviews.
+The agent reads and runs them but does not change them. Changing one is a decision for the owner.
 This follows external evidence that agents with write access to tests will sometimes modify or game them
 (ImpossibleBench, ICLR 2026), and that read-only or hidden tests reduce that.
 
@@ -26,5 +25,5 @@ already-permitted work.
 
 **Evidence status.** The repository's own experiments (archive/research) did not show that method guidance
 improves agent behaviour on the tested synthetic cases (NO CHANGE, ceiling effects, small n). This version
-therefore keeps guidance minimal and relies on enforcement of what the expert owns. Its incremental value is
+therefore keeps guidance minimal and concentrates on what the expert owns. Its incremental value is
 still unproved.

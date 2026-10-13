@@ -1,6 +1,9 @@
-# Installed by golden-path (opt-in --with-ci). Runs the same check the stop gate runs.
+# Installed by golden-path (opt-in --with-ci). Runs the same checks the stop gate runs, against a FIXED
+# comparison commit (the PR base), never the branch's own HEAD. This is feedback, not the boundary:
+# make it a required status check with branch protection and keep human review.
 name: golden-path-check
-on: [pull_request, workflow_dispatch]
+on:
+  pull_request:
 permissions:
   contents: read
 jobs:
@@ -12,6 +15,8 @@ jobs:
         with:
           fetch-depth: 0
           persist-credentials: false
-      # Uses the runner's preinstalled python3 (stdlib only); add your own setup step if needed.
-      - name: Golden Path check (configured command + test integrity vs base)
-        run: python3 .github/hooks/golden-path/gate.py check
+      # Uses the runner's preinstalled Node.js (>= 22 required); add actions/setup-node if your runner differs.
+      - name: Golden Path check (configured commands + integrity vs the PR base commit)
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+        run: node .github/hooks/golden-path/gate.mjs check --base "$BASE_SHA"

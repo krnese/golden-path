@@ -1,8 +1,8 @@
 {
   "$schema": "https://agent-plugins.org/schemas/1.0.0/plugin.schema.json",
   "name": "golden-path",
-  "version": "3.0.0-preview.1",
-  "description": "Golden Path: a better way of working with the Copilot agents you already have, not another system. The business-context expert owns intent and protected acceptance tests; hooks keep the agent from editing them or stopping on red checks.",
+  "version": "3.1.0-preview.1",
+  "description": "Golden Path: help people express business intent as reviewable engineering acceptance, then connect it to the controls they already use. Level 1 is a skill (no runtime); level 2 adds one Node.js 22+ hook script for fast feedback. Branch protection and review remain the durable boundary.",
   "repository": "https://github.com/krnese/golden-path",
   "keywords": [
     "golden-path",
