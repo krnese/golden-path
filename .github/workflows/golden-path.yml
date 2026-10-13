@@ -11,6 +11,7 @@ permissions:
 jobs:
   # Required by existing branch protection; this is only a whitespace check.
   validate:
+    name: "Patch hygiene: no whitespace errors"
     runs-on: ubuntu-latest
     timeout-minutes: 5
     steps:
@@ -19,7 +20,7 @@ jobs:
         with:
           fetch-depth: 0
           persist-credentials: false
-      - name: Check patch whitespace only
+      - name: No whitespace errors in the patch (git diff --check)
         env:
           BASE_SHA: ${{ github.event.pull_request.base.sha || github.event.before }}
         shell: bash
@@ -40,6 +41,7 @@ jobs:
   # Golden Path v3.1 kit: the one Node.js hook script and installer (node --test, built-ins only),
   # on the supported LTS lines and on Windows (CRLF, PowerShell path). The demo app itself is Python (Linux only).
   kit-tests:
+    name: "Kit guarantees (${{ matrix.os }}, Node ${{ matrix.node }})"
     strategy:
       fail-fast: false
       matrix:
@@ -56,10 +58,18 @@ jobs:
         uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
           node-version: ${{ matrix.node }}
-      - name: Kit tests (node --test)
+      - name: Kit keeps its guarantees (packaging, installer, gate, tamper guard, acceptance, Code Owner, weakening, demo)
         shell: bash
-        run: node --test tests/kit.test.mjs
-      - name: Demo smoke (adopter install, frozen hashes, scripted refusal scenario)
+        run: >-
+          node --test
+          --test-reporter=spec --test-reporter-destination=stdout
+          --test-reporter=tap --test-reporter-destination="$RUNNER_TEMP/kit.tap"
+          tests/kit.test.mjs
+      - name: Summarise which guarantees passed
+        if: always()
+        shell: bash
+        run: node .github/scripts/test-summary.mjs "$RUNNER_TEMP/kit.tap" "Kit guarantees (${{ matrix.os }}, Node ${{ matrix.node }})"
+      - name: "Demo works for an adopter: install, frozen hashes, scripted refusal scenario"
         if: runner.os == 'Linux'
         run: |
           bash examples/make-demo.sh "$RUNNER_TEMP/golden-path-demo"
