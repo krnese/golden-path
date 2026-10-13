@@ -14,7 +14,7 @@ cd "$target"
 git init -q
 git add -A
 git -c user.name=demo -c user.email=demo@local commit -qm "Invoice demo baseline (acceptance examples by Finance)"
-python3 "$kit/install.py" --target . \
+node "$kit/install.mjs" --target . \
   --check "python3 -m unittest discover -s tests" \
   --acceptance-path "acceptance/**" \
   --acceptance-owner "Finance: Ingrid Berg" \
