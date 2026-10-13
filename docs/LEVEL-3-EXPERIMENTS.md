@@ -3,6 +3,7 @@
 Level 3 has no code. If you want to know whether Golden Path helps on your work, run a matched experiment with the tools you already have. The retired Python runner is in [archive/research-runner](../archive/research-runner/README.md); revive it only for a specific, approved experiment.
 
 ## A matched experiment
+
 1. **Question and decision first.** Write down what you'll decide from the result ("adopt L2 for team X if …") and the primary comparison: Golden Path vs your plain agent setup.
 2. **Fixed tasks and fixed baseline.** Pick real tasks with acceptance tests the agent can't edit. For each task, record the baseline commit SHA **before** the subject runs. Score against that SHA, never the subject's final HEAD.
 3. **Matched arms.** Same model, client version, task text, time limit and repository state. Only the arm changes. Alternate or randomize the order, and repeat each task at least 3 times per arm.

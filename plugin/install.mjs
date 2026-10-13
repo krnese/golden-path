@@ -2,7 +2,7 @@
 // Install / uninstall the Golden Path kit into an adopter repository (copy-in mode).
 // Plain JavaScript, Node.js built-ins only, Node >= 22. Level 1 needs no runtime at all once copied.
 //
-// Levels (no level requires a higher one; copying the files by hand is equally supported, see README):
+// Levels (no level requires a higher one; copying the files by hand is equally supported, see docs/LEVEL-2.md):
 //   --level 1  Method: skill + references + an instructions block. Zero code, no config, nothing enforced.
 //   --level 2  Checked completion (default): level 1 + ONE hook script (gate.mjs) + hook JSON + config.
 //              Protected acceptance tests are optional config (--acceptance-path ...).
