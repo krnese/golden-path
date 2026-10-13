@@ -6,7 +6,7 @@
 # authorisation. Before honouring it, this workflow verifies, via the GitHub API, an APPROVED review on the
 # CURRENT head commit by a Code Owner (CODEOWNERS read from the BASE commit) of every changed acceptance file.
 # Otherwise it fails. The acceptance-integrity result is then reported as SKIPPED, never as a pass.
-# Required repository settings (see README "Changing acceptance tests on purpose"):
+# Required repository settings (see docs/LEVEL-2.md "Changing acceptance tests on purpose"):
 #   CODEOWNERS covering the acceptance paths; branch protection with "Require review from Code Owners",
 #   "Dismiss stale pull request approvals when new commits are pushed", and this check as required.
 name: golden-path-check
