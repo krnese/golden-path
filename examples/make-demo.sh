@@ -19,7 +19,7 @@ node "$kit/install.mjs" --target . \
   --acceptance-path "acceptance/**" \
   --acceptance-owner "Finance: Ingrid Berg" \
   --acceptance-command "python3 -m unittest acceptance.test_acceptance.T01" \
-  --test-file-command "python3 -m unittest {file}" "$@"
+  "$@"
 git add -A
 git -c user.name=demo -c user.email=demo@local commit -qm "Install Golden Path kit"
 sha256sum -c --quiet FREEZE.sha256 && echo "frozen tasks and acceptance examples verified"

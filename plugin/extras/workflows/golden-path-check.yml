@@ -1,11 +1,23 @@
 # Installed by golden-path (opt-in --with-ci). Runs the same checks the stop gate runs, against a FIXED
 # comparison commit (the PR base), never the branch's own HEAD. This is feedback, not the boundary:
 # make it a required status check with branch protection and keep human review.
+#
+# Authorised acceptance revision. The label "golden-path:acceptance-revision" only SELECTS this path; it is not
+# authorisation. Before honouring it, this workflow verifies, via the GitHub API, an APPROVED review on the
+# CURRENT head commit by a Code Owner (CODEOWNERS read from the BASE commit) of every changed acceptance file.
+# Otherwise it fails. The acceptance-integrity result is then reported as SKIPPED, never as a pass.
+# Required repository settings (see README "Changing acceptance tests on purpose"):
+#   CODEOWNERS covering the acceptance paths; branch protection with "Require review from Code Owners",
+#   "Dismiss stale pull request approvals when new commits are pushed", and this check as required.
 name: golden-path-check
 on:
   pull_request:
+    types: [opened, synchronize, reopened, labeled, unlabeled]
+  pull_request_review:
+    types: [submitted, dismissed]
 permissions:
   contents: read
+  pull-requests: read
 jobs:
   golden-path-check:
     runs-on: ubuntu-latest
@@ -18,5 +30,18 @@ jobs:
       # Uses the runner's preinstalled Node.js (>= 22 required); add actions/setup-node if your runner differs.
       - name: Golden Path check (configured commands + integrity vs the PR base commit)
         env:
+          GH_TOKEN: ${{ github.token }}
+          REPO: ${{ github.repository }}
+          PR: ${{ github.event.pull_request.number }}
           BASE_SHA: ${{ github.event.pull_request.base.sha }}
-        run: node .github/hooks/golden-path/gate.mjs check --base "$BASE_SHA"
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+          REVISION: ${{ contains(github.event.pull_request.labels.*.name, 'golden-path:acceptance-revision') }}
+        run: |
+          gate=.github/hooks/golden-path/gate.mjs
+          if [ "$REVISION" = "true" ]; then
+            gh api --paginate "repos/$REPO/pulls/$PR/reviews?per_page=100" --jq '.[]' > "$RUNNER_TEMP/reviews.jsonl"
+            node "$gate" authorize-acceptance-revision --base "$BASE_SHA" --head "$HEAD_SHA" --reviews "$RUNNER_TEMP/reviews.jsonl"
+            node "$gate" check --base "$BASE_SHA" --authorized-acceptance-revision
+          else
+            node "$gate" check --base "$BASE_SHA"
+          fi

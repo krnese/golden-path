@@ -6,8 +6,7 @@
 //   --level 1  Method: skill + references + an instructions block. Zero code, no config, nothing enforced.
 //   --level 2  Checked completion (default): level 1 + ONE hook script (gate.mjs) + hook JSON + config.
 //              Protected acceptance tests are optional config (--acceptance-path ...).
-//   --level 3  Learning and measurement: level 2 with research.enabled true. The research tools stay in
-//              the kit checkout (research/, Python) and are never copied into the adopter repo.
+//   Level 3 (learning and measurement) is documentation only: docs/LEVEL-3-EXPERIMENTS.md. Nothing to install.
 //
 // Idempotent and conflict-refusing: only golden-path-namespaced files are written; copilot-instructions.md,
 // AGENTS.md and .gitignore get a marked block; .golden-path/config.json is created once and never
@@ -99,15 +98,16 @@ const write = (p, s) => { fs.mkdirSync(path.dirname(p), { recursive: true }); fs
 const LEVEL_NOTE = {
   1: "Level 1 (method): the skill and instructions are in place. Nothing is enforced or checked automatically.",
   2: "Level 2 (checked completion): a stop gate runs your configured checks when the agent finishes. It is fast feedback; keep branch protection and review as the boundary.",
-  3: "Level 3: level 2 plus research.enabled. Run the research tools from the kit checkout (research/).",
 };
 
 export function install(target, o = {}) {
   const manPath = path.join(target, MANIFEST);
   const manifest = exists(manPath) ? JSON.parse(read(manPath)) : { files: {} };
-  const level = Number(o.level || manifest.level || 2);
-  if (level < (manifest.level || 0)) {
-    console.log(`REFUSING: installed at level ${manifest.level}; uninstall first to go down to level ${level}`);
+  // Installs made by older versions at level 3 are level 2 installs (level 3 is now docs only).
+  const prev = Math.min(manifest.level || 0, 2);
+  const level = Number(o.level || prev || 2);
+  if (level < prev) {
+    console.log(`REFUSING: installed at level ${prev}; uninstall first to go down to level ${level}`);
     return 2;
   }
   const has = (rel) => rel in manifest.files;
@@ -148,8 +148,7 @@ export function install(target, o = {}) {
   if (level >= 2 && !exists(cfgPath)) {
     write(cfgPath, JSON.stringify({ check: o.check,
       acceptance: { paths: o.acceptancePaths || [], owner: o.acceptanceOwner || "the acceptance owner", command: o.acceptanceCommand || null },
-      protected: ["tests/**"], max_blocks: 5, hook_budget_sec: 100,
-      research: { enabled: level >= 3 }, test_file_command: o.testFileCommand || null, learned_tests_dir: "tests/learned" }, null, 2) + "\n");
+      protected: ["tests/**"], max_blocks: 5, hook_budget_sec: 100 }, null, 2) + "\n");
   }
   manifest.version = VERSION;
   manifest.level = level;
@@ -187,7 +186,7 @@ export function uninstall(target, force = false, purge = false) {
   return 0;
 }
 
-const FLAGS = { "--target": "target", "--level": "level", "--check": "check", "--test-file-command": "testFileCommand",
+const FLAGS = { "--target": "target", "--level": "level", "--check": "check",
   "--acceptance-owner": "acceptanceOwner", "--acceptance-command": "acceptanceCommand" };
 const BOOLS = { "--with-agent-preset": "agent", "--with-reviewer": "reviewer", "--with-ci": "ci", "--with-local-models": "localModels", "--dry-run": "dryRun",
   "--uninstall": "uninstall", "--force": "force", "--purge": "purge" };
@@ -203,7 +202,8 @@ export function main(argv) {
     else { console.error(`unknown argument: ${a}`); return 64; }
   }
   if (!o.target) { console.error("--target is required"); return 64; }
-  if (o.level && !["1", "2", "3"].includes(String(o.level))) { console.error("--level must be 1, 2 or 3"); return 64; }
+  if (String(o.level) === "3") { console.error("Level 3 is documentation only (docs/LEVEL-3-EXPERIMENTS.md); install level 2 and follow that doc."); return 64; }
+  if (o.level && !["1", "2"].includes(String(o.level))) { console.error("--level must be 1 or 2"); return 64; }
   const t = path.resolve(o.target);
   return o.uninstall ? uninstall(t, o.force, o.purge) : install(t, o);
 }
