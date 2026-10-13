@@ -6,6 +6,50 @@ reviewable engineering acceptance, then connect it to the controls they already 
 > **Core principle:** the expert and engineer decide what needs to be true; automation checks the parts
 > they have made executable.
 
+## What this means in practice
+
+Each part of the pitch maps to something concrete in the kit:
+
+- **"The agents you already have."** There is no new runtime or agent. One installer
+  (`plugin/install.mjs`) adds the `golden-path` skill under `.github/skills/` and, at L2, one optional hook
+  under `.github/hooks/` (Node.js script, no npm packages).
+- **"Express business intent."** The domain expert writes the rule in plain language, as business
+  examples. In the invoice demo, the fictional finance owner's
+  [T01 examples](examples/invoice-demo/acceptance/EXAMPLES.md#t01-percentage-discount-per-line) define a
+  per-line percentage discount; the task [`tasks/T01.md`](examples/invoice-demo/tasks/T01.md) points the
+  agent at them and says not to change them.
+- **"Reviewable engineering acceptance."** The examples become acceptance tests the expert owns. With a
+  CODEOWNERS entry for the acceptance paths and branch protection requiring Code Owner review, a change to
+  those tests needs an approval from their Code Owner on the PR's current head commit
+  ([docs/LEVEL-2.md](docs/LEVEL-2.md)).
+- **"The controls they already use."** The L2 hook is fast feedback inside the agent session only. The
+  binding boundary is your branch protection, Code Owner review and required CI checks. Golden Path adds
+  no new gate; it connects the expert's acceptance to those existing controls.
+
+**Limit:** the tests prove the business rule only as far as the expert wrote it down. Cases the examples
+don't cover are not checked.
+
+## Works with your default agent
+
+You don't need to select a special agent in Copilot; the default agent picks Golden Path up from files in
+the repository:
+
+- **Method:** the skill lives in `.github/skills/golden-path/`, and the installer adds a marked pointer to it
+  in `.github/copilot-instructions.md` (and `AGENTS.md` if present). VS Code discovers skills in
+  `.github/skills/` and includes these instruction files automatically
+  ([skills](https://code.visualstudio.com/docs/copilot/customization/agent-skills),
+  [custom instructions](https://code.visualstudio.com/docs/copilot/customization/custom-instructions)).
+  Discovery makes the skill available; it does not guarantee the model uses it on every prompt.
+- **L2 hook:** it is a workspace hook file, `.github/hooks/golden-path-loop.json`. VS Code loads
+  `.github/hooks/*.json` for the workspace, not per agent, so it runs whichever agent is selected in a local
+  agent session ([hooks](https://code.visualstudio.com/docs/copilot/customization/hooks)). Hooks are a
+  **preview** feature in VS Code.
+- **Custom agent:** `golden-path.agent.md` (`--with-agent-preset`) is an optional preset for teams that
+  want a named agent that always applies the skill. Nothing depends on it.
+
+Today this depends on files committed to your repository. A plugin distribution that does not need
+repository files is being explored.
+
 Golden Path is for two people working together: a **business-context expert** (product owner, finance,
 operations…) who owns the intent and the acceptance examples, and a **developer** who turns them into
 tests and ships the change with whatever coding agent they already use. It adds one skill, and optionally
