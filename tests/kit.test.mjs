@@ -429,7 +429,8 @@ describe("Gate & time budget", () => {
         for (const x of tr) {
           assert.notEqual(x.deadline, null, `${x.cmd} ran without a deadline`);
           assert.ok(x.t < x.deadline, `${x.cmd} started ${x.t - x.deadline} ms after the deadline`);
-          assert.ok(x.t + x.timeout <= x.deadline, `${x.cmd} timeout ${x.timeout} ms reaches past the deadline`);
+          // 50 ms slack: the trace timestamp is taken just after gate.mjs computes timeout = deadline - now.
+          assert.ok(x.t + x.timeout <= x.deadline + 50, `${x.cmd} timeout ${x.timeout} ms reaches past the deadline`);
         }
         assert.ok(!ledger(d).some((r) => r.event === "acceptance_change_attempt"), "unverified is not a change attempt");
         const rec = ledger(d).at(-1);
