@@ -293,7 +293,7 @@ describe("installer", () => {
   test("CI template compares against the fixed PR base commit", () => {
     const y = rd(KIT, "extras/workflows/golden-path-check.yml");
     assert.match(y, /gate=\.github\/hooks\/golden-path\/gate\.mjs/);
-    assert.match(y, /"\$gate" check --base "\$BASE_SHA"\n/);
+    assert.match(y, /"\$gate" check --base "\$BASE_SHA"\r?\n/);
     assert.match(y, /BASE_SHA: \$\{\{ github\.event\.pull_request\.base\.sha \}\}/);
   });
 });
