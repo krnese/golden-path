@@ -56,6 +56,15 @@ No level requires a higher one. Level 1 needs no runtime at all. Level 2 needs N
 - 22 also has a stable `node --test` runner and `String.prototype.replaceAll`, which the tests and installer use.
 - No TypeScript and no build step: what you review is what runs.
 
+### Optional: local models (decision guide)
+If someone wants the agent to run on a local model (for privacy, offline work, cost or experimentation), install the separate `golden-path-local-models` skill with `node plugin/install.mjs --target <repo> --level 1 --with-local-models`. It works at any level and is never part of the core method or the plugin's default skills.
+- It detects the OS, hardware, memory, runtime, client and motive.
+- It points to setup notes for Foundry Local with the VS Code Custom Endpoint. Windows is API-verified with client verification pending; macOS is not yet verified.
+- It verifies an endpoint before use: localhost binding, streaming, tool calling and a client chat test.
+- It recommends local, hosted, narrow-or-stop (no automatic cloud fallback) or deterministic tools.
+
+It only recommends. The host selects and runs the model, repo instructions can't switch models mid-conversation, and there is no router. Level 2 checks run the same regardless of model.
+
 ## What level 2 does, exactly
 - **It checks completion against your configured tests. It does not check customer acceptance.** When the agent tries to stop (`agentStop`), `gate.mjs` runs the following and blocks with the failures while any of them is red:
   - your `check` command;
