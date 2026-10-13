@@ -12,6 +12,10 @@ This skill is separate from the core `golden-path` skill and is not part of the 
 - There is no router in this kit.
 - Level 2 checks run the same regardless of which model did the work.
 
+**Privacy warning.** Local inference does not mean local-only handling.
+- If a cloud-hosted agent or session delegates work to a local model, the cloud side may already have received the context: prompt, files and tool results.
+- Local-only handling holds only when the **whole** session runs on the local model, with no hosted features such as embeddings, semantic search or cloud agents in the loop.
+
 ## 1. Detect and explain (read-only)
 Report each item and say how you know it (a command's output, or the user told you):
 - **OS** and version, **hardware** (CPU, GPU or NPU, Apple Silicon or not), **memory** (RAM, and VRAM if there is a GPU), free **disk**.
@@ -31,6 +35,8 @@ Run these and report each as pass, fail or not tested:
 3. Streaming works (`"stream": true` returns incremental chunks).
 4. Tool calling works for **this** model: a request with one tool definition returns a well-formed tool call. Set `toolCalling` in the client only if it does.
 5. A client-level chat test: pick the model in the client's picker and complete one small real task.
+
+One successful tool call proves **protocol compatibility**, not reliable autonomous tool use. A trial on a real task with its tests decides.
 
 Report the limits you saw: context size, speed, tool-call reliability, and failures. **A model being in the catalog, or supporting tools, does not mean it is reliable for engineering work.** Only these checks and the task's own tests show that.
 

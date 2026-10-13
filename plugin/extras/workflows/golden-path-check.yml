@@ -1,9 +1,15 @@
 # Installed by golden-path (opt-in --with-ci). Runs the same checks the stop gate runs, against a FIXED
 # comparison commit (the PR base), never the branch's own HEAD. This is feedback, not the boundary:
 # make it a required status check with branch protection and keep human review.
+#
+# Authorised acceptance revision: an owner-approved change to protected acceptance tests goes in a SEPARATE PR
+# labelled "golden-path:acceptance-revision". The label only skips acceptance-integrity (all other checks still
+# run). The authority is CODEOWNERS on the acceptance paths plus branch protection "Require review from Code
+# Owners", not the label. After merge, later PRs compare against the new base automatically.
 name: golden-path-check
 on:
   pull_request:
+    types: [opened, synchronize, reopened, labeled, unlabeled]
 permissions:
   contents: read
 jobs:
@@ -19,4 +25,10 @@ jobs:
       - name: Golden Path check (configured commands + integrity vs the PR base commit)
         env:
           BASE_SHA: ${{ github.event.pull_request.base.sha }}
-        run: node .github/hooks/golden-path/gate.mjs check --base "$BASE_SHA"
+          REVISION: ${{ contains(github.event.pull_request.labels.*.name, 'golden-path:acceptance-revision') }}
+        run: |
+          if [ "$REVISION" = "true" ]; then
+            node .github/hooks/golden-path/gate.mjs check --base "$BASE_SHA" --authorized-acceptance-revision
+          else
+            node .github/hooks/golden-path/gate.mjs check --base "$BASE_SHA"
+          fi

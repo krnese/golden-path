@@ -71,8 +71,9 @@ It only recommends. The host selects and runs the model, repo instructions can't
   - the optional `acceptance.command`;
   - two heuristic integrity checks.
 - **Retry limit:** after `max_blocks` (default 5, below Copilot's 8-consecutive-block override) the gate lets the agent stop. The run is then recorded as **`gave_up`, outcome FAILED, `requires_owner_review`**. It is never an implicit pass. **No review request is sent.** Surfacing it to the owner is up to your normal process, such as the required CI check failing on the PR.
-- **One time budget:** `hook_budget_sec` (default 100) covers *all* commands in one hook run, not each command. A command that would overrun is stopped, and later commands are reported "not run". Both count as red.
+- **One time budget:** `hook_budget_sec` (default 100) covers *all* work in one hook run, not each command: configured commands, integrity checks and git calls. Each git call's timeout is taken from what remains. A command that would overrun is stopped, and later commands are reported "not run". Both count as red.
 - **Timeouts fail open** (documented Copilot hook behaviour). If the hook itself exceeds its `timeoutSec` (120), the stop goes ahead and no gate record is written. The L3 summary shows such sessions as **UNVERIFIED**. A timeout kills the command's whole process tree (`taskkill /T` on Windows, the process group on POSIX).
+- **Evidence must be valid.** The base must resolve to a commit present in the clone (`git rev-parse --verify <rev>^{commit}`). An unknown revision, a shallow clone missing the base, or any git failure while reading evidence makes the run **UNVERIFIED** (red, exit 1), never PASS. In CI, use `fetch-depth: 0`.
 - **Fixed comparison commit:** integrity checks compare against the commit recorded at **session start** (`base_sha`), not the agent's eventual HEAD, so committing an edited acceptance test doesn't hide it. In CI, `gate.mjs check --base <PR base sha>` does the same. Without `--base`, the check warns that it compared with HEAD.
 - **Line endings:** CRLF and LF checkouts of the same content are treated as equal (Windows `core.autocrlf`).
 - **Protected-test checks are heuristics, not guarantees.**
@@ -80,6 +81,15 @@ It only recommends. The host selects and runs the model, repo instructions can't
   - The stop gate fails if any acceptance file differs from the session's base commit, or if a protected test lost tests or assertions or gained skip markers.
   - Determined workarounds exist: other tools, generated code, or special-casing the implementation. ImpossibleBench reports that read-only tests stop edits but not other exploits.
 - `method_files_present` (session start) records that the skill files existed and context was offered. **It does not show the agent read or followed the skill.**
+
+## Changing acceptance tests on purpose (authorised revision)
+The PR-base comparison blocks *agent* edits to protected acceptance tests. It shouldn't block the owner's legitimate changes. The path, which uses GitHub's own controls and adds no new system:
+1. The owner (or someone acting for them) changes the acceptance tests in a **separate PR** that contains only that change.
+2. **CODEOWNERS** lists the owner for the acceptance paths, and branch protection has **Require review from Code Owners** on. That approval is the authorisation.
+3. Label the PR `golden-path:acceptance-revision`. The optional `golden-path-check` workflow then runs `gate.mjs check --authorized-acceptance-revision`, which skips **only** acceptance-integrity and reports it as skipped. All other checks still run.
+4. After merge, later PRs compare against the new base automatically.
+
+The label isn't authorisation: anyone with triage rights can add one. Code Owner review is. Locally, the stop gate never skips; the agent can't revise acceptance tests.
 
 ## Honest limits
 - **Level 2 checks completion against the configured tests, not customer acceptance.**
