@@ -153,13 +153,29 @@ export function acceptanceChanges(root, patterns, base = "HEAD") {
 }
 
 const FAILED_TEST_RE = /^(?:FAIL|ERROR): (\S+)|^FAILED (?!\()(\S+)|^\s*✕ (.+)$|^--- FAIL: (\S+)|^not ok \d+ - (.+)$/gm;
+const TIMEOUT_MARK = "\u0000golden-path-timeout\u0000";
+const SUPERVISOR = `const { spawn, spawnSync } = require("node:child_process"); let s = "";
+process.stdin.on("data", (d) => (s += d)).on("end", () => {
+  const { cmd, ms } = JSON.parse(s), win = process.platform === "win32";
+  const c = spawn(cmd, { shell: true, stdio: ["ignore", "inherit", "inherit"], detached: !win, windowsHide: true });
+  const t = setTimeout(() => {
+    if (win) spawnSync("taskkill", ["/pid", String(c.pid), "/T", "/F"], { stdio: "ignore" });
+    else { try { process.kill(-c.pid, "SIGKILL"); } catch {} }
+    process.stderr.write(${JSON.stringify(" golden-path-timeout ")}); process.exit(1);
+  }, ms);
+  c.on("error", (e) => { clearTimeout(t); process.stderr.write(String(e)); process.exit(1); });
+  c.on("exit", (code) => { clearTimeout(t); process.exit(code ?? 1); });
+});`;
 function runCmd(name, cmd, root, deadline) {
   const left = deadline - Date.now();
   if (left <= 0) return { name, ok: false, output: `${name} not run: the hook time budget was used up (counted as RED)` };
-  const r = spawnSync(cmd, { shell: true, cwd: root, encoding: "utf8", timeout: left, maxBuffer: 64 << 20,
+  // Run via a small node supervisor so a timeout kills the WHOLE process tree (taskkill /T on Windows,
+  // process group on POSIX). A plain spawnSync timeout kills only the shell and leaves grandchildren running.
+  const r = spawnSync(process.execPath, ["-e", SUPERVISOR], { cwd: root, encoding: "utf8", input: JSON.stringify({ cmd, ms: left }),
+    timeout: left + 10000, maxBuffer: 64 << 20, windowsHide: true,
     env: { ...process.env, PYTHONDONTWRITEBYTECODE: "1" } }); // no stale bytecode for restored files
-  const out = `${r.stdout || ""}\n${r.stderr || ""}`;
-  if (r.error && r.error.code === "ETIMEDOUT")
+  const out = `${r.stdout || ""}\n${(r.stderr || "").replace(TIMEOUT_MARK, "")}`;
+  if ((r.error && r.error.code === "ETIMEDOUT") || (r.stderr || "").includes(TIMEOUT_MARK))
     return { name, ok: false, output: `${name} timed out: the hook time budget ran out (counted as RED)` };
   const failed = [...new Set([...out.matchAll(FAILED_TEST_RE)].map((m) => m.slice(1).find(Boolean)))].sort();
   return { name, ok: r.status === 0, failed_tests: failed, output: out.trim().split("\n").slice(-60).join("\n") };
@@ -265,7 +281,17 @@ const SHELL_TOOLS = new Set(["bash", "powershell", "Bash", "shell"]);
 const RESTORE_TO_HEAD = /^git\s+(?:checkout\s+(?:HEAD\s+)?--|restore(?:\s+--worktree)?(?:\s+--)?)(?:\s+[\w./*'"-]+)+$/;
 const DESTRUCTIVE = /\b(rm|del|rmdir|mv|move|unlink|truncate|git\s+rm|git\s+mv|git\s+checkout|git\s+stash|cp|tee|git\s+restore|sed\s+-i|perl\s+-pi)\b|Remove-Item|Set-Content|Out-File/;
 const esc = (s) => s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-const relTo = (root, p) => path.relative(root, path.resolve(root, p)).split(path.sep).join("/");
+// Canonical path: resolve symlinks and Windows 8.3 short names (RUNNER~1) via the longest existing ancestor,
+// so an absolute path spelled differently from the git root still maps to the same repo-relative path.
+function canon(p) {
+  let head = path.resolve(p); const tail = [];
+  while (true) {
+    try { return path.join(fs.realpathSync.native(head), ...tail); } catch {}
+    const up = path.dirname(head); if (up === head) return path.resolve(p);
+    tail.unshift(path.basename(head)); head = up;
+  }
+}
+const relTo = (root, p) => path.relative(canon(root), canon(path.resolve(root, p))).split(path.sep).join("/");
 const acceptanceDeny = (cfg, what) => ({ permissionDecision: "deny", permissionDecisionReason:
   `${what} is a protected acceptance test owned by ${cfg.acceptance.owner}. Agents may read and run it, never change it. ` +
   `If it looks wrong, that is a DELEGATION CHANGE: stop and report to ${cfg.acceptance.owner} ` +

@@ -59,13 +59,14 @@ function tree(d) {
   return out;
 }
 const frontmatter = (p) => {
-  const m = fs.readFileSync(p, "utf8").match(/^---\n([\s\S]*?)\n---\n/);
+  const m = fs.readFileSync(p, "utf8").replace(/\r\n/g, "\n").match(/^---\n([\s\S]*?)\n---\n/);
   assert.ok(m, p);
   return Object.fromEntries([...m[1].matchAll(/^(\w[\w-]*):\s*(.+)$/gm)].map((x) => [x[1], x[2]]));
 };
 // Portable shell commands (sh on POSIX, cmd.exe on Windows): use node itself instead of sleep/echo/exit.
 const nodeCmd = (js) => `node -e "${js}"`;
 const PASS = nodeCmd("process.exit(0)");
+// Windows CI checks out with core.autocrlf=true, so frontmatter is parsed after CRLF->LF (as VS Code does).
 const FAIL = nodeCmd("console.log('FAIL: test_x (t.T)');process.exit(1)");
 const SLEEP = (s) => nodeCmd(`setTimeout(()=>{},${s * 1000})`);
 
@@ -302,6 +303,14 @@ describe("stop gate", () => {
   test("timeout counts as red", () => {
     cfg(d, { check: SLEEP(3), hook_budget_sec: 1 });
     assert.match(stop().reason, /timed out/);
+  });
+  test("timeout kills the whole process tree (no grandchild survives)", async () => {
+    fs.writeFileSync(path.join(d, "kid.js"), 'const fs = require("fs"); setTimeout(() => fs.writeFileSync("late.txt", "x"), 1500);\n');
+    fs.writeFileSync(path.join(d, "parent.js"), 'require("child_process").spawn(process.execPath, ["kid.js"], { stdio: "inherit" }); setTimeout(() => {}, 5000);\n');
+    cfg(d, { check: "node parent.js", hook_budget_sec: 1 });
+    assert.match(stop().reason, /timed out/);
+    await new Promise((r) => setTimeout(r, 2500));
+    assert.ok(!fs.existsSync(path.join(d, "late.txt")), "grandchild outlived the hook timeout");
   });
   test("ONE time budget for the whole hook, not per command", () => {
     cfg(d, { check: SLEEP(1.2), hook_budget_sec: 2, acceptance: { command: SLEEP(1.2) } });
