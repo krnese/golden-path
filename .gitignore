@@ -3,3 +3,6 @@ node_modules/
 coverage/
 *.log
 /.vscode/settings.json
+__pycache__/
+*.pyc
+.golden-path/

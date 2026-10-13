@@ -36,3 +36,18 @@ jobs:
             echo "No event base: checking the latest commit only."
             git show --format= --check HEAD
           fi
+
+  # Golden Path v2 kit: hook scripts, installer (scratch repos incl. conflicts), plugin
+  # format checks and the demo end-to-end (rigged simulator; plumbing only, not evidence).
+  kit-tests:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Check out source
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          persist-credentials: false
+      - name: Unit and integration tests (python3 stdlib only)
+        run: python3 -m unittest discover -s tests -t tests -v
+      - name: Demo smoke (adopter install + frozen task hashes)
+        run: bash examples/make-demo.sh "$RUNNER_TEMP/golden-path-demo"
