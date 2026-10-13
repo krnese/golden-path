@@ -1,0 +1,557 @@
+// Golden Path kit tests (Node.js built-ins only): node --test tests/
+// Ported one-for-one from the Python v3 kit tests, plus the v3.1 hardening regressions.
+// Format sources:
+// https://code.visualstudio.com/docs/agent-customization/agent-plugins
+// https://github.com/agentplugins/agent-plugins-spec/blob/main/spec/1.0.0.md
+// https://docs.github.com/en/copilot/reference/hooks-reference
+import assert from "node:assert/strict";
+import { spawnSync } from "node:child_process";
+import fs from "node:fs";
+import os from "node:os";
+import path from "node:path";
+import { after, before, beforeEach, afterEach, describe, test } from "node:test";
+import { fileURLToPath } from "node:url";
+import * as gate from "../plugin/scripts/gate.mjs";
+
+const REPO = path.dirname(path.dirname(fileURLToPath(import.meta.url)));
+const KIT = path.join(REPO, "plugin");
+const GATE = path.join(KIT, "scripts", "gate.mjs");
+const INSTALL = path.join(KIT, "install.mjs");
+const NODE = process.execPath;
+
+// ---------- helpers ----------
+const sh = (cmd, cwd, opts = {}) => spawnSync(cmd, { shell: true, cwd, encoding: "utf8", ...opts });
+const run = (args, cwd, opts = {}) => spawnSync(args[0], args.slice(1), { cwd, encoding: "utf8", ...opts });
+const git = (cwd, ...a) => run(["git", "-c", "user.name=t", "-c", "user.email=t@t", ...a], cwd);
+const w = (d, rel, s) => { fs.mkdirSync(path.dirname(path.join(d, rel)), { recursive: true }); fs.writeFileSync(path.join(d, rel), s); };
+const rd = (d, rel) => fs.readFileSync(path.join(d, rel), "utf8");
+function scratch(files = {}) {
+  const d = fs.mkdtempSync(path.join(os.tmpdir(), "gp-test-"));
+  git(d, "init", "-q");
+  git(d, "config", "core.autocrlf", "false");
+  for (const [rel, s] of Object.entries(files)) w(d, rel, s);
+  git(d, "add", "-A");
+  git(d, "commit", "-qm", "base", "--allow-empty");
+  return d;
+}
+const rm = (d) => fs.rmSync(d, { recursive: true, force: true });
+const cfg = (d, c) => w(d, ".golden-path/config.json", JSON.stringify(c));
+const CMD = { stop: ["stop"], start: ["start"], guard: ["guard"], reviewer: ["subagent", "start"] };
+function hook(d, kind, payload, env = {}) {
+  const r = run([NODE, GATE, ...(CMD[kind] || kind.split(" "))], d, { input: JSON.stringify(payload), env: { ...process.env, ...env } });
+  assert.equal(r.status, 0, r.stderr);
+  return JSON.parse(r.stdout || "{}");
+}
+const ledger = (d) => {
+  const p = path.join(d, ".golden-path/ledger.jsonl");
+  return fs.existsSync(p) ? fs.readFileSync(p, "utf8").split("\n").filter(Boolean).map((l) => JSON.parse(l)) : [];
+};
+function tree(d) {
+  const out = {};
+  const walk = (dir) => {
+    for (const e of fs.readdirSync(dir, { withFileTypes: true })) {
+      if (e.name === ".git") continue;
+      const p = path.join(dir, e.name);
+      if (e.isDirectory()) walk(p); else out[path.relative(d, p).split(path.sep).join("/")] = fs.readFileSync(p, "utf8");
+    }
+  };
+  walk(d);
+  return out;
+}
+const frontmatter = (p) => {
+  const m = fs.readFileSync(p, "utf8").match(/^---\n([\s\S]*?)\n---\n/);
+  assert.ok(m, p);
+  return Object.fromEntries([...m[1].matchAll(/^(\w[\w-]*):\s*(.+)$/gm)].map((x) => [x[1], x[2]]));
+};
+// Portable shell commands (sh on POSIX, cmd.exe on Windows): use node itself instead of sleep/echo/exit.
+const nodeCmd = (js) => `node -e "${js}"`;
+const PASS = nodeCmd("process.exit(0)");
+const FAIL = nodeCmd("console.log('FAIL: test_x (t.T)');process.exit(1)");
+const SLEEP = (s) => nodeCmd(`setTimeout(()=>{},${s * 1000})`);
+
+// ---------- plugin format ----------
+const DOC_EVENTS = new Set(["agentStop", "errorOccurred", "notification", "permissionRequest", "postToolUse", "postToolUseFailure",
+  "preCompact", "preToolUse", "sessionEnd", "sessionStart", "subagentStart", "subagentStop", "userPromptSubmitted", "userPromptTransformed"]);
+const ENTRY_FIELDS = new Set(["type", "bash", "powershell", "command", "cwd", "env", "timeoutSec", "timeout", "matcher", "exec", "args"]);
+
+describe("plugin format", () => {
+  test("manifest", () => {
+    const m = JSON.parse(fs.readFileSync(path.join(KIT, "plugin.json"), "utf8"));
+    assert.equal(m.$schema, "https://agent-plugins.org/schemas/1.0.0/plugin.schema.json");
+    assert.match(m.name, /^[a-z0-9.-]+$/);
+    const allowed = new Set(["$schema", "name", "version", "description", "author", "homepage", "repository", "license", "keywords", "extensions"]);
+    for (const k of Object.keys(m)) assert.ok(allowed.has(k), k);
+  });
+  test("exactly one skill named like its dir", () => {
+    assert.deepEqual(fs.readdirSync(path.join(KIT, "skills")), ["golden-path"]);
+    const fm = frontmatter(path.join(KIT, "skills/golden-path/SKILL.md"));
+    assert.equal(fm.name, "golden-path");
+    assert.ok(fm.description);
+    assert.ok(fs.existsSync(path.join(KIT, "skills/golden-path/references/METHOD.md")));
+  });
+  test("agents are optional presets; reviewer is read-only", () => {
+    assert.ok(!fs.existsSync(path.join(KIT, "com.github.copilot", "agents")));
+    assert.deepEqual(fs.readdirSync(path.join(KIT, "optional/agents")).sort(), ["golden-path-reviewer.agent.md", "golden-path.agent.md"]);
+    const fm = frontmatter(path.join(KIT, "optional/agents/golden-path-reviewer.agent.md"));
+    assert.equal(fm.name, "golden-path-reviewer");
+    assert.ok(!(fm.tools || "").includes("edit"));
+  });
+  test("one hook script, plain JS, no Python or research code in the plugin", () => {
+    assert.deepEqual(fs.readdirSync(path.join(KIT, "scripts")), ["gate.mjs"]);
+    const code = Object.keys(tree(KIT)).filter((p) => /\.(py|js|mjs|cjs|ts)$/.test(p)).sort();
+    assert.deepEqual(code, ["install.mjs", "scripts/gate.mjs"]);
+    for (const f of code) {
+      const imports = [...fs.readFileSync(path.join(KIT, f), "utf8").matchAll(/^import .* from "([^"]+)"/gm)].map((m) => m[1]);
+      for (const i of imports) assert.match(i, /^node:/, `${f} imports ${i}: built-ins only`);
+    }
+  });
+  test("skill is short and level-agnostic (no level 2 enforcement wording)", () => {
+    const s = rd(KIT, "skills/golden-path/SKILL.md") + rd(KIT, "skills/golden-path/references/METHOD.md");
+    assert.ok(rd(KIT, "skills/golden-path/SKILL.md").split("\n").length <= 40);
+    assert.doesNotMatch(s, /stop gate|guard|hook|preToolUse|level 2/i);
+  });
+  test("hooks.json uses the documented schema and calls node with the local script (no npx, no network)", () => {
+    const h = JSON.parse(rd(KIT, "com.github.copilot/hooks/hooks.json"));
+    assert.equal(h.version, 1);
+    for (const [ev, entries] of Object.entries(h.hooks)) {
+      assert.ok(DOC_EVENTS.has(ev), ev);
+      for (const e of entries) {
+        for (const k of Object.keys(e)) assert.ok(ENTRY_FIELDS.has(k), `${ev}.${k}`);
+        assert.equal(e.type, "command");
+        assert.ok(e.timeoutSec < 300);
+        for (const line of [e.bash, e.powershell]) {
+          assert.match(line, /^node "\$\{PLUGIN_ROOT\}\/scripts\/gate\.mjs"/);
+          assert.doesNotMatch(line, /npx|npm|https?:/);
+        }
+      }
+    }
+    const cfgBudget = gate.DEFAULT_CONFIG.hook_budget_sec;
+    assert.ok(h.hooks.agentStop[0].timeoutSec > cfgBudget, "hook timeout must exceed the gate's own budget");
+  });
+  test("no mcp.json needed", () => assert.ok(!fs.existsSync(path.join(KIT, "mcp.json"))));
+});
+
+// ---------- installer ----------
+const CHECK = "npm test";
+const install = (d, ...a) => run([NODE, INSTALL, "--target", d, ...a], d);
+describe("installer", () => {
+  let d;
+  beforeEach(() => { d = scratch({ "README.md": "hi\n" }); });
+  afterEach(() => rm(d));
+
+  test("fresh install layout and namespacing", () => {
+    const r = install(d, "--check", CHECK);
+    assert.equal(r.status, 0, r.stdout + r.stderr);
+    const f = tree(d);
+    for (const p of Object.keys(f)) if (p !== "README.md") assert.ok(p.includes("golden-path") || [".github/copilot-instructions.md", ".gitignore"].includes(p), p);
+    assert.ok(".github/hooks/golden-path-loop.json" in f && ".github/skills/golden-path/SKILL.md" in f);
+    assert.ok(!(".github/agents/golden-path-reviewer.agent.md" in f) && !("AGENTS.md" in f));
+    assert.equal(JSON.parse(f[".github/hooks/golden-path-loop.json"]).version, 1);
+    assert.doesNotMatch(f[".github/hooks/golden-path-loop.json"], /PLUGIN_ROOT/);
+    assert.match(f[".github/hooks/golden-path-loop.json"], /node \\"\.github\/hooks\/golden-path\/gate\.mjs\\" stop/);
+    const c = JSON.parse(f[".golden-path/config.json"]);
+    assert.equal(c.check, CHECK);
+    assert.deepEqual(c.acceptance.paths, []);
+    assert.equal(c.research.enabled, false);
+    assert.deepEqual(Object.keys(f).filter((p) => p.endsWith(".agent.md")), []);
+  });
+  test("level 2 installs exactly one script", () => {
+    install(d, "--check", CHECK);
+    assert.deepEqual(Object.keys(tree(d)).filter((p) => /\.(py|mjs|js)$/.test(p)), [".github/hooks/golden-path/gate.mjs"]);
+  });
+  test("level 1 is method only: zero code, and no level 2 enforcement wording in files or output", () => {
+    const r = install(d, "--level", "1");
+    assert.equal(r.status, 0, r.stdout + r.stderr);
+    const f = tree(d);
+    assert.ok(".github/skills/golden-path/SKILL.md" in f);
+    assert.deepEqual(Object.keys(f).filter((p) => /\.(py|mjs|js|json)$/.test(p) && !p.includes("manifest")), []);
+    assert.ok(!(".golden-path/config.json" in f) && !(".gitignore" in f));
+    const text = r.stdout + Object.entries(f).filter(([p]) => p !== "README.md" && !p.includes("manifest")).map(([, s]) => s).join("\n");
+    assert.doesNotMatch(text, /stop gate|guard|hook|enforce[sd]? by|blocks? while/i);
+    assert.match(r.stdout, /Nothing is enforced/);
+    const up = install(d, "--level", "2", "--check", CHECK);
+    assert.equal(up.status, 0, up.stdout);
+    assert.ok(".github/hooks/golden-path/gate.mjs" in tree(d));
+    assert.match(tree(d)[".github/copilot-instructions.md"], /stop gate/);
+    assert.equal(install(d, "--level", "1").status, 2); // no silent downgrade
+  });
+  test("level 3 enables research but copies no research code", () => {
+    assert.equal(install(d, "--level", "3", "--check", CHECK).status, 0);
+    const f = tree(d);
+    assert.equal(JSON.parse(f[".golden-path/config.json"]).research.enabled, true);
+    assert.ok(!Object.keys(f).some((p) => p.includes("research")));
+  });
+  test("agent preset and acceptance flags", () => {
+    const r = install(d, "--check", CHECK, "--with-agent-preset", "--acceptance-path", "acceptance/**", "--acceptance-path", "specs/*.feature",
+      "--acceptance-owner", "Finance", "--acceptance-command", "python3 acceptance/run.py");
+    assert.equal(r.status, 0, r.stdout + r.stderr);
+    const f = tree(d);
+    assert.ok(".github/agents/golden-path.agent.md" in f);
+    assert.deepEqual(JSON.parse(f[".golden-path/config.json"]).acceptance,
+      { paths: ["acceptance/**", "specs/*.feature"], owner: "Finance", command: "python3 acceptance/run.py" });
+  });
+  test("idempotent", () => {
+    install(d, "--check", CHECK);
+    const b = tree(d);
+    const r = install(d);
+    assert.equal(r.status, 0);
+    assert.match(r.stdout, /nothing changed/);
+    assert.deepEqual(tree(d), b);
+  });
+  test("first install requires --check", () => {
+    assert.equal(install(d).status, 2);
+    assert.deepEqual(Object.keys(tree(d)), ["README.md"]);
+  });
+  test("appends to existing adopter files without overwriting, and uninstall restores them", () => {
+    const orig = { ".github/copilot-instructions.md": "# Team rules\nUse tabs.\n", "AGENTS.md": "# Agents\nBe nice.\n", ".gitignore": "node_modules/\n" };
+    for (const [k, v] of Object.entries(orig)) w(d, k, v);
+    install(d, "--check", CHECK);
+    const f = tree(d);
+    assert.ok(f[".github/copilot-instructions.md"].startsWith(orig[".github/copilot-instructions.md"]));
+    assert.match(f["AGENTS.md"], /<!-- golden-path:begin -->/);
+    assert.ok(f[".gitignore"].startsWith("node_modules/\n"));
+    assert.equal(install(d, "--uninstall").status, 0);
+    const g = tree(d);
+    for (const [k, v] of Object.entries(orig)) assert.equal(g[k], v, k);
+  });
+  test("refuses on conflicting file and writes nothing", () => {
+    w(d, ".github/skills/golden-path/SKILL.md", "someone else's skill\n");
+    const b = tree(d);
+    const r = install(d, "--check", CHECK);
+    assert.equal(r.status, 2);
+    assert.match(r.stdout, /REFUSING/);
+    assert.deepEqual(tree(d), b);
+  });
+  test("refuses on existing CI file", () => {
+    w(d, ".github/workflows/golden-path-check.yml", "name: mine\n");
+    assert.equal(install(d, "--check", CHECK, "--with-ci").status, 2);
+  });
+  test("refuses on malformed block", () => {
+    w(d, "AGENTS.md", "<!-- golden-path:begin -->\nno end\n");
+    assert.equal(install(d, "--check", CHECK).status, 2);
+  });
+  test("existing config never overwritten", () => {
+    install(d, "--check", CHECK);
+    w(d, ".golden-path/config.json", '{"check": "make test"}\n');
+    assert.equal(install(d, "--check", "other").status, 0);
+    assert.equal(rd(d, ".golden-path/config.json"), '{"check": "make test"}\n');
+  });
+  test("uninstall refuses modified files, then --force --purge removes everything", () => {
+    install(d, "--check", CHECK, "--with-reviewer", "--with-ci");
+    const f = tree(d);
+    assert.ok(".github/agents/golden-path-reviewer.agent.md" in f && ".github/workflows/golden-path-check.yml" in f);
+    fs.appendFileSync(path.join(d, ".github/hooks/golden-path/gate.mjs"), "// local edit\n");
+    assert.equal(install(d, "--uninstall").status, 2);
+    assert.equal(install(d, "--uninstall", "--force", "--purge").status, 0);
+    assert.deepEqual(Object.keys(tree(d)), ["README.md"]);
+  });
+  test("modified kit file blocks upgrade", () => {
+    install(d, "--check", CHECK);
+    fs.appendFileSync(path.join(d, ".github/skills/golden-path/SKILL.md"), "local tweak\n");
+    const b = tree(d);
+    assert.equal(install(d).status, 2);
+    assert.deepEqual(tree(d), b);
+  });
+  test("reinstall preserves optional components", () => {
+    install(d, "--check", CHECK, "--with-reviewer");
+    assert.match(install(d).stdout, /nothing changed/);
+    assert.ok(".github/agents/golden-path-reviewer.agent.md" in tree(d));
+  });
+  test("CI template compares against the fixed PR base commit", () => {
+    const y = rd(KIT, "extras/workflows/golden-path-check.yml");
+    assert.match(y, /gate\.mjs check --base "\$BASE_SHA"/);
+    assert.match(y, /BASE_SHA: \$\{\{ github\.event\.pull_request\.base\.sha \}\}/);
+  });
+});
+
+// ---------- stop gate ----------
+describe("stop gate", () => {
+  let d;
+  beforeEach(() => { d = scratch({ "tests/test_a.py": "def test_a():\n    assert 1\n" }); });
+  afterEach(() => rm(d));
+  const stop = (extra = {}) => hook(d, "stop", { sessionId: "s1", cwd: d, stopReason: "end_turn", stop_hook_active: false, ...extra });
+
+  test("blocks while red, then allows when green", () => {
+    cfg(d, { check: FAIL, max_blocks: 5 });
+    const o = stop();
+    assert.equal(o.decision, "block");
+    assert.match(o.reason, /RED/);
+    assert.match(o.reason, /FAIL: test_x/);
+    cfg(d, { check: PASS });
+    assert.deepEqual(stop(), {});
+    assert.deepEqual(ledger(d).map((r) => r.event), ["gate_red", "gate_green"]);
+    const red = ledger(d)[0];
+    assert.deepEqual(red.failed_tests, ["test_x"]);
+    assert.ok(red.head_sha && red.diff_hash);
+  });
+  test("green first time allows", () => { cfg(d, { check: PASS }); assert.deepEqual(stop(), {}); });
+  test("block limit is recorded as FAILED, requires owner review, never a pass and never 'escalated'", () => {
+    cfg(d, { check: FAIL, max_blocks: 2, acceptance: { owner: "Finance: Ingrid" } });
+    const outs = [stop(), stop(), stop()];
+    assert.deepEqual(outs.map((o) => o.decision), ["block", "block", undefined]);
+    assert.match(outs[1].reason, /last block/);
+    assert.match(outs[1].reason, /requires review by Finance: Ingrid/);
+    const last = ledger(d).at(-1);
+    assert.deepEqual([last.event, last.outcome, last.ok], ["gave_up", "FAILED", false]);
+    assert.equal(last.requires_owner_review, "Finance: Ingrid");
+    assert.ok(!ledger(d).some((r) => r.event === "gate_green"));
+    assert.doesNotMatch(fs.readFileSync(path.join(d, ".golden-path/ledger.jsonl"), "utf8") + outs.map((o) => o.reason || "").join(""), /escalat/i);
+    assert.equal(JSON.parse(rd(d, ".golden-path/state/s1.json")).outcome, "FAILED");
+  });
+  test("missing config is red", () => assert.match(stop().reason, /No check command/));
+  test("timeout counts as red", () => {
+    cfg(d, { check: SLEEP(3), hook_budget_sec: 1 });
+    assert.match(stop().reason, /timed out/);
+  });
+  test("ONE time budget for the whole hook, not per command", () => {
+    cfg(d, { check: SLEEP(1.2), hook_budget_sec: 2, acceptance: { command: SLEEP(1.2) } });
+    const t = Date.now();
+    const o = stop();
+    const ms = Date.now() - t;
+    assert.equal(o.decision, "block");
+    assert.match(o.reason, /\[acceptance\]\n.*(timed out|budget)/);
+    assert.ok(ms < 2900, `hook took ${ms} ms; per-command timeouts would allow ~2400+ ms of commands plus overhead each`);
+    cfg(d, { check: SLEEP(2.5), hook_budget_sec: 2, acceptance: { command: PASS } });
+    const o2 = stop({ sessionId: "s2" });
+    assert.match(o2.reason, /\[acceptance\]\nacceptance not run: the hook time budget was used up/);
+  });
+  test("snake_case payload", () => {
+    cfg(d, { check: PASS });
+    assert.deepEqual(hook(d, "stop", { hook_event_name: "Stop", session_id: "vs1", cwd: d, stop_hook_active: false }), {});
+    assert.equal(ledger(d)[0].session, "vs1");
+  });
+  test("weakening blocks even if check is green", () => {
+    cfg(d, { check: PASS, protected: ["tests/**"] });
+    w(d, "tests/test_a.py", "# emptied\n");
+    const o = stop();
+    assert.equal(o.decision, "block");
+    assert.match(o.reason, /test-integrity/);
+  });
+});
+
+describe("session start", () => {
+  test("records method_files_present (not method_loaded) and the fixed base commit", () => {
+    const d = scratch();
+    try {
+      cfg(d, { check: PASS });
+      const o = hook(d, "start", { sessionId: "s", cwd: d, source: "new" });
+      assert.match(o.additionalContext, /Golden Path is active/);
+      const rec = ledger(d)[0];
+      assert.equal(rec.event, "method_files_present");
+      assert.doesNotMatch(JSON.stringify(ledger(d)), /method_loaded/);
+      assert.match(rec.note, /does not show the agent read or followed/);
+      assert.ok(rec.skill_found && rec.skill_hash && rec.method_hash);
+      assert.equal(rec.base_sha, gate.headSha(d));
+    } finally { rm(d); }
+  });
+});
+
+describe("reviewer usage", () => {
+  test("only the reviewer is recorded and it never blocks", () => {
+    const d = scratch();
+    try {
+      assert.deepEqual(hook(d, "reviewer", { agentName: "explore", cwd: d }), {});
+      assert.deepEqual(ledger(d), []);
+      for (const phase of ["start", "stop"]) assert.deepEqual(hook(d, `subagent ${phase}`, { agentName: "golden-path-reviewer", cwd: d, response: "ok" }), {});
+      assert.deepEqual(ledger(d).map((r) => r.event), ["reviewer_start", "reviewer_stop"]);
+    } finally { rm(d); }
+  });
+});
+
+// ---------- guard ----------
+describe("guard", () => {
+  let d;
+  beforeEach(() => { d = scratch({ "tests/test_a.py": "def test_a():\n    assert 1\n", "src/a.py": "x=1\n" }); cfg(d, { check: PASS, protected: ["tests/**"] }); });
+  afterEach(() => rm(d));
+  const g = (toolName, toolArgs) => hook(d, "guard", { sessionId: "s", cwd: d, toolName, toolArgs });
+
+  test("edit of an existing test asks", () => assert.equal(g("edit", { path: "tests/test_a.py" }).permissionDecision, "ask"));
+  test("new test file allowed", () => assert.deepEqual(g("create", { path: "tests/test_new.py" }), {}));
+  test("source edit allowed", () => assert.deepEqual(g("edit", { path: path.join(d, "src/a.py") }), {}));
+  test("kit files denied", () => {
+    for (const p of [".github/hooks/golden-path-loop.json", ".github/hooks/golden-path/gate.mjs", ".golden-path/config.json"])
+      assert.equal(g("edit", { path: p }).permissionDecision, "deny", p);
+  });
+  test("shell delete of tests denied", () => {
+    for (const c of ["rm -rf tests", "git rm tests/test_a.py", "echo x > tests/test_a.py", "sed -i s/assert/#/ tests/test_a.py"])
+      assert.equal(g("bash", { command: c }).permissionDecision, "deny", c);
+  });
+  test("shell running tests allowed", () => {
+    for (const c of ["python3 -m unittest discover -s tests", "pytest tests -q > out.log", "npm test"]) assert.deepEqual(g("bash", { command: c }), {}, c);
+  });
+  test("--no-verify denied", () => assert.equal(g("bash", { command: "git commit --no-verify -m x" }).permissionDecision, "deny"));
+  test("VS Code payload and garbage never crash", () => {
+    assert.equal(hook(d, "guard", { hook_event_name: "PreToolUse", tool_name: "Edit", tool_input: { file_path: "tests/test_a.py" }, cwd: d }).permissionDecision, "ask");
+    assert.deepEqual(hook(d, "guard", { toolName: "bash", toolArgs: "not json", cwd: d }), {});
+    const r = run([NODE, GATE, "guard"], d, { input: "{{{" });
+    assert.equal(r.status, 0);
+    assert.deepEqual(JSON.parse(r.stdout), {});
+  });
+});
+
+// ---------- protected acceptance tests ----------
+const ACC = { paths: ["acceptance/**"], owner: "Finance: Ingrid", command: null };
+describe("acceptance guard", () => {
+  let d;
+  beforeEach(() => { d = scratch({ "acceptance/test_t01.py": "def test_x():\n    assert 1\n", "src/a.py": "x=1\n" }); cfg(d, { check: PASS, acceptance: ACC }); });
+  afterEach(() => rm(d));
+  const g = (toolName, toolArgs) => hook(d, "guard", { sessionId: "s", cwd: d, toolName, toolArgs });
+  test("edit, create and absolute-path edit denied with owner", () => {
+    for (const [tool, p] of [["edit", "acceptance/test_t01.py"], ["create", "acceptance/test_new.py"], ["edit", path.join(d, "acceptance/test_t01.py")]]) {
+      const o = g(tool, { path: p });
+      assert.equal(o.permissionDecision, "deny", p);
+      assert.match(o.permissionDecisionReason, /Finance: Ingrid/);
+      assert.match(o.permissionDecisionReason, /DELEGATION CHANGE/);
+    }
+  });
+  test("shell mutation denied, running and restoring allowed", () => {
+    for (const c of ["sed -i 's/1/0/' acceptance/test_t01.py", "rm acceptance/test_t01.py", "echo x > acceptance/test_t01.py",
+      "git checkout HEAD~1 -- acceptance/test_t01.py", "git restore --source HEAD~1 acceptance/test_t01.py",
+      "git restore --source=main acceptance/test_t01.py", "git restore -s main acceptance/test_t01.py", "git restore acceptance/x.py; rm acceptance/test_t01.py"])
+      assert.equal(g("bash", { command: c }).permissionDecision, "deny", c);
+    for (const c of ["python3 -m unittest acceptance/test_t01.py", "cat acceptance/test_t01.py", "echo hi > out.txt",
+      "git restore acceptance/test_t01.py", "git checkout -- acceptance/test_t01.py"])
+      assert.deepEqual(g("bash", { command: c }), {}, c);
+  });
+  test("source edit still allowed", () => assert.deepEqual(g("edit", { path: "src/a.py" }), {}));
+});
+
+describe("acceptance gate", () => {
+  let d;
+  beforeEach(() => {
+    d = scratch({ "acceptance/test_t01.py": "def test_x():\n    assert 1\n" });
+    cfg(d, { check: PASS, acceptance: ACC });
+    hook(d, "start", { sessionId: "s", cwd: d, source: "new" });
+  });
+  afterEach(() => rm(d));
+  const stop = (sid = "s") => hook(d, "stop", { sessionId: sid, cwd: d, stop_hook_active: false });
+
+  test("changed acceptance test blocks and is recorded", () => {
+    w(d, "acceptance/test_t01.py", "def test_x():\n    pass\n");
+    const o = stop();
+    assert.equal(o.decision, "block");
+    assert.match(o.reason, /acceptance-integrity/);
+    assert.match(o.reason, /DELEGATION CHANGE/);
+    assert.ok(ledger(d).some((r) => r.event === "acceptance_change_attempt"));
+  });
+  test("new or deleted acceptance file blocks", () => {
+    w(d, "acceptance/test_extra.py", "def test_y():\n    assert 1\n");
+    assert.equal(stop().decision, "block");
+    fs.rmSync(path.join(d, "acceptance/test_extra.py"));
+    fs.rmSync(path.join(d, "acceptance/test_t01.py"));
+    assert.equal(stop().decision, "block");
+  });
+  test("unchanged is green; the acceptance command runs", () => {
+    assert.deepEqual(stop(), {});
+    cfg(d, { check: PASS, acceptance: { ...ACC, command: nodeCmd("process.exit(1)") } });
+    assert.match(stop().reason, /acceptance/);
+  });
+  test("fixed base: an agent COMMIT of a changed acceptance test still blocks (base is the session-start commit)", () => {
+    w(d, "acceptance/test_t01.py", "def test_x():\n    pass\n");
+    git(d, "commit", "-qam", "agent commits its edit");
+    const o = stop();
+    assert.equal(o.decision, "block");
+    assert.match(o.reason, /protected acceptance file modified/);
+  });
+  test("an expert-committed change is the new base for the NEXT session", () => {
+    w(d, "acceptance/test_t01.py", "def test_x():\n    assert 2\n");
+    git(d, "commit", "-qam", "Ingrid approves revised example");
+    hook(d, "start", { sessionId: "s2", cwd: d, source: "new" });
+    assert.deepEqual(stop("s2"), {});
+  });
+  test("CRLF checkout of unchanged acceptance tests is not a change (Windows core.autocrlf)", () => {
+    git(d, "config", "core.autocrlf", "true");
+    fs.rmSync(path.join(d, "acceptance/test_t01.py"));
+    git(d, "checkout", "--", "acceptance/test_t01.py");
+    assert.match(rd(d, "acceptance/test_t01.py"), /\r\n/, "precondition: checked out with CRLF");
+    assert.deepEqual(stop(), {});
+    w(d, "acceptance/test_t01.py", "def test_x():\r\n    pass\r\n");
+    assert.equal(stop().decision, "block", "a real change in a CRLF file is still detected");
+  });
+});
+
+describe("check CLI uses an explicit fixed comparison commit", () => {
+  test("--base <sha> catches changes the subject committed; HEAD-only comparison warns", () => {
+    const d = scratch({ "acceptance/test_t01.py": "def test_x():\n    assert 1\n", "tests/test_a.py": "def test_a():\n    assert 1\n" });
+    try {
+      cfg(d, { check: PASS, acceptance: ACC });
+      git(d, "add", "-A"); git(d, "commit", "-qm", "config");
+      const base = gate.headSha(d);
+      w(d, "acceptance/test_t01.py", "def test_x():\n    pass\n");
+      w(d, "tests/test_a.py", "# emptied\n");
+      git(d, "commit", "-qam", "subject rewrites tests and commits");
+      const withBase = run([NODE, GATE, "check", "--base", base], d);
+      assert.equal(withBase.status, 1);
+      const res = JSON.parse(withBase.stdout);
+      assert.equal(res.base, base);
+      assert.deepEqual(res.failed.sort(), ["acceptance-integrity", "test-integrity"]);
+      const env = run([NODE, GATE, "check"], d, { env: { ...process.env, GOLDEN_PATH_BASE: base } });
+      assert.equal(env.status, 1);
+      const headOnly = run([NODE, GATE, "check"], d, { env: { ...process.env, GOLDEN_PATH_BASE: "" } });
+      assert.equal(headOnly.status, 0, "against its own HEAD the subject looks clean, which is why a fixed base is required");
+      assert.match(JSON.parse(headOnly.stdout).warning, /Pass a fixed commit/);
+    } finally { rm(d); }
+  });
+});
+
+// ---------- integrity heuristics ----------
+const PY = "import unittest\nclass T(unittest.TestCase):\n    def test_a(self):\n        self.assertEqual(1, 1)\n    def test_b(self):\n        self.assertTrue(True)\n";
+const JS = "test('a', () => { expect(1).toBe(1); });\nit('b', () => { expect(2).toBe(2); });\n";
+describe("test-integrity heuristics", () => {
+  let d;
+  beforeEach(() => { d = scratch({ "tests/test_a.py": PY, "tests/a.test.js": JS, "src/x.py": "" }); });
+  afterEach(() => rm(d));
+  const v = () => gate.testIntegrity(d, ["tests/**"]);
+  test("clean", () => assert.deepEqual(v(), []));
+  test("adding tests to an EXISTING protected file is allowed (brownfield misclassification regression)", () => {
+    w(d, "tests/test_a.py", PY + "    def test_c(self):\n        self.assertIn(1, [1])\n");
+    w(d, "tests/a.test.js", JS + "test('c', () => { expect(3).toBe(3); });\n");
+    assert.deepEqual(v(), []);
+  });
+  test("removed test flagged", () => { w(d, "tests/test_a.py", PY.split("    def test_b")[0]); assert.ok(v().some((x) => x.includes("test count dropped"))); });
+  test("removed assert flagged", () => { w(d, "tests/test_a.py", PY.replace("self.assertTrue(True)", "pass")); assert.ok(v().some((x) => x.includes("assertion count dropped"))); });
+  test("skip flagged", () => { w(d, "tests/test_a.py", PY.replace("    def test_b", "    @unittest.skip('x')\n    def test_b")); assert.ok(v().some((x) => x.includes("skip"))); });
+  test("js .only flagged", () => { w(d, "tests/a.test.js", JS.replace("test('a'", "test.only('a'")); assert.ok(v().some((x) => x.includes("skip/only"))); });
+  test("deleted flagged", () => { fs.rmSync(path.join(d, "tests/a.test.js")); assert.ok(v().some((x) => x.includes("deleted"))); });
+  test("unprotected ignored", () => { fs.rmSync(path.join(d, "src/x.py")); assert.deepEqual(v(), []); });
+  test("CRLF line endings do not change counts", () => { w(d, "tests/test_a.py", PY.replace(/\n/g, "\r\n")); assert.deepEqual(v(), []); });
+  test("matches", () => {
+    assert.ok(gate.matches("tests/a/b.py", ["tests/**"]));
+    assert.ok(!gate.matches("testsuite/a.py", ["tests/**"]));
+    assert.ok(gate.matches("src/a.test.ts", ["**/*.test.ts", "src/*.test.ts"]));
+  });
+});
+
+// ---------- demo end to end (level 2, no Python kit code) ----------
+describe("demo", { skip: process.platform === "win32" ? "the demo uses bash and python3; covered on Linux" : false }, () => {
+  let base, d, makeOut;
+  before(() => {
+    base = fs.mkdtempSync(path.join(os.tmpdir(), "gp-demo-"));
+    d = path.join(base, "demo");
+    const r = run(["bash", path.join(REPO, "examples/make-demo.sh"), d], REPO, { env: { ...process.env, PATH: path.dirname(NODE) + path.delimiter + process.env.PATH } });
+    assert.equal(r.status, 0, r.stdout + r.stderr);
+    makeOut = r.stdout;
+  });
+  after(() => rm(base));
+  test("baseline: one hook script, acceptance red until T01 is implemented, research off", () => {
+    assert.match(makeOut, /frozen tasks and acceptance examples verified/);
+    const code = Object.keys(tree(d)).filter((p) => /\.(py|mjs)$/.test(p)).sort();
+    assert.deepEqual(code, [".github/hooks/golden-path/gate.mjs", "acceptance/test_acceptance.py", "invoice.py", "simulator/refusal_scenario.mjs", "tests/test_invoice.py"]);
+    const r = run([NODE, path.join(d, ".github/hooks/golden-path/gate.mjs"), "check", "--base", gate.headSha(d)], d);
+    assert.equal(r.status, 1);
+    const res = Object.fromEntries(JSON.parse(r.stdout).results.map((x) => [x.name, x.ok]));
+    assert.deepEqual(res, { check: true, acceptance: false, "test-integrity": true, "acceptance-integrity": true });
+    const c = JSON.parse(rd(d, ".golden-path/config.json"));
+    assert.deepEqual(c.acceptance.paths, ["acceptance/**"]);
+    assert.equal(c.research.enabled, false);
+  });
+  test("scripted refusal scenario", () => {
+    const r = run([NODE, "simulator/refusal_scenario.mjs"], d, { env: { ...process.env, GOLDEN_PATH_SESSION: "refusal-1" } });
+    assert.equal(r.status, 0, r.stdout + r.stderr);
+    assert.match(r.stdout, /RESULT: as expected/);
+    const ev = ledger(d).filter((x) => x.session === "refusal-1").map((x) => x.event);
+    assert.equal(ev.filter((e) => e === "guard_deny").length, 2);
+    assert.ok(ev.includes("acceptance_change_attempt"));
+    assert.equal(run(["git", "status", "--porcelain", "acceptance"], d).stdout.trim(), "");
+  });
+});
