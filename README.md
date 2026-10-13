@@ -1,89 +1,89 @@
-# Golden Path
+# Golden Path v2
 
-**Implementation throughput can exceed accountable human supervision.**
+**A small engineering method for agents, plus native Copilot mechanisms that enforce the
+parts that can be enforced, and a way to measure whether learning helps.**
 
-Golden Path explores a deliberately small engineering method for delegating work
-to agents without silently expanding what has been accepted:
+- **One skill** (`golden-path`): Understand → Bound → Engineer → Prove → Report
+  ([method](plugin/skills/golden-path/references/METHOD.md)).
+- **One primary agent** (`golden-path`). An optional read-only reviewer
+  (`golden-path-reviewer`) is off by default; its use is recorded so you can see whether it earns its cost.
+- **A stop gate** (`agentStop` hook): the agent cannot finish while your repository checks are red.
+- **A guard** (`preToolUse` hook) and an **integrity check** catch tests being deleted, skipped or weakened.
+- **Method-loaded record** (`sessionStart` hook): every session records that the skill was available.
+- **Earned lessons**: after a red-to-green fix, the agent proposes a regression test. It is
+  accepted only if it **fails on the base commit and passes on the fix**, and it lands in your
+  test suite. There is no separate memory store.
+- **A local ledger and A/B runner**: iterations to green, failed checks, time to green, and
+  per-lesson benefit (lessons on / off / leave-one-out).
 
-**Understand → Bound → Engineer → Prove → Report**
+v1 (method only) and its research, including the **NO CHANGE** results, are in [archive/](archive/INDEX.md).
+v2 does not claim the method helps. It makes that claim measurable in your own repository.
 
-**Delegate implementation broadly within accepted boundaries. Escalate
-consequential change. Prove using systems that own truth.**
+## Status of what this depends on (checked 13 Oct 2026)
 
-## What it asks you to do
+| Dependency | Status | Source |
+|---|---|---|
+| Copilot hooks (`version: 1`, `agentStop` block, `preToolUse` decisions) | Copilot SDK/CLI hooks GA; the VS Code hooks experience is **Preview** | [VS Code hooks](https://code.visualstudio.com/docs/agent-customization/hooks), [hooks reference](https://docs.github.com/en/copilot/reference/hooks-reference) |
+| Copilot harness on the Agent Host (AHP) in VS Code | Shipped (1.134+, 1.140 headline); "under active development" | [Agent Host](https://code.visualstudio.com/docs/agents/concepts/agent-host) |
+| Agent Plugins 1.0 packaging | Supported in VS Code via `chat.plugins.enabled`; current lifecycle label not confirmed (was Experimental in 1.110) | [Agent plugins](https://code.visualstudio.com/docs/agent-customization/agent-plugins) |
+| Dynamic workflows | **Public preview**, CLI/app/SDK only. The authoring API is not publicly documented, so the A/B runner here is a **plain CLI script** | [Using dynamic workflows](https://docs.github.com/en/copilot/how-tos/use-copilot-agents/use-dynamic-workflows) |
 
-Understand the intended result and existing system. Establish the delegated work,
-constraints and permitted effects using existing issues, designs and policies.
-Let the agent make implementation choices within those boundaries. If a
-consequential change appears necessary, pause the affected action and surface the
-decision to the appropriate owner; continue separable permitted work.
+## 15-minute quickstart (demo)
 
-Use existing tests, review, CI and operating evidence. Report what changed, what
-the evidence establishes and what remains uncertain. Humans remain accountable;
-the method does not guarantee recognition of consequential change.
+Prerequisites: VS Code 1.141+ signed in to GitHub Copilot, `git`, `python3` (3.9+, stdlib only).
 
-## What this is not
+1. `git clone https://github.com/krnese/golden-path && cd golden-path && git checkout golden-path-v2` (1 min)
+2. `examples/make-demo.sh ~/golden-path-demo` creates a separate demo repo and installs the kit
+   into it the way an adopter would. (1 min)
+3. `code ~/golden-path-demo`, trust the workspace, choose the **Copilot** harness in the
+   session-target picker, and type `/hooks`. You should see `golden-path-loop.json`. (2 min)
+4. In chat: `Do the task in tasks/T01.md using the golden-path skill.` Watch for a red gate, an
+   iteration, green, then one learning turn. (5 min)
+5. In the terminal:
+   `python3 .github/hooks/golden-path/golden_path.py learn validate <proposal-name>`, then
+   `... learn accept <proposal-name>`. Review `git diff` and commit. (3 min)
+6. `python3 .github/hooks/golden-path/golden_path.py report` shows iterations to green, failed
+   checks, time to green, and reviewer use. (1 min)
+7. Optional (not timed): an A/B run with any agent CLI, e.g.
+   `golden_path.py ab --tasks T01,T02 --reps 3 --per-lesson --agent-cmd '<your agent CLI> {prompt_file}'`.
 
-Golden Path is **not** an agent runtime, orchestration framework, agent
-architecture, governance platform, state machine, policy engine or new system
-of record. It does not replace Git, CI/CD, IAM, deployment systems, telemetry or
-existing engineering practice. Those systems retain their authority and controls,
-including mandatory review.
+For the go/no-go on a real VS Code install, see [VERIFY-IN-VSCODE.md](VERIFY-IN-VSCODE.md).
 
-There are no required Golden Path records, graphs, approval states or ledgers.
-The skill grants no permissions, and implementation success is not outcome proof.
+## Adopting it in your repository
 
-## Evidence, not promises
+Pick **one** mode. If you use both, the hooks run twice.
 
-This project is intentionally experimental and falsification-driven. Claims must
-be compared with **competent conventional engineering practice**, not a weak
-baseline. If Golden Path adds no incremental value, **NO CHANGE** is the correct
-result.
+| Mode | How |
+|---|---|
+| **Copy-in** (`.github`-native) | `python3 plugin/install.py --target <repo> --check "<your test command>" [--test-file-command "<cmd> {file}"] [--with-reviewer] [--with-ci]` |
+| **Agent Plugin** | VS Code: `chat.plugins.enabled: true` and `"chat.pluginLocations": {"<path>/plugin": true}`, or *Chat: Install Plugin From Source*. Then create `.golden-path/config.json` in your repo. |
+| **Fork** | Fork this repo; `plugin/` is the kit. |
 
-- Earlier structured-state experiments did not earn their complexity; the
-  architecture was retired. [History and limitations](research/experimental-v1/README.md).
-- The lightweight method's continuing-delegation experiment returned **NO CHANGE**:
-  both groups handled 12/12 consequential cases and 6/6 benign cases correctly.
-  Golden Path made uncertainty more explicit but did not improve boundary
-  behavior; median total elapsed cost was 13.9% higher.
-  [Results and limitations](research/continuing-delegation/RESULTS.md).
-- Later investigations did not establish incremental engineering value. Existing
-  release checks prevented every tested bad deployment; a capable agent recognized
-  an invalidated architectural assumption using ordinary artifacts. Both CSV
-  smoke-test implementations passed, but canonical Golden Path loading was not
-  demonstrated in treatment, leaving that comparison inconclusive.
-  [Consolidated findings and limitations](research/README.md).
+What the installer guarantees (tested in `tests/test_installer.py`):
+- It writes only `golden-path`-namespaced files under `.github/` (`skills/golden-path/`,
+  `agents/golden-path*.agent.md`, `hooks/golden-path-loop.json`, `hooks/golden-path/`,
+  `prompts/golden-path-task.prompt.md`, and `workflows/golden-path-check.yml` only with `--with-ci`).
+- It never overwrites `copilot-instructions.md`, `AGENTS.md` or `.gitignore`. It appends a marked
+  `golden-path:begin/end` block instead, and only touches `AGENTS.md` if you already have one.
+- `.golden-path/config.json` (your check command) is yours. It is created once and never overwritten.
+- If anything conflicts, it **refuses and writes nothing** (exit 2). Re-running is a no-op.
+  `--uninstall` removes exactly what was installed and refuses if you modified a kit file.
 
-These small synthetic experiments do not establish general reliability or
-business-outcome improvement. The method's incremental value remains unproved.
-Keep what helps; do not add machinery to preserve a hypothesis that failed.
+`.golden-path/config.json`:
+```json
+{ "check": "npm test", "test_file_command": "npx jest {file}", "protected": ["tests/**"],
+  "learned_tests_dir": "tests/learned", "max_blocks": 5, "check_timeout_sec": 100 }
+```
 
-## Start here
+## Honest limits
+- The guard and integrity check are heuristics; they catch common test weakening, not all of it.
+- Hook timeouts **fail open** (hooks reference), so keep `check` fast. A check that times out is counted as red.
+- The demo's `simulator/` is **rigged**. CI uses it to test plumbing, and its numbers are not evidence.
+- Whether lessons help is an empirical question for your repo. Use `ab` with repeats and remove
+  lessons that show no benefit.
+- Prior art exists for each part (stop gates, rule and memory files, self-learning skills,
+  gated re-runs). The combination here is a candidate, not a proven first.
 
-Read [METHOD.md](METHOD.md), or supply it and the
-[canonical skill](.github/skills/golden-path/SKILL.md) to your coding agent.
-Describe real work using your existing authoritative sources and checks.
-No package installation, custom agent or project reorganization is required.
-
-The skill is a portable procedure, not a runtime integration. For native
-discovery, install the skill and method together in a supported location,
-preserving their relative link; discovery varies by runtime. Supplying both
-documents explicitly is the fallback.
-
-| Find | Where |
-| --- | --- |
-| Current proposal | [Method](METHOD.md) and [skill](.github/skills/golden-path/SKILL.md) |
-| Practical illustrations, not evidence | [Examples](examples/README.md); [optional agreement template](templates/ENGINEERING.md), only when existing guidance is insufficient |
-| Observed evidence and limitations | [Research summary](research/README.md) and retained historical Markdown reports |
-| Reproduction material | [Archive index](research/ARCHIVE.md): source snapshots, tests, protocols and raw evidence |
-
-The active project is the method, canonical skill and discovery pointer, with
-ordinary repository maintenance. Experimental runners, application fixtures,
-tests and the optional contract/verifier pilot have been archived and removed
-from the active checkout. Historical Markdown is retained, including uncommitted
-investigation notes; it is not an additional instruction source or a supported
-runtime. No installation or test harness is required to use the method.
-
-[Report failures, unnecessary escalation and equal results](CONTRIBUTING.md).
-This repository's `validate` CI job checks patch whitespace only, not engineering
-correctness, authority, evidence or acceptance.
+## Repository layout
+`plugin/` kit (Agent Plugin + installer) · `examples/` demo adopter repo · `tests/` kit tests ·
+`archive/` v1 · `.github/workflows/golden-path.yml` CI for this repo.

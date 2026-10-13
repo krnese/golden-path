@@ -1,0 +1,17 @@
+# Installed by golden-path (opt-in --with-ci). Runs the same check the stop gate runs.
+name: golden-path-check
+on: [pull_request, workflow_dispatch]
+permissions:
+  contents: read
+jobs:
+  golden-path-check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      # Uses the runner's preinstalled python3 (stdlib only); add your own setup step if needed.
+      - name: Golden Path check (configured command + test integrity vs base)
+        run: python3 .github/hooks/golden-path/golden_path.py check
