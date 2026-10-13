@@ -10,7 +10,7 @@ import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
 import { after, before, beforeEach, afterEach, describe, test } from "node:test";
-import { fileURLToPath } from "node:url";
+import { fileURLToPath, pathToFileURL } from "node:url";
 import * as gate from "../plugin/scripts/gate.mjs";
 import { plannedFiles } from "../plugin/install.mjs";
 
@@ -99,6 +99,10 @@ describe("plugin format", () => {
     assert.match(body, /No automatic cloud fallback/);
     assert.match(body, /cannot switch the model in a running conversation/);
     assert.match(body, /no router/i);
+    assert.match(body, /Local inference does not mean local-only handling/);
+    assert.match(body, /protocol compatibility/);
+    assert.match(rd(dir, "references/windows.md"), /chat\.agentHost\.byokModels\.enabled/);
+    assert.match(rd(dir, "references/windows.md"), /foundry model unload/);
     assert.match(rd(dir, "references/windows.md"), /API-verified, client verification pending/);
     assert.match(rd(dir, "references/macos.md"), /not yet verified/);
     assert.doesNotMatch(rd(KIT, "skills/golden-path/SKILL.md") + rd(KIT, "skills/golden-path/references/METHOD.md"), /local-models/);
@@ -338,16 +342,31 @@ describe("stop gate", () => {
     assert.ok(!fs.existsSync(path.join(d, "late.txt")), "grandchild outlived the hook timeout");
   });
   test("ONE time budget for the whole hook, not per command", () => {
+    // Structural, not wall-clock: with per-command timeouts of 2 s, both 1.2 s commands would finish green.
     cfg(d, { check: SLEEP(1.2), hook_budget_sec: 2, acceptance: { command: SLEEP(1.2) } });
     const t = Date.now();
     const o = stop();
     const ms = Date.now() - t;
     assert.equal(o.decision, "block");
     assert.match(o.reason, /\[acceptance\]\n.*(timed out|budget)/);
-    assert.ok(ms < 2900, `hook took ${ms} ms; per-command timeouts would allow ~2400+ ms of commands plus overhead each`);
-    cfg(d, { check: SLEEP(2.5), hook_budget_sec: 2, acceptance: { command: PASS } });
-    const o2 = stop({ sessionId: "s2" });
-    assert.match(o2.reason, /\[acceptance\]\nacceptance not run: the hook time budget was used up/);
+    // Generous sanity bound for process start-up on slow runners; the structural assertion above is the real test.
+    assert.ok(ms < 2000 + 6000, `hook took ${ms} ms`);
+  });
+  test("budget covers integrity checks and git calls: nothing starts after the deadline", () => {
+    cfg(d, { check: SLEEP(2.5), hook_budget_sec: 2, acceptance: { ...ACC, command: PASS } });
+    git(d, "add", "-A"); git(d, "commit", "-qm", "config");
+    const r = run([NODE, GATE, "check", "--base", gate.headSha(d)], d);
+    assert.equal(r.status, 1);
+    const res = JSON.parse(r.stdout);
+    assert.equal(res.outcome, "UNVERIFIED");
+    for (const x of res.results) {
+      if (x.started_ms >= res.deadline_ms) assert.match(x.output, /not run: the hook time budget was used up/, x.name);
+    }
+    for (const n of ["acceptance", "test-integrity", "acceptance-integrity"]) {
+      const x = res.results.find((y) => y.name === n);
+      assert.ok(!x.ok && x.unverified, n);
+      assert.match(x.output, /not run: the hook time budget was used up/, n);
+    }
   });
   test("snake_case payload", () => {
     cfg(d, { check: PASS });
@@ -524,6 +543,66 @@ describe("check CLI uses an explicit fixed comparison commit", () => {
       const headOnly = run([NODE, GATE, "check"], d, { env: { ...process.env, GOLDEN_PATH_BASE: "" } });
       assert.equal(headOnly.status, 0, "against its own HEAD the subject looks clean, which is why a fixed base is required");
       assert.match(JSON.parse(headOnly.stdout).warning, /Pass a fixed commit/);
+    } finally { rm(d); }
+  });
+});
+
+describe("baseline evidence must be valid: never PASS on missing evidence", () => {
+  const files = { "acceptance/test_t01.py": "def test_x():\n    assert 1\n", "tests/test_a.py": "def test_a():\n    assert 1\n" };
+  const setup = () => { const d = scratch(files); cfg(d, { check: PASS, protected: ["tests/**"], acceptance: ACC }); git(d, "add", "-A"); git(d, "commit", "-qm", "config"); return d; };
+  test("nonexistent revision is UNVERIFIED (library and CLI)", () => {
+    const d = setup();
+    try {
+      const res = gate.runChecks(d, gate.loadConfig(d), "0123456789abcdef0123456789abcdef01234567");
+      assert.equal(res.ok, false);
+      assert.equal(res.outcome, "UNVERIFIED");
+      assert.ok(res.unverified.includes("baseline") && res.unverified.includes("acceptance-integrity") && res.unverified.includes("test-integrity"));
+      const cli = run([NODE, GATE, "check", "--base", "no-such-branch"], d);
+      assert.equal(cli.status, 1);
+      assert.match(JSON.parse(cli.stdout).results[0].output, /does not resolve to a commit/);
+    } finally { rm(d); }
+  });
+  test("shallow clone without the base commit is UNVERIFIED and says so", () => {
+    const d = setup(), c = fs.mkdtempSync(path.join(os.tmpdir(), "gp-shallow-"));
+    try {
+      const base = gate.headSha(d);
+      w(d, "src.txt", "x\n"); git(d, "add", "-A"); git(d, "commit", "-qm", "work");
+      const clone = path.join(c, "r");
+      git(c, "clone", "-q", "--depth", "1", pathToFileURL(d).href, clone);
+      assert.equal(spawnSync("git", ["rev-parse", "--is-shallow-repository"], { cwd: clone, encoding: "utf8" }).stdout.trim(), "true");
+      const r = run([NODE, GATE, "check", "--base", base], clone);
+      assert.equal(r.status, 1);
+      const res = JSON.parse(r.stdout);
+      assert.equal(res.outcome, "UNVERIFIED");
+      assert.match(res.results[0].output, /shallow clone/);
+    } finally { rm(d); rm(c); }
+  });
+  test("git failure while reading base content is UNVERIFIED, not an empty (passing) diff", () => {
+    const d = setup();
+    try {
+      const blob = spawnSync("git", ["rev-parse", "HEAD:acceptance/test_t01.py"], { cwd: d, encoding: "utf8" }).stdout.trim();
+      fs.rmSync(path.join(d, ".git", "objects", blob.slice(0, 2), blob.slice(2)), { force: true }); // loose object gone
+      const res = gate.runChecks(d, gate.loadConfig(d), gate.headSha(d));
+      assert.equal(res.ok, false);
+      assert.equal(res.outcome, "UNVERIFIED");
+      const a = res.results.find((x) => x.name === "acceptance-integrity");
+      assert.ok(a.unverified);
+      assert.match(a.output, /UNVERIFIED: git show/);
+    } finally { rm(d); }
+  });
+  test("authorised acceptance revision skips only acceptance-integrity, and says where authority comes from", () => {
+    const d = setup();
+    try {
+      const base = gate.headSha(d);
+      w(d, "acceptance/test_t01.py", "def test_x():\n    assert 2\n");
+      assert.equal(run([NODE, GATE, "check", "--base", base], d).status, 1);
+      const r = run([NODE, GATE, "check", "--base", base, "--authorized-acceptance-revision"], d);
+      assert.equal(r.status, 0, r.stdout);
+      const a = JSON.parse(r.stdout).results.find((x) => x.name === "acceptance-integrity");
+      assert.ok(a.skipped);
+      assert.match(a.output, /CODEOWNERS/);
+      w(d, "tests/test_a.py", "# emptied\n");
+      assert.equal(run([NODE, GATE, "check", "--base", base, "--authorized-acceptance-revision"], d).status, 1, "other checks still apply");
     } finally { rm(d); }
   });
 });

@@ -12,7 +12,7 @@
 // What it is: fast feedback inside the agent session. It checks completion against the configured tests,
 // not customer acceptance. Branch protection and human review stay the durable boundary.
 // Honest limits:
-// - ONE time budget (hook_budget_sec, default 100) covers every command this hook runs. Keep it below the
+// - ONE time budget (hook_budget_sec, default 100) covers every command AND git call this hook runs. Keep it below the
 //   hook timeoutSec: if the hook itself times out, Copilot fails OPEN (the stop proceeds, nothing recorded).
 // - After max_blocks (default 5, below the CLI's 8-consecutive-block override) the agent may stop, but the
 //   run is recorded as outcome FAILED, requires_owner_review. No review request is sent by this script.
@@ -31,7 +31,7 @@ export const DEFAULT_CONFIG = {
   check: null, // REQUIRED: adopter's check command (exit 0 == green)
   protected: ["tests/**"], // developer tests guarded against weakening (heuristic)
   max_blocks: 5,
-  hook_budget_sec: 100, // ONE budget for all commands in one hook run; keep below the hook timeoutSec
+  hook_budget_sec: 100, // ONE budget for all commands and git calls in one hook run; keep below the hook timeoutSec
   acceptance: { paths: [], command: null, owner: "the acceptance owner" },
   research: { enabled: false },
 };
@@ -51,9 +51,29 @@ export function readPayload() {
 }
 export const field = (p, camel, snake, dflt) => (camel in p ? p[camel] : snake && snake in p ? p[snake] : dflt);
 
+// ONE deadline for the whole hook run: every git call takes its timeout from what is left of it.
+let DEADLINE = Infinity;
+export const setDeadline = (t) => { DEADLINE = t; };
 export function git(root, ...args) {
-  const r = spawnSync("git", args, { cwd: root, encoding: "utf8", timeout: 30000, maxBuffer: 64 << 20 });
-  return [r.status ?? 1, r.stdout || ""];
+  const left = DEADLINE - Date.now();
+  if (left <= 0) return [124, "", "the hook time budget was used up"];
+  const r = spawnSync("git", args, { cwd: root, encoding: "utf8", timeout: Math.min(30000, left), maxBuffer: 64 << 20 });
+  return [r.status ?? 1, r.stdout || "", r.error ? String(r.error.code || r.error) : r.stderr || ""];
+}
+/** Evidence that could not be read. Integrity checks report it as UNVERIFIED, never as PASS. */
+export class EvidenceError extends Error {}
+function gitStrict(root, ...args) {
+  const [code, out, err] = git(root, ...args);
+  if (code !== 0) throw new EvidenceError(`git ${args.join(" ")} failed (${code}): ${String(err).trim().slice(0, 300)}`);
+  return out;
+}
+/** The base must resolve to a commit object that is present locally (a shallow clone may not have it). */
+export function resolveBase(root, base) {
+  const [code, out] = git(root, "rev-parse", "--verify", "--quiet", `${base}^{commit}`);
+  if (code === 0 && out.trim()) return { sha: out.trim() };
+  const shallow = git(root, "rev-parse", "--is-shallow-repository")[1].trim() === "true";
+  return { error: `baseline ${JSON.stringify(base)} does not resolve to a commit in this clone` +
+    (shallow ? " (shallow clone: fetch full history, e.g. actions/checkout fetch-depth: 0)" : "") };
 }
 export function repoRoot(start) {
   start = start || process.cwd();
@@ -114,8 +134,7 @@ const ASSERT_RE = /\b(assert\w*|expect\s*\(|Assert\.\w+|self\.fail|pytest\.raise
 const SKIP_RE = /(@unittest\.skip|@pytest\.mark\.(skip|xfail)|\b(it|describe|test)\.(skip|only)\b|\bx(it|describe)\s*\(|expectedFailure|t\.Skip|\[Ignore\]|Skip\s*=)/g;
 const counts = (t) => [TEST_RE, ASSERT_RE, SKIP_RE].map((re) => (t.match(re) || []).length);
 const baseFiles = (root, patterns, base) => {
-  const [code, out] = git(root, "ls-tree", "-r", "--name-only", base);
-  return code === 0 ? out.split("\n").filter((r) => r && matches(r, patterns)) : [];
+  return gitStrict(root, "ls-tree", "-r", "--name-only", base).split("\n").filter((r) => r && matches(r, patterns));
 };
 const readText = (p) => fs.readFileSync(p, "utf8");
 
@@ -125,7 +144,7 @@ export function testIntegrity(root, patterns, base = "HEAD") {
   for (const rel of baseFiles(root, patterns, base)) {
     const p = path.join(root, rel);
     if (!fs.existsSync(p)) { out.push(`${rel}: protected test file deleted`); continue; }
-    const [bt, ba, bs] = counts(git(root, "show", `${base}:${rel}`)[1]);
+    const [bt, ba, bs] = counts(gitStrict(root, "show", `${base}:${rel}`));
     const [at, aa, as] = counts(readText(p));
     if (at < bt) out.push(`${rel}: test count dropped ${bt} -> ${at}`);
     if (aa < ba) out.push(`${rel}: assertion count dropped ${ba} -> ${aa}`);
@@ -142,11 +161,11 @@ export function acceptanceChanges(root, patterns, base = "HEAD") {
   for (const rel of inBase) {
     const p = path.join(root, rel);
     if (!fs.existsSync(p)) out.push(`${rel}: protected acceptance file deleted`);
-    else if (lf(readText(p)) !== lf(git(root, "show", `${base}:${rel}`)[1])) out.push(`${rel}: protected acceptance file modified`);
+    else if (lf(readText(p)) !== lf(gitStrict(root, "show", `${base}:${rel}`))) out.push(`${rel}: protected acceptance file modified`);
   }
   const added = new Set([
-    ...git(root, "ls-files", "--others", "--exclude-standard")[1].split("\n"),
-    ...git(root, "diff", "--name-only", "--diff-filter=A", base)[1].split("\n"),
+    ...gitStrict(root, "ls-files", "--others", "--exclude-standard").split("\n"),
+    ...gitStrict(root, "diff", "--name-only", "--diff-filter=A", base).split("\n"),
   ]);
   for (const r of [...added].sort()) if (r && matches(r, patterns) && !inBase.includes(r)) out.push(`${r}: new file under protected acceptance paths`);
   return out;
@@ -181,22 +200,45 @@ function runCmd(name, cmd, root, deadline) {
   return { name, ok: r.status === 0, failed_tests: failed, output: out.trim().split("\n").slice(-60).join("\n") };
 }
 
-/** All checks share ONE deadline. base must be a fixed commit recorded before the work started. */
-export function runChecks(root, cfg, base = "HEAD", started = Date.now()) {
+/** Everything in one hook run (commands, git calls, integrity checks) shares ONE deadline.
+ * base must be a fixed commit recorded before the work started. Unreadable evidence is UNVERIFIED, never PASS.
+ * opts.allowAcceptanceChange: an owner-authorised acceptance revision (see README); acceptance-integrity is
+ * then reported as skipped, and the authorisation must come from CODEOWNERS review, not from this flag. */
+export function runChecks(root, cfg, base = "HEAD", started = Date.now(), opts = {}) {
   const deadline = started + 1000 * Number(cfg.hook_budget_sec ?? cfg.check_timeout_sec ?? 100);
-  const acc = cfg.acceptance;
-  const res = [cfg.check ? runCmd("check", cfg.check, root, deadline)
-    : { name: "config", ok: false, output: "No check command configured in .golden-path/config.json ('check')." }];
-  if (acc.command) res.push(runCmd("acceptance", acc.command, root, deadline));
-  const v = testIntegrity(root, cfg.protected || [], base);
-  res.push({ name: "test-integrity", ok: !v.length, output: v.join("\n") });
-  const a = acceptanceChanges(root, acc.paths || [], base);
-  res.push({ name: "acceptance-integrity", ok: !a.length, owner: acc.owner, output: a.join("\n") });
-  return { ok: res.every((r) => r.ok), base, results: res, failed: res.filter((r) => !r.ok).map((r) => r.name),
-    failed_tests: [...new Set(res.flatMap((r) => r.failed_tests || []))].sort(), budget_sec: (deadline - started) / 1000 };
+  setDeadline(deadline);
+  const acc = cfg.acceptance, res = [];
+  const step = (name, fn, extra = {}) => {
+    const at = Date.now() - started;
+    if (Date.now() >= deadline) return res.push({ name, ok: false, unverified: true, started_ms: at, ...extra,
+      output: `${name} not run: the hook time budget was used up (UNVERIFIED, counted as RED)` });
+    try { res.push({ ...fn(), started_ms: at, ...extra }); }
+    catch (e) {
+      if (!(e instanceof EvidenceError)) throw e;
+      res.push({ name, ok: false, unverified: true, started_ms: at, ...extra, output: `${name} UNVERIFIED: ${e.message}` });
+    }
+  };
+  const b = resolveBase(root, base);
+  if (b.error) res.push({ name: "baseline", ok: false, unverified: true, started_ms: 0, output: `baseline UNVERIFIED: ${b.error}` });
+  step("check", () => cfg.check ? runCmd("check", cfg.check, root, deadline)
+    : { name: "config", ok: false, output: "No check command configured in .golden-path/config.json ('check')." });
+  if (acc.command) step("acceptance", () => runCmd("acceptance", acc.command, root, deadline));
+  const integrity = (name, f, extra = {}) => step(name, () => {
+    if (b.error) throw new EvidenceError("no valid baseline to compare with");
+    const v = f(b.sha);
+    return { name, ok: !v.length, output: v.join("\n") };
+  }, extra);
+  integrity("test-integrity", (sha) => testIntegrity(root, cfg.protected || [], sha));
+  if (opts.allowAcceptanceChange) res.push({ name: "acceptance-integrity", ok: true, skipped: true, owner: acc.owner, started_ms: Date.now() - started,
+    output: "skipped: authorised acceptance revision (owner approval must come from CODEOWNERS review)" });
+  else integrity("acceptance-integrity", (sha) => acceptanceChanges(root, acc.paths || [], sha), { owner: acc.owner });
+  const ok = res.every((r) => r.ok), unverified = res.some((r) => r.unverified);
+  return { ok, outcome: ok ? "PASSED" : unverified ? "UNVERIFIED" : "FAILED", base, base_sha: b.sha || null, results: res,
+    failed: res.filter((r) => !r.ok).map((r) => r.name), unverified: res.filter((r) => r.unverified).map((r) => r.name),
+    failed_tests: [...new Set(res.flatMap((r) => r.failed_tests || []))].sort(), budget_sec: (deadline - started) / 1000,
+    deadline_ms: deadline - started };
 }
 
-// ---------- hooks ----------
 export function onStart(payload) {
   const root = repoRoot(field(payload, "cwd"));
   const cfg = loadConfig(root), sid = sessionId(payload);
@@ -231,9 +273,10 @@ export function onStop(payload) {
   st.blocks = st.blocks || 0;
   st.attempts = (st.attempts || 0) + 1;
   const res = runChecks(root, cfg, st.base_sha || "HEAD", t0);
+  setDeadline(Infinity); // bookkeeping below (ledger, HEAD, diff hash) must still be recorded
   const owner = cfg.acceptance.owner, limit = Number(cfg.max_blocks ?? 5);
   const rec = { session: sid, task: st.task || process.env.GOLDEN_PATH_TASK || null, attempt: st.attempts, ok: res.ok,
-    failed: res.failed, failed_tests: res.failed_tests, elapsed_sec: Math.round(1000 * (t0 / 1000 - st.started)) / 1000,
+    failed: res.failed, unverified: res.unverified, failed_tests: res.failed_tests, elapsed_sec: Math.round(1000 * (t0 / 1000 - st.started)) / 1000,
     base_sha: st.base_sha, base_source: st.base_source, head_sha: headSha(root), diff_hash: diffHash(root),
     stop_hook_active: !!field(payload, "stop_hook_active", "stop_hook_active") };
   let out = {};
@@ -246,7 +289,7 @@ export function onStop(payload) {
     st.blocks = 0; st.outcome = "FAILED";
   } else {
     st.blocks += 1;
-    ledger(root, "gate_red", { outcome: "RED", ...rec });
+    ledger(root, "gate_red", { outcome: res.unverified.length ? "UNVERIFIED" : "RED", ...rec });
     let extra = "";
     if (res.failed.includes("acceptance-integrity")) {
       ledger(root, "acceptance_change_attempt", { owner, ...rec });
@@ -357,7 +400,8 @@ export function main(argv) {
     const i = argv.indexOf("--base");
     const base = i >= 0 ? argv[i + 1] : process.env.GOLDEN_PATH_BASE;
     const root = repoRoot();
-    const res = runChecks(root, loadConfig(root), base || "HEAD");
+    const res = runChecks(root, loadConfig(root), base || "HEAD", Date.now(),
+      { allowAcceptanceChange: argv.includes("--authorized-acceptance-revision") });
     if (!base) res.warning = "no --base given: compared with HEAD, which includes any agent commits. Pass a fixed commit.";
     process.stdout.write(JSON.stringify(res, null, 1) + "\n");
     return res.ok ? 0 : 1;
