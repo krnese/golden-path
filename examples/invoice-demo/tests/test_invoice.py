@@ -1,8 +1,7 @@
 import unittest
 from decimal import Decimal
 
-from invoice.invoice import Invoice, Line
-from invoice.money import round_money, to_money
+from invoice import Invoice, Line, round_money, to_money
 
 
 class MoneyTests(unittest.TestCase):
