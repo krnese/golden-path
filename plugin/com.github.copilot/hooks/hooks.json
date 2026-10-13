@@ -1,0 +1,20 @@
+{
+  "version": 1,
+  "hooks": {
+    "sessionStart": [
+      { "type": "command", "bash": "python3 \"${PLUGIN_ROOT}/scripts/session_start.py\"", "powershell": "python \"${PLUGIN_ROOT}/scripts/session_start.py\"", "timeoutSec": 15 }
+    ],
+    "preToolUse": [
+      { "type": "command", "bash": "python3 \"${PLUGIN_ROOT}/scripts/guard.py\"", "powershell": "python \"${PLUGIN_ROOT}/scripts/guard.py\"", "timeoutSec": 10 }
+    ],
+    "agentStop": [
+      { "type": "command", "bash": "python3 \"${PLUGIN_ROOT}/scripts/gate.py\"", "powershell": "python \"${PLUGIN_ROOT}/scripts/gate.py\"", "timeoutSec": 120 }
+    ],
+    "subagentStart": [
+      { "type": "command", "matcher": "golden-path-reviewer", "bash": "python3 \"${PLUGIN_ROOT}/scripts/reviewer_usage.py\" start", "powershell": "python \"${PLUGIN_ROOT}/scripts/reviewer_usage.py\" start", "timeoutSec": 10 }
+    ],
+    "subagentStop": [
+      { "type": "command", "bash": "python3 \"${PLUGIN_ROOT}/scripts/reviewer_usage.py\" stop", "powershell": "python \"${PLUGIN_ROOT}/scripts/reviewer_usage.py\" stop", "timeoutSec": 10 }
+    ]
+  }
+}
