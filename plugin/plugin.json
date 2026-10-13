@@ -1,8 +1,14 @@
 {
   "$schema": "https://agent-plugins.org/schemas/1.0.0/plugin.schema.json",
   "name": "golden-path",
-  "version": "2.0.0-preview.1",
-  "description": "Golden Path: one skill, one primary agent, a stop gate that blocks while repository checks are red, an anti-test-weakening guard, and earned (validated) regression-test lessons with a local metrics ledger.",
+  "version": "3.0.0-preview.1",
+  "description": "Golden Path: a better way of working with the Copilot agents you already have, not another system. The business-context expert owns intent and protected acceptance tests; hooks keep the agent from editing them or stopping on red checks.",
   "repository": "https://github.com/krnese/golden-path",
-  "keywords": ["golden-path", "hooks", "stop-gate", "testing", "copilot"]
+  "keywords": [
+    "golden-path",
+    "hooks",
+    "stop-gate",
+    "testing",
+    "copilot"
+  ]
 }

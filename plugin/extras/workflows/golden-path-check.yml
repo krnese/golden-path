@@ -14,4 +14,4 @@ jobs:
           persist-credentials: false
       # Uses the runner's preinstalled python3 (stdlib only); add your own setup step if needed.
       - name: Golden Path check (configured command + test integrity vs base)
-        run: python3 .github/hooks/golden-path/golden_path.py check
+        run: python3 .github/hooks/golden-path/gate.py check
