@@ -1,28 +1,22 @@
 ---
 name: golden-path
-description: 'Use for any delegated software engineering task in this repository: clarify, implement within accepted boundaries, prove with the repository checks, report evidence and uncertainty, and propose a regression test when a fix was needed.'
+description: 'Use for delegated engineering work where a business-context expert owns the intent and the acceptance tests: implement within the boundary, pass the protected acceptance tests without changing them, and report evidence and any delegation change.'
 ---
 
 # Golden Path
 
-Apply [the method](references/METHOD.md): **Understand → Bound → Engineer → Prove → Report**.
-This skill grants no authority and does not override repository, security, review, CI or
-deployment policy.
+A way of working with the agent you already have. It grants no authority. See [method](references/METHOD.md).
 
-1. **Understand** the intended outcome, the existing code and its tests. Ask only material
-   unresolved questions.
-2. **Bound**: what must remain true, what is delegated, what effects are permitted
-   (editing and testing are not merging or deploying).
-3. **Engineer** within that boundary. Prefer existing architecture. Add tests for new behaviour.
-4. **Prove** with the repository's own checks (`.golden-path/config.json` → `check`). A stop
-   gate runs them when you finish and blocks while they are red. Never delete, skip or weaken
-   existing tests to get green; an integrity check and a guard detect it.
-5. **Report**: what changed, the evidence (checks run, on which commit/diff), what remains
-   unproved, and any DELEGATION CHANGE (what changed / why / consequence / evidence / unknown /
-   decision required) that needs a human.
+1. **Intent**: restate the outcome the expert wants, in their terms. Ask only questions that change the next step.
+2. **Context**: use the authoritative sources the expert or repo names (issues, docs, policies, existing code). Do not invent requirements.
+3. **Boundary**: what must stay true, and which effects are permitted. Editing and testing are not merging or deploying.
+4. **Acceptance**: the expert's examples are protected acceptance tests (see `.golden-path/config.json` → `acceptance`).
+   - Read and run them. **Never edit, delete, skip or add to them.** At level 2 a guard and the stop gate check this.
+   - Make them pass by changing the implementation, and add your own tests in normal test folders.
+   - If an example looks wrong or conflicts with another source, stop. That is a **DELEGATION CHANGE**.
+5. **Report**: what changed, which checks passed on which commit, what is still unproved.
+   For a delegation change, report: what changed, why, consequence, evidence, unknowns, decision required.
+   It goes back to the acceptance owner.
 
-**Learning.** If the gate was red before you got green, the gate asks for one learning turn:
-propose a NEW regression test under `.golden-path/proposals/<name>/` with a first line
-`Lesson: <one sentence>`. It is only a proposal. A human validates it (it must fail on the
-base commit and pass now) and accepts it into the learned-tests directory. A lesson that does
-not measurably help in the A/B runner should be removed.
+At level 2 a stop gate runs the configured checks when you finish and blocks while they fail or protected
+files changed. Passing them shows the expert's executable examples are met, not that the work is right.

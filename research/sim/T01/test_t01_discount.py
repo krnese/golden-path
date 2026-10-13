@@ -1,6 +1,6 @@
 import unittest
 from decimal import Decimal
-from invoice.invoice import Line
+from invoice import Line
 
 
 class DiscountTests(unittest.TestCase):

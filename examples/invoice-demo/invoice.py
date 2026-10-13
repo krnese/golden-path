@@ -1,8 +1,21 @@
 """Invoice totals. Norwegian standard VAT (25%) is applied per line, then summed."""
 from dataclasses import dataclass, field
-from decimal import Decimal
+from decimal import ROUND_HALF_UP, Decimal
 
-from .money import round_money, to_money
+# Money: amounts are Decimal; rounding is commercial (half-up) to 2 dp.
+CENT = Decimal("0.01")
+
+
+def to_money(value) -> Decimal:
+    """Convert int/str/Decimal to Decimal. Floats are rejected to avoid binary error."""
+    if isinstance(value, float):
+        raise TypeError("use str or Decimal, not float, for money")
+    return Decimal(value)
+
+
+def round_money(amount: Decimal) -> Decimal:
+    return amount.quantize(CENT, rounding=ROUND_HALF_UP)
+
 
 VAT_RATES = {"standard": Decimal("0.25"), "food": Decimal("0.15"), "exempt": Decimal("0")}
 

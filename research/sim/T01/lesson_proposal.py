@@ -1,7 +1,7 @@
 # Lesson: round the line net once, after applying the discount (half-up to 2 dp).
 import unittest
 from decimal import Decimal
-from invoice.invoice import Line
+from invoice import Line
 
 
 class RoundAfterDiscount(unittest.TestCase):

@@ -39,8 +39,13 @@ def write_config(d, **cfg):
         json.dump(cfg, f)
 
 
+GATE = os.path.join(SCRIPTS, "gate.py")
+CMD = {"gate.py": ["stop"], "session_start.py": ["start"], "guard.py": ["guard"], "reviewer_usage.py": ["subagent", "start"]}
+
+
 def hook(d, script, payload, env=None):
-    p = subprocess.run([sys.executable, os.path.join(SCRIPTS, script)], input=json.dumps(payload),
+    """Run the one hook script with the subcommand for this hook (names kept readable in tests)."""
+    p = subprocess.run([sys.executable, GATE, *CMD.get(script, script.split())], input=json.dumps(payload),
                        capture_output=True, text=True, cwd=d, env=dict(os.environ, **(env or {})))
     assert p.returncode == 0, p.stderr
     return json.loads(p.stdout or "{}")

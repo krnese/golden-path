@@ -2,19 +2,45 @@
   "version": 1,
   "hooks": {
     "sessionStart": [
-      { "type": "command", "bash": "python3 \"${PLUGIN_ROOT}/scripts/session_start.py\"", "powershell": "python \"${PLUGIN_ROOT}/scripts/session_start.py\"", "timeoutSec": 15 }
+      {
+        "type": "command",
+        "bash": "python3 \"${PLUGIN_ROOT}/scripts/gate.py\" start",
+        "powershell": "python \"${PLUGIN_ROOT}/scripts/gate.py\" start",
+        "timeoutSec": 15
+      }
     ],
     "preToolUse": [
-      { "type": "command", "bash": "python3 \"${PLUGIN_ROOT}/scripts/guard.py\"", "powershell": "python \"${PLUGIN_ROOT}/scripts/guard.py\"", "timeoutSec": 10 }
+      {
+        "type": "command",
+        "bash": "python3 \"${PLUGIN_ROOT}/scripts/gate.py\" guard",
+        "powershell": "python \"${PLUGIN_ROOT}/scripts/gate.py\" guard",
+        "timeoutSec": 10
+      }
     ],
     "agentStop": [
-      { "type": "command", "bash": "python3 \"${PLUGIN_ROOT}/scripts/gate.py\"", "powershell": "python \"${PLUGIN_ROOT}/scripts/gate.py\"", "timeoutSec": 120 }
+      {
+        "type": "command",
+        "bash": "python3 \"${PLUGIN_ROOT}/scripts/gate.py\" stop",
+        "powershell": "python \"${PLUGIN_ROOT}/scripts/gate.py\" stop",
+        "timeoutSec": 120
+      }
     ],
     "subagentStart": [
-      { "type": "command", "matcher": "golden-path-reviewer", "bash": "python3 \"${PLUGIN_ROOT}/scripts/reviewer_usage.py\" start", "powershell": "python \"${PLUGIN_ROOT}/scripts/reviewer_usage.py\" start", "timeoutSec": 10 }
+      {
+        "type": "command",
+        "matcher": "golden-path-reviewer",
+        "bash": "python3 \"${PLUGIN_ROOT}/scripts/gate.py\" subagent start",
+        "powershell": "python \"${PLUGIN_ROOT}/scripts/gate.py\" subagent start",
+        "timeoutSec": 10
+      }
     ],
     "subagentStop": [
-      { "type": "command", "bash": "python3 \"${PLUGIN_ROOT}/scripts/reviewer_usage.py\" stop", "powershell": "python \"${PLUGIN_ROOT}/scripts/reviewer_usage.py\" stop", "timeoutSec": 10 }
+      {
+        "type": "command",
+        "bash": "python3 \"${PLUGIN_ROOT}/scripts/gate.py\" subagent stop",
+        "powershell": "python \"${PLUGIN_ROOT}/scripts/gate.py\" subagent stop",
+        "timeoutSec": 10
+      }
     ]
   }
 }
