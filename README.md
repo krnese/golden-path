@@ -28,18 +28,18 @@ We make no claim that it is unique or that it is proven to help (see [Evidence](
 
 ## Three adoption levels
 
-No level requires a higher one. Level 1 needs no runtime at all. Level 2 needs Node.js 22+ and nothing from npm. The Python research tools are never a prerequisite.
+No level requires a higher one. Level 1 needs no runtime at all. Level 2 needs Node.js 22+ and nothing from npm. Level 3 is documentation only.
 
 | Level | What you get | Files in your repo | Code |
 |---|---|---|---|
 | **L1 Method** | The `golden-path` skill (Intent → Context → Boundary → Acceptance → Report) and its reference | `.github/skills/golden-path/` (+ an instructions block) | none |
 | **L2 Checked completion** | L1 + a stop gate that runs **your existing checks** when the agent tries to finish. Optional: protected acceptance tests (`acceptance.paths` in config) and the test-weakening guard | L1 + `.github/hooks/golden-path-loop.json`, `.github/hooks/golden-path/gate.mjs`, `.golden-path/config.json` | **one** plain JavaScript file, Node built-ins only |
-| **L3 Learning and measurement** | Lesson validation, ledger summary, A/B runner (Golden Path vs a plain agent). Research tools, **off by default**; we keep them only if they prove useful | L2 config with `"research": {"enabled": true}`. The tools stay in this repo's `research/` and are never copied in | `research/golden_path_research.py` (Python) |
+| **L3 Learning and measurement** | How to run a matched experiment (Golden Path vs your plain agent) with native tools: worktrees, transcripts, git, CI. **Docs only**: [docs/LEVEL-3-EXPERIMENTS.md](docs/LEVEL-3-EXPERIMENTS.md). The Python runner is retired to [archive/research-runner](archive/research-runner/README.md) | nothing beyond L2 | none |
 
 ### Install
 - **Installer:** `node plugin/install.mjs --target <repo> --level 1`.
   - Or `--level 2 --check "<your test command>" [--acceptance-path 'acceptance/**' --acceptance-owner "Finance: Ingrid" --acceptance-command "<cmd>"]`.
-  - Or `--level 3 ...`.
+  - Level 3 needs no install: see [docs/LEVEL-3-EXPERIMENTS.md](docs/LEVEL-3-EXPERIMENTS.md).
   - It writes only `golden-path`-namespaced files. It never overwrites your files: `copilot-instructions.md`, `AGENTS.md` and `.gitignore` get a marked block appended.
   - It refuses and writes nothing on any conflict.
   - `--uninstall` removes exactly what it wrote.
@@ -71,8 +71,8 @@ It only recommends. The host selects and runs the model, repo instructions can't
   - the optional `acceptance.command`;
   - two heuristic integrity checks.
 - **Retry limit:** after `max_blocks` (default 5, below Copilot's 8-consecutive-block override) the gate lets the agent stop. The run is then recorded as **`gave_up`, outcome FAILED, `requires_owner_review`**. It is never an implicit pass. **No review request is sent.** Surfacing it to the owner is up to your normal process, such as the required CI check failing on the PR.
-- **One time budget:** `hook_budget_sec` (default 100) covers *all* work in one hook run, not each command: configured commands, integrity checks and git calls. Each git call's timeout is taken from what remains. A command that would overrun is stopped, and later commands are reported "not run". Both count as red.
-- **Timeouts fail open** (documented Copilot hook behaviour). If the hook itself exceeds its `timeoutSec` (120), the stop goes ahead and no gate record is written. The L3 summary shows such sessions as **UNVERIFIED**. A timeout kills the command's whole process tree (`taskkill /T` on Windows, the process group on POSIX).
+- **One time budget:** `hook_budget_sec` (default 100) covers *all* work in one hook run, not each command: configured commands, integrity checks and git calls. This includes the repo lookup and the provenance reads (HEAD, diff hash). Each git call's timeout is taken from what remains, and no git process starts once the budget is used up. Provenance is then recorded as `provenance_unavailable`. There's no separate bookkeeping allowance: only local file writes (state, ledger) follow, well inside the host `timeoutSec` (120 vs the default budget of 100). A command that would overrun is stopped, and later commands are reported "not run". Both count as red.
+- **Timeouts fail open** (documented Copilot hook behaviour). If the hook itself exceeds its `timeoutSec` (120), the stop goes ahead and no gate record is written. Count such sessions as **UNVERIFIED** in any experiment. A timeout kills the command's whole process tree (`taskkill /T` on Windows, the process group on POSIX).
 - **Evidence must be valid.** The base must resolve to a commit present in the clone (`git rev-parse --verify <rev>^{commit}`). An unknown revision, a shallow clone missing the base, or any git failure while reading evidence makes the run **UNVERIFIED** (red, exit 1), never PASS. In CI, use `fetch-depth: 0`.
 - **Fixed comparison commit:** integrity checks compare against the commit recorded at **session start** (`base_sha`), not the agent's eventual HEAD, so committing an edited acceptance test doesn't hide it. In CI, `gate.mjs check --base <PR base sha>` does the same. Without `--base`, the check warns that it compared with HEAD.
 - **Line endings:** CRLF and LF checkouts of the same content are treated as equal (Windows `core.autocrlf`).
@@ -83,13 +83,22 @@ It only recommends. The host selects and runs the model, repo instructions can't
 - `method_files_present` (session start) records that the skill files existed and context was offered. **It does not show the agent read or followed the skill.**
 
 ## Changing acceptance tests on purpose (authorised revision)
-The PR-base comparison blocks *agent* edits to protected acceptance tests. It shouldn't block the owner's legitimate changes. The path, which uses GitHub's own controls and adds no new system:
-1. The owner (or someone acting for them) changes the acceptance tests in a **separate PR** that contains only that change.
-2. **CODEOWNERS** lists the owner for the acceptance paths, and branch protection has **Require review from Code Owners** on. That approval is the authorisation.
-3. Label the PR `golden-path:acceptance-revision`. The optional `golden-path-check` workflow then runs `gate.mjs check --authorized-acceptance-revision`, which skips **only** acceptance-integrity and reports it as skipped. All other checks still run.
-4. After merge, later PRs compare against the new base automatically.
+The PR-base comparison blocks agent edits to protected acceptance tests. Legitimate owner changes go through GitHub's own controls; this adds no new system.
 
-The label isn't authorisation: anyone with triage rights can add one. Code Owner review is. Locally, the stop gate never skips; the agent can't revise acceptance tests.
+**Required repository setup.** All four are needed; the label alone authorises nothing.
+1. A **CODEOWNERS** file that lists the acceptance owner for every acceptance path. Use individual `@user` owners: this check doesn't resolve teams or emails, so it fails closed on them.
+2. Branch protection or a ruleset with **Require review from Code Owners**.
+3. **Dismiss stale pull request approvals when new commits are pushed.**
+4. **`golden-path-check` as a required status check.**
+
+**Flow.**
+1. The owner's change goes in a **separate PR** labelled `golden-path:acceptance-revision`. The label only *selects* this path.
+2. The workflow then reads the PR's reviews from the GitHub API ([list reviews](https://docs.github.com/en/rest/pulls/reviews#list-reviews-for-a-pull-request)) and runs `gate.mjs authorize-acceptance-revision`. That requires an **APPROVED review on the current head commit** by a Code Owner of **every** changed acceptance file. CODEOWNERS and the config are read from the **base** commit, so the PR can't grant itself owners. Otherwise the check fails.
+3. A label without approval fails. So does an approval for an older commit, for example when acceptance tests changed after approval.
+4. When authorised, acceptance-integrity is reported as **SKIPPED** (outcome `PASSED_WITH_SKIPPED`), never as an integrity pass. All other checks still run.
+5. After merge, later PRs compare against the new base.
+
+Locally, the stop gate never skips: the agent can't revise acceptance tests.
 
 ## Honest limits
 - **Level 2 checks completion against the configured tests, not customer acceptance.**
@@ -97,7 +106,6 @@ The label isn't authorisation: anyone with triage rights can add one. Code Owner
 - Passing protected tests shows only that **the expert's executable examples are met**. It does not prove business correctness, deployment readiness, or authorization to merge, release or deploy.
 - The VS Code hooks experience is **Preview**; Copilot CLI/SDK hooks are GA. See [VERIFY-IN-VSCODE.md](VERIFY-IN-VSCODE.md) for what still has to be checked on a signed-in install.
 - L3 A/B: the **primary** comparison is Golden Path vs a **plain agent** (same agent command, model, tasks and acceptance tests; kit removed from the worktree). **Lessons on/off measures only the benefit of the retained lessons. It does not establish the benefit of Golden Path as a whole.**
-- The demo's research simulator (`research/sim/`) is **rigged**. It tests plumbing, and its numbers are not evidence.
 
 ## Evidence
 **This repository's own experiments** ([archive/research](archive/research/README.md)) found no measurable benefit from method guidance:
@@ -129,7 +137,7 @@ code .                                         # then: "Do tasks/T01.md" with Co
 ```
 - `acceptance/EXAMPLES.md` holds the business examples written by the (fictional) owner *Finance: Ingrid Berg*.
 - `acceptance/test_acceptance.py` holds the protected tests built from them. The owner enables increments in the acceptance command (`...test_acceptance.T01`).
-- L3 (optional): set `"research": {"enabled": true}`, then run `python3 <kit>/research/golden_path_research.py ab --tasks T01 --reps 3 --agent-cmd '<agent CLI> {prompt_file}'`, and `... summary`.
+- L3: follow [docs/LEVEL-3-EXPERIMENTS.md](docs/LEVEL-3-EXPERIMENTS.md) with your own agent client.
 
 ## Layout
 - `plugin/` is the kit:
@@ -138,7 +146,7 @@ code .                                         # then: "Do tasks/T01.md" with Co
   - `com.github.copilot/hooks/hooks.json`;
   - `optional/agents/`;
   - `install.mjs`.
-- `research/` holds the L3 tools and the rigged simulator. They are not in the plugin and are never installed.
+- `docs/LEVEL-3-EXPERIMENTS.md` is Level 3 (docs only).
 - `examples/` is the demo.
-- `tests/` holds the kit tests (`kit.test.mjs`, run with `node --test`) and the research tests (Python `unittest`).
-- `archive/` holds v1, v2 notes and the experiments.
+- `tests/` holds the kit tests (`kit.test.mjs`, run with `node --test`).
+- `archive/` holds v1, v2 notes, the experiments and the retired research runner.

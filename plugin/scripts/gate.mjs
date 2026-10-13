@@ -33,7 +33,6 @@ export const DEFAULT_CONFIG = {
   max_blocks: 5,
   hook_budget_sec: 100, // ONE budget for all commands and git calls in one hook run; keep below the hook timeoutSec
   acceptance: { paths: [], command: null, owner: "the acceptance owner" },
-  research: { enabled: false },
 };
 const SKILL_CANDIDATES = [".github/skills/golden-path/SKILL.md", "skills/golden-path/SKILL.md"];
 const HERE = path.dirname(fileURLToPath(import.meta.url));
@@ -53,11 +52,18 @@ export const field = (p, camel, snake, dflt) => (camel in p ? p[camel] : snake &
 
 // ONE deadline for the whole hook run: every git call takes its timeout from what is left of it.
 let DEADLINE = Infinity;
+// Diagnostics: GOLDEN_PATH_TRACE=<file> appends one JSON line per subprocess launch (time, command, timeout).
+function trace(cmd, timeout) {
+  const f = process.env.GOLDEN_PATH_TRACE;
+  if (f) fs.appendFileSync(f, JSON.stringify({ t: Date.now(), deadline: DEADLINE === Infinity ? null : DEADLINE, cmd, timeout }) + "\n");
+}
 export const setDeadline = (t) => { DEADLINE = t; };
 export function git(root, ...args) {
   const left = DEADLINE - Date.now();
   if (left <= 0) return [124, "", "the hook time budget was used up"];
-  const r = spawnSync("git", args, { cwd: root, encoding: "utf8", timeout: Math.min(30000, left), maxBuffer: 64 << 20 });
+  const timeout = Math.min(30000, left);
+  trace("git " + args.join(" "), timeout);
+  const r = spawnSync("git", args, { cwd: root, encoding: "utf8", timeout, maxBuffer: 64 << 20 });
   return [r.status ?? 1, r.stdout || "", r.error ? String(r.error.code || r.error) : r.stderr || ""];
 }
 /** Evidence that could not be read. Integrity checks report it as UNVERIFIED, never as PASS. */
@@ -91,9 +97,14 @@ export const headSha = (root) => {
   const [c, o] = git(root, "rev-parse", "HEAD");
   return c === 0 ? o.trim() : null;
 };
+/** Provenance hash of the working tree; null when git can't provide it (e.g. the hook budget is used up). */
 export function diffHash(root) {
-  const h = createHash("sha256").update(git(root, "diff", "HEAD", "--binary")[1]);
-  for (const rel of git(root, "ls-files", "--others", "--exclude-standard")[1].split("\n").filter(Boolean).sort()) {
+  const [c1, diff] = git(root, "diff", "HEAD", "--binary");
+  if (c1 !== 0) return null;
+  const [c2, others] = git(root, "ls-files", "--others", "--exclude-standard");
+  if (c2 !== 0) return null;
+  const h = createHash("sha256").update(diff);
+  for (const rel of others.split("\n").filter(Boolean).sort()) {
     h.update(rel);
     try { h.update(fs.readFileSync(path.join(root, rel))); } catch { /* vanished */ }
   }
@@ -190,6 +201,7 @@ function runCmd(name, cmd, root, deadline) {
   if (left <= 0) return { name, ok: false, output: `${name} not run: the hook time budget was used up (counted as RED)` };
   // Run via a small node supervisor so a timeout kills the WHOLE process tree (taskkill /T on Windows,
   // process group on POSIX). A plain spawnSync timeout kills only the shell and leaves grandchildren running.
+  trace("check: " + cmd, left);
   const r = spawnSync(process.execPath, ["-e", SUPERVISOR], { cwd: root, encoding: "utf8", input: JSON.stringify({ cmd, ms: left }),
     timeout: left + 10000, maxBuffer: 64 << 20, windowsHide: true,
     env: { ...process.env, PYTHONDONTWRITEBYTECODE: "1" } }); // no stale bytecode for restored files
@@ -229,11 +241,11 @@ export function runChecks(root, cfg, base = "HEAD", started = Date.now(), opts =
     return { name, ok: !v.length, output: v.join("\n") };
   }, extra);
   integrity("test-integrity", (sha) => testIntegrity(root, cfg.protected || [], sha));
-  if (opts.allowAcceptanceChange) res.push({ name: "acceptance-integrity", ok: true, skipped: true, owner: acc.owner, started_ms: Date.now() - started,
-    output: "skipped: authorised acceptance revision (owner approval must come from CODEOWNERS review)" });
+  if (opts.allowAcceptanceChange) res.push({ name: "acceptance-integrity", ok: true, skipped: true, status: "SKIPPED", owner: acc.owner, started_ms: Date.now() - started,
+    output: "SKIPPED (not checked, not a pass): authorised acceptance revision; authority is the current-head Code Owner approval verified by authorize-acceptance-revision" });
   else integrity("acceptance-integrity", (sha) => acceptanceChanges(root, acc.paths || [], sha), { owner: acc.owner });
-  const ok = res.every((r) => r.ok), unverified = res.some((r) => r.unverified);
-  return { ok, outcome: ok ? "PASSED" : unverified ? "UNVERIFIED" : "FAILED", base, base_sha: b.sha || null, results: res,
+  const ok = res.every((r) => r.ok), unverified = res.some((r) => r.unverified), skipped = res.filter((r) => r.skipped).map((r) => r.name);
+  return { ok, outcome: !ok ? (unverified ? "UNVERIFIED" : "FAILED") : skipped.length ? "PASSED_WITH_SKIPPED" : "PASSED", skipped, base, base_sha: b.sha || null, results: res,
     failed: res.filter((r) => !r.ok).map((r) => r.name), unverified: res.filter((r) => r.unverified).map((r) => r.name),
     failed_tests: [...new Set(res.flatMap((r) => r.failed_tests || []))].sort(), budget_sec: (deadline - started) / 1000,
     deadline_ms: deadline - started };
@@ -264,21 +276,27 @@ export function onStart(payload) {
 }
 
 export function onStop(payload) {
+  // The budget covers the WHOLE hook: repo lookup, checks, and provenance git reads. There is no extra
+  // bookkeeping allowance; once the budget is used up no git process is started and provenance is recorded
+  // as unavailable. Only local file writes (state, ledger) happen after that.
   const t0 = Date.now();
+  setDeadline(t0 + 1000 * Number(DEFAULT_CONFIG.hook_budget_sec));
   const root = repoRoot(field(payload, "cwd"));
   const cfg = loadConfig(root), sid = sessionId(payload);
+  setDeadline(t0 + 1000 * Number(cfg.hook_budget_sec ?? cfg.check_timeout_sec ?? DEFAULT_CONFIG.hook_budget_sec));
   const st = state(root, sid);
   st.started = st.started || t0 / 1000;
   if (!st.base_sha) { st.base_sha = headSha(root); st.base_source = "first-stop (sessionStart did not run; base may include agent commits)"; }
   st.blocks = st.blocks || 0;
   st.attempts = (st.attempts || 0) + 1;
   const res = runChecks(root, cfg, st.base_sha || "HEAD", t0);
-  setDeadline(Infinity); // bookkeeping below (ledger, HEAD, diff hash) must still be recorded
   const owner = cfg.acceptance.owner, limit = Number(cfg.max_blocks ?? 5);
   const rec = { session: sid, task: st.task || process.env.GOLDEN_PATH_TASK || null, attempt: st.attempts, ok: res.ok,
     failed: res.failed, unverified: res.unverified, failed_tests: res.failed_tests, elapsed_sec: Math.round(1000 * (t0 / 1000 - st.started)) / 1000,
     base_sha: st.base_sha, base_source: st.base_source, head_sha: headSha(root), diff_hash: diffHash(root),
     stop_hook_active: !!field(payload, "stop_hook_active", "stop_hook_active") };
+  if (rec.head_sha === null || rec.diff_hash === null) rec.provenance_unavailable = Date.now() >= t0 + 1000 * res.budget_sec
+    ? "the hook time budget was used up before provenance could be read" : "git could not provide HEAD or the diff";
   let out = {};
   if (res.ok) {
     ledger(root, "gate_green", { outcome: "PASSED", ...rec });
@@ -291,7 +309,8 @@ export function onStop(payload) {
     st.blocks += 1;
     ledger(root, "gate_red", { outcome: res.unverified.length ? "UNVERIFIED" : "RED", ...rec });
     let extra = "";
-    if (res.failed.includes("acceptance-integrity")) {
+    // Only a real detected change is an attempt; acceptance-integrity that could not run is UNVERIFIED, not an attempt.
+    if (res.results.some((r) => r.name === "acceptance-integrity" && !r.ok && !r.unverified)) {
       ledger(root, "acceptance_change_attempt", { owner, ...rec });
       extra = `\n\nProtected acceptance tests were changed. Restore them (git restore <path>). If you believe an acceptance ` +
         `example is wrong, that is a DELEGATION CHANGE: stop and report to ${owner}: what changed, why, consequence, ` +
@@ -394,8 +413,73 @@ export function onGuard(payload) {
   }
 }
 
+// ---------- authorised acceptance revision (CI only) ----------
+// The label only SELECTS the revision path. Authority is an APPROVED review, on the CURRENT head commit, by a
+// Code Owner of every changed acceptance file, with CODEOWNERS and config read from the BASE commit (a PR cannot
+// grant itself owners). Reviews come from GET /repos/{owner}/{repo}/pulls/{n}/reviews
+// (https://docs.github.com/en/rest/pulls/reviews#list-reviews-for-a-pull-request). Team and email owners are
+// not resolved here (that needs org membership lookups), so they fail closed. CODEOWNERS matching is the
+// common gitignore-style subset (https://docs.github.com/en/repositories/managing-your-repositorys-settings-and-features/customizing-your-repository/about-code-owners).
+function codeownersRe(pat) {
+  const dir = pat.endsWith("/"); let p = dir ? pat.slice(0, -1) : pat;
+  const anchored = p.startsWith("/") || p.includes("/"); if (p.startsWith("/")) p = p.slice(1);
+  const body = p.replace(/[.+^${}()|\\[\]]/g, "\\$&").replace(/\*\*/g, "\u0001").replace(/\*/g, "[^/]*")
+    .replace(/\?/g, "[^/]").replace(/\u0001/g, ".*");
+  return new RegExp((anchored ? "^" : "^(?:.*/)?") + body + (dir ? "/.*$" : "(?:/.*)?$"));
+}
+export function codeOwners(text, rel) {
+  let owners = null;
+  for (const line of text.split(/\r?\n/)) {
+    const t = line.replace(/#.*/, "").trim(); if (!t) continue;
+    const [pat, ...o] = t.split(/\s+/);
+    if (codeownersRe(pat).test(rel)) owners = o; // last matching rule wins
+  }
+  return owners;
+}
+/** A JSON array, or one review object per line (gh api --paginate --jq '.[]'). */
+export const parseReviews = (t) => (t.trim().startsWith("[") ? JSON.parse(t) : t.split(/\r?\n/).filter((l) => l.trim()).map((l) => JSON.parse(l)));
+export function authorizeRevision(root, { base, head, reviews }) {
+  const problems = [], fromBase = (rel) => { const [c, o] = git(root, "show", `${base}:${rel}`); return c === 0 ? o : null; };
+  const co = [".github/CODEOWNERS", "CODEOWNERS", "docs/CODEOWNERS"].map(fromBase).find((x) => x !== null);
+  const cfgText = fromBase(CONFIG_REL);
+  const accPaths = cfgText ? (JSON.parse(cfgText).acceptance || {}).paths || [] : [];
+  if (co == null) problems.push("no CODEOWNERS file at the base commit");
+  if (!accPaths.length) problems.push("no acceptance paths configured at the base commit");
+  const [dc, diff] = git(root, "diff", "--name-only", `${base}...${head}`);
+  if (dc !== 0) problems.push(`cannot list changes ${base}...${head}`);
+  const changed = dc === 0 ? diff.split("\n").filter((r) => r && matches(r, accPaths)) : [];
+  if (!problems.length && !changed.length) problems.push("the label is set but no acceptance file changed");
+  // Latest decisive review per user (COMMENTED/PENDING don't change approval state).
+  const latest = {};
+  for (const r of [...reviews].sort((a, b) => String(a.submitted_at).localeCompare(String(b.submitted_at))))
+    if (["APPROVED", "CHANGES_REQUESTED", "DISMISSED"].includes(r.state)) latest[String(r.user?.login).toLowerCase()] = r;
+  const files = [];
+  for (const rel of changed) {
+    const owners = co == null ? null : codeOwners(co, rel);
+    if (!owners || !owners.length) { problems.push(`${rel}: no Code Owner in CODEOWNERS at the base commit`); continue; }
+    const users = owners.filter((o) => /^@[^/]+$/.test(o)).map((o) => o.slice(1).toLowerCase());
+    const blocked = users.filter((u) => latest[u]?.state === "CHANGES_REQUESTED");
+    const ok = users.filter((u) => latest[u]?.state === "APPROVED" && latest[u].commit_id === head);
+    const stale = users.filter((u) => latest[u]?.state === "APPROVED" && latest[u].commit_id !== head);
+    if (blocked.length) problems.push(`${rel}: changes requested by ${blocked.join(", ")}`);
+    else if (!ok.length) problems.push(`${rel}: no approval by a Code Owner (${owners.join(" ")}) on the current head ${head}` +
+      (stale.length ? `; approval by ${stale.join(", ")} is for an older commit (acceptance may have changed after approval)` : "") +
+      (users.length < owners.length ? "; team/email owners are not resolved by this check" : ""));
+    files.push({ file: rel, owners, approved_by: ok });
+  }
+  return { authorized: !problems.length, base, head, files, problems };
+}
+
 export function main(argv) {
   const cmd = argv[0] || "stop";
+  if (cmd === "authorize-acceptance-revision") {
+    const arg = (k) => { const i = argv.indexOf(k); return i >= 0 ? argv[i + 1] : undefined; };
+    const [base, head, file] = [arg("--base"), arg("--head"), arg("--reviews")];
+    if (!base || !head || !file) { process.stderr.write("usage: authorize-acceptance-revision --base SHA --head SHA --reviews reviews.json\n"); return 64; }
+    const res = authorizeRevision(repoRoot(), { base, head, reviews: parseReviews(fs.readFileSync(file, "utf8")) });
+    process.stdout.write(JSON.stringify(res, null, 1) + "\n");
+    return res.authorized ? 0 : 1;
+  }
   if (cmd === "check") {
     const i = argv.indexOf("--base");
     const base = i >= 0 ? argv[i + 1] : process.env.GOLDEN_PATH_BASE;

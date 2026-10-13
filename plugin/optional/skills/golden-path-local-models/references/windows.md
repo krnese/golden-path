@@ -2,14 +2,43 @@
 
 **Status: API-verified, client verification pending.**
 
-## Verified by KN on Foundry Local 0.11.0 (Windows)
-<!-- TODO(KN): fill in the exact values you observed; the agent that wrote this file did not have them. -->
-- Exact model IDs (from `foundry model list --verbose`): _not yet recorded_
-- Port behaviour across `foundry server restart` / reboot, with and without `--port`: _not yet recorded_
-- VS Code UI chat test (model picker → one real task): **pending**
- The commands and settings below come from primary docs (fetched 13 Oct 2026). The end-to-end VS Code chat with a Foundry Local model has not yet been tested by this kit.
+## Verified by KN on Windows (13 Oct 2026, version-specific)
+These were observed on one machine. Treat them as an example, not a guarantee for other versions or hardware.
 
-Ask the user before each download or settings change. Nothing here goes into the repo.
+**Versions:**
+- Foundry Local CLI **0.11.0**, from WinGet package **Microsoft.FoundryLocal 0.11.0.0**.
+- VS Code **1.141.1**, Windows x64.
+
+**Model:**
+- Exact model ID **`qwen2.5-coder-0.5b-instruct-generic-gpu:4`**, alias **`qwen2.5-coder-0.5b`**.
+- About **528 MB**, WebGPU variant. Downloaded and loaded.
+
+**Port:**
+- The first, automatic-port service URL was `http://127.0.0.1:62719`. That was a single observation of a dynamic port, not a reusable fixed port.
+- These two commands set a fixed port:
+  ```powershell
+  foundry config set port 5273 --force
+  foundry server restart --port 5273
+  ```
+- Verified listener **`127.0.0.1:5273`** (localhost only) and endpoint **`http://127.0.0.1:5273/v1/chat/completions`**. The explicit restart honoured the selected port.
+
+**API checks:**
+- Non-streaming and streaming requests both returned HTTP 200 with `LOCAL_OK`.
+- With an **explicit** function choice, the model called `add_numbers` with `{a:2, b:3}`.
+- With **automatic** tool choice it did **not** reliably produce a call. That shows protocol compatibility, not reliable autonomous tool use.
+
+**Unload:** `foundry model unload` freed memory after verification.
+
+**Client:**
+- The user-level Custom Endpoint configuration and the experimental Agent Host BYOK flag were written in the user profile, not this repo.
+- This did not switch the model in the existing conversation.
+
+**Not verified (pending):**
+- Persistence after a reboot.
+- What an unqualified `foundry server restart` (without `--port`) does.
+- Repeated dynamic-port assignment.
+- An actual VS Code model-picker/chat success.
+- Reliable engineering performance.
 
 ## Foundry Local (preview)
 Source: [Foundry Local CLI](https://learn.microsoft.com/en-us/azure/foundry-local/how-to/how-to-use-foundry-local-cli), [CLI reference](https://learn.microsoft.com/en-us/azure/foundry-local/reference/reference-cli).
@@ -42,4 +71,4 @@ Source: [AI language models in VS Code](https://code.visualstudio.com/docs/agent
 - `github.copilot.chat.customOAIModels` is deprecated; use Custom Endpoint.
 - Agent Host sessions (for example Copilot sessions in the Agents window) need `chat.agentHost.byokModels.enabled` to use BYOK models. The docs mark it **experimental**; it might change or be removed.
 
-Pending verification: the exact model id format VS Code needs from Foundry Local, the dynamic port across restarts, tool calling per model, and the agent-mode chat test.
+Pending client verification: a VS Code model-picker/chat success with the ID above, and an agent-mode task trial. See "Not verified" above.
