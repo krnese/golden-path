@@ -16,11 +16,11 @@ import sys
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 ROOT = os.getcwd()
-GATE = os.path.join(ROOT, ".github", "hooks", "golden-path", "gate.py")
+GATE = os.path.join(ROOT, ".github", "hooks", "golden-path", "gate.mjs")
 
 
 def hook(cmd, payload):
-    p = subprocess.run([sys.executable, GATE, cmd], input=json.dumps(payload), capture_output=True, text=True, cwd=ROOT)
+    p = subprocess.run(["node", GATE, cmd], input=json.dumps(payload), capture_output=True, text=True, cwd=ROOT)
     return json.loads(p.stdout or "{}")
 
 

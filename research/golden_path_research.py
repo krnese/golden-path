@@ -7,10 +7,13 @@ Requires "research": {"enabled": true} in .golden-path/config.json. Run from the
   python3 research/golden_path_research.py learn validate|accept <proposal>
   python3 research/golden_path_research.py summary [--json]   ledger outcomes + A/B results
 
-A/B (primary comparison): arm `golden-path` (kit installed) vs arm `plain` (kit removed from the
+A/B (primary comparison, the only one that speaks to Golden Path as a whole): arm `golden-path` (kit installed) vs arm `plain` (kit removed from the
 throwaway worktree: hooks, skill, agents, instruction blocks). Same agent command, model, tasks and
 acceptance command. Secondary: `--lesson-arms` adds `lessons-off`, and `--per-lesson` adds one
-`minus-<lesson>` arm per learned test.
+`minus-<lesson>` arm per learned test. Lessons on/off measures only the benefit of the retained
+lessons; it does not establish the benefit of Golden Path as a whole.
+Scoring compares against a FIXED baseline commit recorded before the subject runs (baseline_sha), never the
+subject's eventual HEAD, so a subject that commits edits to the acceptance tests is still caught.
 This is a plain CLI script, NOT a Copilot dynamic workflow: the extension/workflow authoring API is
 not publicly documented (https://docs.github.com/en/copilot/how-tos/use-copilot-agents/use-dynamic-workflows).
 
@@ -30,10 +33,71 @@ import tempfile
 import time
 import uuid
 
-HERE = os.path.dirname(os.path.abspath(__file__))
-for p in (os.path.join(HERE, "..", "plugin", "scripts"), os.path.join(os.getcwd(), ".github", "hooks", "golden-path")):
-    sys.path.insert(0, os.path.abspath(p))
-import gate as g  # noqa: E402  (the kit's own gate script provides config, ledger and checks)
+import fnmatch
+import types
+
+
+# ---------- minimal helpers (the kit's hook script is Node.js; research stays Python and self-contained) ----------
+def _git(root, *args):
+    try:
+        p = subprocess.run(["git", *args], cwd=root, capture_output=True, text=True, timeout=60)
+        return p.returncode, p.stdout
+    except (OSError, subprocess.SubprocessError):
+        return 1, ""
+
+
+def _repo_root():
+    code, out = _git(os.getcwd(), "rev-parse", "--show-toplevel")
+    return out.strip() if code == 0 and out.strip() else os.getcwd()
+
+
+LEDGER_REL = os.path.join(".golden-path", "ledger.jsonl")
+
+
+def _load_config(root):
+    p = os.path.join(root, ".golden-path", "config.json")
+    cfg = {"protected": ["tests/**"], "research": {"enabled": False}}
+    if os.path.exists(p):
+        with open(p, encoding="utf-8") as f:
+            cfg.update(json.load(f))
+    cfg["acceptance"] = dict({"paths": [], "command": None, "owner": "the acceptance owner"}, **(cfg.get("acceptance") or {}))
+    return cfg
+
+
+def _ledger(root, event, **data):
+    p = os.path.join(root, LEDGER_REL)
+    os.makedirs(os.path.dirname(p), exist_ok=True)
+    with open(p, "a", encoding="utf-8") as f:
+        f.write(json.dumps({"ts": time.time(), "event": event, "arm": os.environ.get("GOLDEN_PATH_ARM"), **data}) + "\n")
+
+
+def _matches(rel, patterns):
+    rel = rel.replace(os.sep, "/")
+    return any((p.endswith("/**") and (rel == p[:-3] or rel.startswith(p[:-2]))) or fnmatch.fnmatch(rel, p) for p in patterns)
+
+
+def _acceptance_changes(root, patterns, base):
+    """Same rule as the kit's gate: any edit, deletion or new file vs a FIXED base commit (CRLF == LF)."""
+    if not patterns:
+        return []
+    code, out = _git(root, "ls-tree", "-r", "--name-only", base)
+    in_base = [r for r in out.splitlines() if _matches(r, patterns)] if code == 0 else []
+    changes = []
+    for rel in in_base:
+        p = os.path.join(root, rel)
+        if not os.path.exists(p):
+            changes.append(f"{rel}: deleted")
+            continue
+        with open(p, encoding="utf-8", errors="replace", newline="") as f:
+            if f.read().replace("\r\n", "\n") != _git(root, "show", f"{base}:{rel}")[1].replace("\r\n", "\n"):
+                changes.append(f"{rel}: modified")
+    added = set(_git(root, "ls-files", "--others", "--exclude-standard")[1].splitlines())
+    added |= set(_git(root, "diff", "--name-only", "--diff-filter=A", base)[1].splitlines())
+    return changes + [f"{r}: added" for r in sorted(added) if r and _matches(r, patterns) and r not in in_base]
+
+
+g = types.SimpleNamespace(git=_git, repo_root=_repo_root, load_config=_load_config, ledger=_ledger,
+                          acceptance_changes=_acceptance_changes, LEDGER_REL=LEDGER_REL)
 
 AB_REL = os.path.join(".golden-path", "ab", "results.jsonl")
 PROPOSALS_REL = os.path.join(".golden-path", "proposals")
@@ -73,7 +137,7 @@ def report(root):
         # The LAST gate event decides. No gate record at all (e.g. hook timeout, fails open) is UNVERIFIED.
         outcome = {"gate_green": "PASSED", "gave_up": "FAILED", "gate_red": "RED", None: "UNVERIFIED"}[last]
         sessions.append({"session": sid, "task": (gates or rs)[0].get("task"), "arm": rs[0].get("arm"),
-                         "outcome": outcome, "escalated_to": gates[-1].get("escalated_to") if outcome == "FAILED" else None,
+                         "outcome": outcome, "requires_owner_review": gates[-1].get("requires_owner_review") if outcome == "FAILED" else None,
                          "method_files_present": any(r["event"] == "method_files_present" for r in rs),
                          "iterations_to_green": green["attempt"] if green else None,
                          "time_to_green_sec": green["elapsed_sec"] if green else None,
@@ -197,6 +261,8 @@ def _one(root, cfg, spec, task, arm, rep, agent_cmd, timeout):
             subprocess.run(["git", "add", "-A"], cwd=tree, capture_output=True)
             subprocess.run(["git", "-c", "user.name=ab", "-c", "user.email=ab@local", "commit", "-q", "--allow-empty",
                             "-m", f"ab arm {arm}"], cwd=tree, capture_output=True)
+            # FIXED comparison commit, recorded before the subject runs. Scoring never uses the subject's own HEAD.
+            baseline = g.git(tree, "rev-parse", "HEAD")[1].strip()
             prompt = os.path.join(tree, spec.get("tasks_dir") or "", task + ".md")
             env = dict(os.environ, GOLDEN_PATH_ARM=arm, GOLDEN_PATH_TASK=task, GOLDEN_PATH_SESSION=sid,
                        GOLDEN_PATH_LESSONS="off" if arm in ("plain", "lessons-off") else "on")
@@ -208,14 +274,15 @@ def _one(root, cfg, spec, task, arm, rep, agent_cmd, timeout):
                 agent_exit = None
             wall = round(time.time() - t0, 3)
             acc_paths = cfg["acceptance"].get("paths") or []
-            changed = bool(g.acceptance_changes(tree, acc_paths, "HEAD"))
+            changed = bool(g.acceptance_changes(tree, acc_paths, baseline))
             acc_cmd = (spec.get("acceptance_command") or cfg["acceptance"].get("command") or "").replace("{task}", task)
             if changed:  # score against the expert's tests, not the agent's edited copy
-                subprocess.run(["git", "checkout", "-q", "HEAD", "--", *[p.split("*")[0].rstrip("/") for p in acc_paths]],
+                subprocess.run(["git", "checkout", "-q", baseline, "--", *[p.split("*")[0].rstrip("/") for p in acc_paths]],
                                cwd=tree, capture_output=True)
             accepted = subprocess.run(acc_cmd, shell=True, cwd=tree, capture_output=True).returncode == 0 if acc_cmd else None
             s = next((x for x in report(tree)["sessions"] if x["session"] == sid), None)
-            row = {"task": task, "arm": arm, "rep": rep, "session": sid, "agent_exit": agent_exit, "wall_sec": wall,
+            row = {"task": task, "arm": arm, "rep": rep, "session": sid, "baseline_sha": baseline,
+                   "subject_head_sha": g.git(tree, "rev-parse", "HEAD")[1].strip(), "agent_exit": agent_exit, "wall_sec": wall,
                    "accepted": accepted, "acceptance_tests_changed": changed,
                    "outcome": s["outcome"] if s else ("NO-GATE" if arm == "plain" else "UNVERIFIED"),
                    "iterations_to_green": s and s["iterations_to_green"], "failed_checks": s and s["failed_checks"],
@@ -240,7 +307,7 @@ def summary(root):
         arms.setdefault(r["arm"], []).append(r)
     by_arm = {a: {"n": len(v), "acceptance_rate": _mean([1 if r["accepted"] else 0 for r in v if r["accepted"] is not None]),
                   "acceptance_tests_changed": sum(1 for r in v if r["acceptance_tests_changed"]),
-                  "failed_escalated": sum(1 for r in v if r["outcome"] == "FAILED"),
+                  "failed_requires_owner_review": sum(1 for r in v if r["outcome"] == "FAILED"),
                   "mean_wall_sec": _mean([r["wall_sec"] for r in v]),
                   "mean_iterations_to_green": _mean([r["iterations_to_green"] for r in v])} for a, v in sorted(arms.items())}
     gp, plain = by_arm.get("golden-path"), by_arm.get("plain")
@@ -289,10 +356,10 @@ def main(argv=None):
         print(json.dumps(out, indent=1))
         return 0
     o = out["ledger"]["outcomes"]
-    print(f"Golden Path sessions: PASSED {o['PASSED']}, FAILED (escalated) {o['FAILED']}, still RED {o['RED']}, "
+    print(f"Golden Path sessions: PASSED {o['PASSED']}, FAILED (requires owner review) {o['FAILED']}, still RED {o['RED']}, "
           f"UNVERIFIED (no gate record) {o['UNVERIFIED']}")
     for s in out["ledger"]["failed_sessions"]:
-        print(f"  FAILED: session {s['session']} task {s['task']} -> escalated to {s['escalated_to']}")
+        print(f"  FAILED: session {s['session']} task {s['task']} -> requires review by {s['requires_owner_review']} (no request was sent)")
     print("A/B primary (golden-path vs plain):", json.dumps(out["ab"]["primary_golden_path_vs_plain"]))
     print(out["ledger"]["note"])
     print(out["ab"]["caveat"])
