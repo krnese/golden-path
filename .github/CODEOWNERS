@@ -1,0 +1,45 @@
+# CODEOWNERS for the Golden Path kit repository (krnese/golden-path).
+#
+# What it does: GitHub requests a review from the listed owner on every pull request that touches a matching
+# path. The LAST matching pattern wins, so the explicit lines below override the default '*' line; keep them
+# owned by the same person unless you mean to change who reviews that path.
+#
+# Enforcement is OFF on purpose. The ruleset 'Golden Path main' has "Require review from Code Owners"
+# disabled because this repository has a single maintainer, and GitHub does not let a PR author approve
+# their own PR. Turning the rule on now would lock the maintainer out of merging. This file routes review
+# requests and documents ownership; it does not block merges today.
+#
+# To enable enforcement safely later:
+#   1. Add a second owner (for example a colleague, as an individual @user) to the lines below and merge
+#      that change first, so every owned path has someone other than the author who can approve.
+#   2. Then, in Settings > Rules > 'Golden Path main', turn on "Require review from Code Owners".
+# Alternative for a sole maintainer: add the repository admin role as a bypass actor with mode
+# "pull request only" (bypass allowed only through a PR, never by direct push), document that choice in
+# docs/LEVEL-2.md, and only then enable the rule.
+#
+# Copilot code review reads instructions from the PR head branch, so instruction files are owner-reviewed.
+
+*                                   @krnese
+
+# Kit source and installer
+/plugin/                            @krnese
+
+# Installed kit, automation and agent instructions
+/.github/                           @krnese
+/.github/hooks/                     @krnese
+/.github/skills/                    @krnese
+/.github/prompts/                   @krnese
+/.github/workflows/                 @krnese
+/.github/scripts/                   @krnese
+/.github/copilot-instructions.md    @krnese
+/.github/instructions/              @krnese
+/AGENTS.md                          @krnese
+/.golden-path/config.json           @krnese
+
+# Kit tests and the demo's business acceptance and tasks
+/tests/                             @krnese
+/examples/invoice-demo/acceptance/  @krnese
+/examples/invoice-demo/tasks/       @krnese
+
+# This file itself (last, so nothing above can override it)
+/.github/CODEOWNERS                 @krnese

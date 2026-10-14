@@ -77,6 +77,15 @@ The PR-base comparison blocks agent edits to protected acceptance tests. Legitim
 
 Locally, the stop gate never skips: the agent can't revise acceptance tests.
 
+### Code Owner review for single-maintainer repos
+
+GitHub doesn't let a PR author approve their own PR. If you are the only Code Owner and turn on **Require review from Code Owners**, you can't merge your own changes. Enable it safely:
+
+1. Add a second owner first (an individual `@user`, such as a colleague) to every CODEOWNERS line, and merge that change.
+2. Then turn on **Require review from Code Owners** in the branch protection or ruleset.
+
+Alternative: give the repository admin role a **pull request only** bypass in the ruleset (no direct pushes), document that choice, and then enable the rule. Until one of these is in place, keep CODEOWNERS for review routing and leave the rule off. The authorised-revision check above needs an approval from someone other than the author, so it also needs a second owner. The kit's own repository works this way today: CODEOWNERS lists `@krnese`, and the rule is off on purpose.
+
 ---
 
 Next: [Level 3: learning and measurement](LEVEL-3-EXPERIMENTS.md) →
