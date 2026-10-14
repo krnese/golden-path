@@ -337,8 +337,13 @@ describe("Gate & time budget", () => {
       cfg(d, { check: FAIL, max_blocks: 2 });
       const outs = Array.from({ length: 8 }, () => stop());
       assert.deepEqual(outs.map((o) => o.decision), ["block", "block", "allow", "allow", "allow", "allow", "allow", "allow"]);
-      for (const o of outs.slice(2)) assert.match(o.reason, /remains FAILED/);
-      for (const o of outs.slice(3)) assert.match(o.reason, /needs review by/);
+      assert.match(outs[2].reason, /retries exhausted/);
+      assert.doesNotMatch(outs[2].reason, /No checks were run/);
+      for (const o of outs.slice(3)) {
+        assert.match(o.reason, /remains FAILED/);
+        assert.match(o.reason, /No checks were run/);
+        assert.match(o.reason, /needs review by/);
+      }
       const st = JSON.parse(rd(d, ".golden-path/state/s1.json"));
       assert.equal(st.outcome, "FAILED"); assert.equal(st.terminal, true); assert.equal(st.blocks, 2);
       assert.equal(ledger(d).filter((r) => r.event === "gate_red").length, 2, "no second retry cycle");

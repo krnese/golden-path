@@ -346,6 +346,8 @@ export const SCOPE_NOTE = "These results do not expand the user's assignment: re
   "If a failure is outside it, report the blocker and stop; do not revert or discard work, and do not implement unrelated features.";
 // "allow" is a documented agentStop decision; the host ignores reason when not blocking, so the message is for
 // hook logs and the ledger, not a prompt. https://docs.github.com/en/copilot/reference/hooks-reference
+export const GAVE_UP_MESSAGE = (owner) => `Golden Path stop gate: retries exhausted. This run is recorded as FAILED ` +
+  `and needs review by ${owner}. Stopping is allowed; it is not a pass. Start a new session to retry.`;
 export const TERMINAL_MESSAGE = (owner) => `Golden Path stop gate: this run remains FAILED (retries exhausted in this ` +
   `session) and needs review by ${owner}. No checks were run. Stopping is allowed; it is not a pass. Start a new session to retry.`;
 
@@ -361,8 +363,9 @@ export function onStop(payload) {
   const st = state(root, sid);
   const owner = cfg.acceptance.owner, limit = Number(cfg.max_blocks ?? 5);
   // Terminal failure: once this session has used up its retries (outcome FAILED), later stops in the SAME session
-  // are allowed at once. No check command and no git call runs, the outcome stays FAILED, and the ledger records it.
-  // Allowing the stop is not success. Only a new session (new session id) starts a new retry budget.
+  // are allowed at once. No check command and no further git call after the repository lookup. The outcome stays
+  // FAILED, and the ledger records it. Allowing the stop is not success. Only a new session (new session id)
+  // starts a new retry budget.
   if (st.terminal || st.outcome === "FAILED") {
     st.terminal = true; st.outcome = "FAILED";
     st.stops_after_terminal = (st.stops_after_terminal || 0) + 1;
@@ -393,7 +396,7 @@ export function onStop(payload) {
     // Terminal for this session: the block count is NOT reset, so no new retry cycle starts (see the top of onStop).
     ledger(root, "gave_up", { outcome: "FAILED", requires_owner_review: owner, ...rec });
     st.outcome = "FAILED"; st.terminal = true;
-    out = { decision: "allow", reason: TERMINAL_MESSAGE(owner) };
+    out = { decision: "allow", reason: GAVE_UP_MESSAGE(owner) };
   } else {
     st.blocks += 1;
     ledger(root, "gate_red", { outcome: res.unverified.length ? "UNVERIFIED" : "RED", ...rec });
