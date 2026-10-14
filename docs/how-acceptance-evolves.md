@@ -12,7 +12,7 @@ I've kept two kinds of statements apart throughout. **Verified** means it's back
 
 ## Two kinds of tests, which are easy to mix up
 
-**1. The kit's own tests ship with the kit.** `tests/kit.test.mjs` in the Golden Path repository tests the kit itself: the gate, the installer, the CODEOWNERS logic. For example, it checks that owners are read from the *base* commit's CODEOWNERS so a PR can't grant itself owners, and that team owners fail closed (`tests/kit.test.mjs`, around lines 720–760). You get these the moment you clone the kit. They tell you the guard rails work. They say nothing about your business.
+**1. The kit's own tests ship with the kit.** `tests/kit.test.mjs` in the Golden Path repository tests the kit itself: the gate, the installer, the CODEOWNERS logic. For example, the tests "later changes-requested overrides approval; the PR cannot grant itself owners" and "no CODEOWNERS or team owners fail closed" check that owners are read from the *base* commit's CODEOWNERS so a PR can't grant itself owners, and that team owners fail closed. You get these the moment you clone the kit. They tell you the guard rails work. They say nothing about your business.
 
 **2. Your repository's acceptance tests don't exist yet.** Nobody can ship them to you, because they describe *your* rules: what a correct invoice, report or API response looks like for *your* owners. They build up over time, one task after another. Each task brings examples from the person who owns that rule, and those examples become protected tests.
 
