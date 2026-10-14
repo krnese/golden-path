@@ -35,5 +35,27 @@ test("self-install: installer dry-run over the committed state has nothing to do
     assert.equal(code, 0, `${FIX}\n  ${out.join("\n  ")}`);
     assert.equal(out.join("\n"), "nothing to do", `${FIX}\n  ${out.join("\n  ")}`);
   } finally { fs.rmSync(tmp, { recursive: true, force: true }); }
-  assert.equal(JSON.parse(rd(".golden-path/config.json")).check, "node --test tests/*.test.mjs");
+  // The hook check is deliberately a fast subset (packaging, installer, self-install) that fits hook_budget_sec on a
+  // developer machine; the full suite (gate, demo, Windows) runs in CI as the required "Kit guarantees" jobs.
+  const check = JSON.parse(rd(".golden-path/config.json")).check;
+  assert.match(check, /--test-name-pattern="\^\(Packaging\|Installer\|self-install\)"/);
+  assert.match(check, /tests\/kit\.test\.mjs tests\/self-install\.test\.mjs$/);
+});
+
+test("self-install: CRLF-only differences in kit sources or installed copies are not drift", () => {
+  // Windows clones with core.autocrlf made before .gitattributes pinned eol=lf can hold CRLF copies.
+  const tmp = fs.mkdtempSync(path.join(os.tmpdir(), "gp-crlf-"));
+  try {
+    const log = console.log; console.log = () => {};
+    try { assert.equal(install(tmp, { check: "node -e 0" }), 0); } finally { console.log = log; }
+    const manifest = JSON.parse(fs.readFileSync(path.join(tmp, ".golden-path/install-manifest.json"), "utf8"));
+    for (const rel of Object.keys(manifest.files)) {
+      const p = path.join(tmp, rel);
+      fs.writeFileSync(p, fs.readFileSync(p, "utf8").replace(/\n/g, "\r\n"));
+    }
+    const out = []; console.log = (...a) => out.push(a.join(" "));
+    try { assert.equal(install(tmp, { dryRun: true }), 0); } finally { console.log = log; }
+    assert.equal(out.join("\n"), "nothing to do");
+    for (const c of Object.values(plannedFiles({ level: 2 }))) assert.ok(!c.includes("\r"), "planned kit content is LF");
+  } finally { fs.rmSync(tmp, { recursive: true, force: true }); }
 });

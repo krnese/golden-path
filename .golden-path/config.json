@@ -1,5 +1,5 @@
 {
-  "check": "node --test tests/*.test.mjs",
+  "check": "node --test --test-name-pattern=\"^(Packaging|Installer|self-install)\" tests/kit.test.mjs tests/self-install.test.mjs",
   "acceptance": {
     "paths": [],
     "owner": "the acceptance owner",

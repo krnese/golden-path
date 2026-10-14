@@ -1,5 +1,7 @@
 # Kit source and its installed copies keep LF on every OS, so the installer's hashes match on Windows clones
 # (otherwise `node plugin/install.mjs --target .` sees CRLF copies as modified and refuses).
+# If a clone predates these rules, run: git add --renormalize . && git status  (or re-clone). The installer also
+# treats CRLF-only differences as identical to the LF kit sources so a stale checkout is not reported as drift.
 plugin/** text eol=lf
 .github/skills/golden-path/** text eol=lf
 .github/hooks/** text eol=lf
