@@ -6,6 +6,47 @@ reviewable engineering acceptance, then connect it to the controls they already 
 > **Core principle:** the expert and engineer decide what needs to be true; automation checks the parts
 > they have made executable.
 
+![Golden Path overview: business functions, shared acceptance record, coding agent, pull request, durable boundary, outcomes, golden loop](docs/assets/golden-path-overview.png)
+
+Left to right: **business owners** (product, the domain expert) write intent and concrete examples; those
+become the **shared acceptance record**, which in this kit is plain files (in the demo,
+`examples/invoice-demo/tasks/T01.md` and `examples/invoice-demo/acceptance/EXAMPLES.md` plus the acceptance
+tests). **The coding agent** implements and tests; at Level 2 a stop gate keeps it working while checks are
+red (up to `max_blocks`, default 5) and denies edits to protected acceptance tests. The **pull request** carries
+the change and evidence, and the **durable boundary** (CI, branch protection, Code Owner review: GitHub
+settings you configure) decides the merge.
+
+The **golden loop** is a process that starts outside the repository: a business owner (for example marketing)
+works with an agent outside the repo, which turns their intent into a PR; Copilot in the repo picks up that
+PR, and owners approve any outward change.
+
+**What's verified today.**
+- *Shipped and tested:* the skill and instructions (`plugin/skills/golden-path/`), the L2 guard and stop gate
+  (`plugin/scripts/gate.mjs`; tests in `tests/kit.test.mjs` such as "the stop gate blocks while checks are red,
+  then allows once they are green" and "editing, creating or absolute-path editing an acceptance test is
+  denied and names the owner"), the installer (`plugin/install.mjs`), and the invoice demo with its scripted
+  refusal scenario (`examples/make-demo.sh`, `simulator/refusal_scenario.mjs`). Verified with Copilot in VS Code.
+- *Your GitHub settings:* CI, branch protection and Code Owner review. The kit adds no gate of its own.
+- *Target model, not yet validated:* "any harness, any model" (other agents get the skill only, untested),
+  the golden loop (being validated with a real end-to-end trial), and measured outcomes (Level 3 is guidance
+  only). Legal/Compliance and Marketing/Sales as owners are part of the method; the kit has no tooling for them.
+
+Every element is checked in [docs/overview-claims.md](docs/overview-claims.md).
+
+## Two ways to use Golden Path
+
+1. **Fork or clone this repository.** It works with Copilot in VS Code right away: the kit is already
+   installed here at Level 2 (`.github/skills/golden-path/`, the marked block in
+   `.github/copilot-instructions.md`, the hook in `.github/hooks/`, config in `.golden-path/config.json`,
+   whose check is this repo's own `node --test`). Those are installed *copies*; **`plugin/` is the source of
+   truth**. After changing anything under `plugin/`, rerun `node plugin/install.mjs --target .` and commit;
+   a test (`tests/self-install.test.mjs`) fails in CI if the copies drift.
+2. **Add it to your own repository** with `node plugin/install.mjs --target <your-repo>` (levels below). It
+   copies the same files into *your* repository's `.github/` (and `.golden-path/` at L2). Paths such as
+   `.github/skills/golden-path/` below mean those files in your repository after install.
+
+A standalone VS Code plugin that does not need repository files is being explored.
+
 ## What this means in practice
 
 Each part of the pitch maps to something concrete in the kit:
@@ -16,7 +57,7 @@ Each part of the pitch maps to something concrete in the kit:
 - **"Express business intent."** The domain expert writes the rule in plain language, as business
   examples. In the invoice demo, the fictional finance owner's
   [T01 examples](examples/invoice-demo/acceptance/EXAMPLES.md#t01-percentage-discount-per-line) define a
-  per-line percentage discount; the task [`tasks/T01.md`](examples/invoice-demo/tasks/T01.md) points the
+  per-line percentage discount; the task [`examples/invoice-demo/tasks/T01.md`](examples/invoice-demo/tasks/T01.md) points the
   agent at them and says not to change them.
 - **"Reviewable engineering acceptance."** The examples become acceptance tests the expert owns. With a
   CODEOWNERS entry for the acceptance paths and branch protection requiring Code Owner review, a change to
@@ -47,8 +88,7 @@ the repository:
 - **Custom agent:** `golden-path.agent.md` (`--with-agent-preset`) is an optional preset for teams that
   want a named agent that always applies the skill. Nothing depends on it.
 
-Today this depends on files committed to your repository. A plugin distribution that does not need
-repository files is being explored.
+Today this depends on files committed to your repository (in this repository they are already committed).
 
 Golden Path is for two people working together: a **business-context expert** (product owner, finance,
 operations…) who owns the intent and the acceptance examples, and a **developer** who turns them into
@@ -106,7 +146,7 @@ node plugin/install.mjs --target <repo> --level 2 --check "npm test" \
   --with-ci
 ```
 
-- `--with-ci` adds `.github/workflows/golden-path-check.yml`, which re-runs the checks against the PR base
+- `--with-ci` adds `.github/workflows/golden-path-check.yml` to your repository, which re-runs the checks against the PR base
   commit. Make it a required status check.
 - The protected-test checks are **heuristics**: they catch the common ways an agent edits or weakens a test,
   not every workaround.
@@ -165,10 +205,13 @@ selects or switches the model; that is the host's job. L2 checks run the same re
 
 ## Repository layout
 
-- `plugin/`: the kit (skill, `scripts/gate.mjs` hook, hooks JSON, optional agents and skills, `install.mjs`).
+- `plugin/`: the kit (skill, `plugin/scripts/gate.mjs` hook, hooks JSON, optional agents and skills, `install.mjs`).
 - `docs/`: level 2 reference, level 3 guide, evidence, examples.
 - `examples/`: the invoice demo.
 - `tests/kit.test.mjs`: kit tests (`node --test tests/kit.test.mjs`).
+- `tests/self-install.test.mjs`: checks the installed copies below match `plugin/`.
+- `.github/skills/golden-path/`, `.github/hooks/`, `.github/prompts/`, `.github/copilot-instructions.md`, `.golden-path/`:
+  the kit installed into this repository (generated from `plugin/`; do not edit by hand).
 - `archive/`: earlier versions and the original experiments (history, not instructions).
 - [CHANGELOG.md](CHANGELOG.md): version history.
 

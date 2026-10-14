@@ -5,6 +5,13 @@ History of the kit. The current way to adopt it is in the [README](README.md); t
 
 ## Unreleased
 
+- **Self-install (dogfooding).** The repository has its own kit installed at Level 2 (skill, instructions
+  block, hook, `.golden-path/config.json` with `node --test` as the check), so a fork or clone works with
+  Copilot in VS Code on open. `plugin/` stays the source of truth; `tests/self-install.test.mjs` (also a CI
+  step on Ubuntu and Windows) fails if the installed copies drift. README: "Two ways to use Golden Path" and an overview
+  diagram (`docs/assets/golden-path-overview.png`, HTML source alongside) whose claims are checked in
+  `docs/overview-claims.md`; parts not yet validated are labelled in the text. Kit files keep LF on Windows
+  (`.gitattributes`) so the installer's hashes match.
 - README rewritten for adopters: pitch, how it works, three levels with quickstarts, limits, examples.
   History moved here; level 2 detail moved to [docs/LEVEL-2.md](docs/LEVEL-2.md); evidence moved to
   [docs/evidence.md](docs/evidence.md).
