@@ -7,6 +7,7 @@ History of the kit. The current way to adopt it is in the [README](README.md); t
 
 ## Unreleased
 
+- **Gate: terminal FAILED after retries; this repo's check no longer picks up the demo.** After `max_blocks` the session stays FAILED: later stops in the same session allow at once, run no checks, keep outcome FAILED, and record `gate_terminal` (not a pass). A new session restarts the budget. The red-block reason now says results do not expand the user's assignment — repair only within the authorized scope, otherwise report the blocker and stop. This repository's `.golden-path/config.json` `check` is now `node --test tests/*.test.mjs` (kit + self-install only); the invoice demo's intentionally red acceptance stays out of the hook and is still asserted in CI and the demo kit test. New kit tests for terminal exhaustion, no post-terminal checks, new-session restart, ledger permanence, and scope wording.
 - **Background article** ([docs/background.md](docs/background.md)): why Golden Path exists and how it evolved,
   from the outcome-first V0 lifecycle through the retired structured-state architecture, the NO CHANGE studies,
   the demoted learning loop and retired research runner, to today's bridge (Intent → Context → Boundary →

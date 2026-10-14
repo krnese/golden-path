@@ -323,7 +323,7 @@ describe("Gate & time budget", () => {
     test("block limit is recorded as FAILED, requires owner review, never a pass and never 'escalated'", () => {
       cfg(d, { check: FAIL, max_blocks: 2, acceptance: { owner: "Finance: Ingrid" } });
       const outs = [stop(), stop(), stop()];
-      assert.deepEqual(outs.map((o) => o.decision), ["block", "block", undefined]);
+      assert.deepEqual(outs.map((o) => o.decision), ["block", "block", "allow"]);
       assert.match(outs[1].reason, /last block/);
       assert.match(outs[1].reason, /requires review by Finance: Ingrid/);
       const last = ledger(d).at(-1);
@@ -332,6 +332,61 @@ describe("Gate & time budget", () => {
       assert.ok(!ledger(d).some((r) => r.event === "gate_green"));
       assert.doesNotMatch(fs.readFileSync(path.join(d, ".golden-path/ledger.jsonl"), "utf8") + outs.map((o) => o.reason || "").join(""), /escalat/i);
       assert.equal(JSON.parse(rd(d, ".golden-path/state/s1.json")).outcome, "FAILED");
+    });
+    test("retry exhaustion stays terminal across repeated stop events in the same session", () => {
+      cfg(d, { check: FAIL, max_blocks: 2 });
+      const outs = Array.from({ length: 8 }, () => stop());
+      assert.deepEqual(outs.map((o) => o.decision), ["block", "block", "allow", "allow", "allow", "allow", "allow", "allow"]);
+      assert.match(outs[2].reason, /retries exhausted/);
+      assert.doesNotMatch(outs[2].reason, /No checks were run/);
+      for (const o of outs.slice(3)) {
+        assert.match(o.reason, /remains FAILED/);
+        assert.match(o.reason, /No checks were run/);
+        assert.match(o.reason, /needs review by/);
+      }
+      const st = JSON.parse(rd(d, ".golden-path/state/s1.json"));
+      assert.equal(st.outcome, "FAILED"); assert.equal(st.terminal, true); assert.equal(st.blocks, 2);
+      assert.equal(ledger(d).filter((r) => r.event === "gate_red").length, 2, "no second retry cycle");
+    });
+    test("a terminal FAILED run launches no further check commands", () => {
+      const marker = path.join(d, "check-ran.log");
+      cfg(d, { check: nodeCmd(`require('fs').appendFileSync(${JSON.stringify(marker).replace(/"/g, "'")},'x');process.exit(1)`), max_blocks: 1 });
+      stop(); stop(); // block 1/1, then gave_up (FAILED)
+      assert.equal(fs.readFileSync(marker, "utf8"), "xx");
+      const trace = path.join(d, "trace.jsonl");
+      for (let i = 0; i < 3; i++) hook(d, "stop", { sessionId: "s1", cwd: d, stop_hook_active: true }, { GOLDEN_PATH_TRACE: trace });
+      assert.equal(fs.readFileSync(marker, "utf8"), "xx", "check command ran after the run was terminal");
+      const launched = fs.existsSync(trace) ? fs.readFileSync(trace, "utf8").split("\n").filter(Boolean).map((l) => JSON.parse(l).cmd) : [];
+      assert.ok(!launched.some((c) => c.startsWith("check:")), launched.join(", "));
+      assert.ok(launched.every((c) => c === "git rev-parse --show-toplevel"), `only the repo lookup may run: ${launched.join(", ")}`);
+    });
+    test("a new session restarts the retry budget after a terminal FAILED run", () => {
+      cfg(d, { check: FAIL, max_blocks: 1 });
+      stop(); stop();
+      assert.equal(stop().decision, "allow");
+      assert.equal(stop({ sessionId: "s2" }).decision, "block");
+      cfg(d, { check: PASS });
+      assert.deepEqual(stop({ sessionId: "s2" }), {});
+      assert.equal(JSON.parse(rd(d, ".golden-path/state/s2.json")).outcome, "PASSED");
+      assert.equal(JSON.parse(rd(d, ".golden-path/state/s1.json")).outcome, "FAILED");
+    });
+    test("a terminal failure stays recorded in the ledger and is never turned into a pass", () => {
+      cfg(d, { check: FAIL, max_blocks: 1, acceptance: { owner: "Finance: Ingrid" } });
+      stop(); stop();
+      cfg(d, { check: PASS, acceptance: { owner: "Finance: Ingrid" } }); // even if checks would now be green, the same session stays FAILED
+      stop(); stop();
+      const ev = ledger(d);
+      assert.deepEqual(ev.map((r) => r.event), ["gate_red", "gave_up", "gate_terminal", "gate_terminal"]);
+      assert.ok(ev.slice(1).every((r) => r.outcome === "FAILED" && r.requires_owner_review === "Finance: Ingrid"));
+      assert.ok(!ev.some((r) => r.event === "gate_green" || r.outcome === "PASSED"));
+    });
+    test("the red block reason limits repair to the authorized scope", () => {
+      cfg(d, { check: FAIL });
+      const r = stop().reason;
+      assert.match(r, /do not expand the user's assignment/);
+      assert.match(r, /repair only within the authorized scope/);
+      assert.match(r, /report the blocker and stop/);
+      assert.match(r, /do not revert or discard work, and do not implement unrelated features/);
     });
     test("a missing check command counts as red", () => assert.match(stop().reason, /No check command/));
     test("a check that times out counts as red", () => {

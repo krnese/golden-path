@@ -328,7 +328,8 @@ What each party does:
 - **CI.** The optional `golden-path-check` workflow re-runs the checks against the PR's base commit.
 - **Optional session guidance and checking (Level 2).** A guard denies edits to acceptance files and names the
   owner. A stop gate keeps the agent working while checks are red, up to a limit, and records a run that gives up
-  as FAILED, never as a pass.
+  as FAILED, never as a pass. FAILED is terminal for that session: later stops are allowed without re-running
+  checks and the outcome stays FAILED; only a new session starts a new retry budget.
 
 **Hooks and instructions are assistance, not the final security or governance boundary.** The README is explicit:
 hooks run inside the agent session, can time out (and then fail open) and can be worked around; the protected-test
