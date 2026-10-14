@@ -1,9 +1,17 @@
 # Acceptance examples: invoice calculator
 
-Owner: **Finance, Ingrid Berg** (a fictional business-context expert). These examples are the
-acceptance criteria. Each section is an executable test class in `acceptance/test_acceptance.py`, which Ingrid reviewed
-and approved. Agents may read and run them but never change them. A change goes back to Ingrid.
-Ingrid releases increments by naming them in the acceptance command (`.golden-path/config.json`), e.g. `python3 -m unittest acceptance.test_acceptance.T01`.
+Ownership is per increment, and each owner has their own acceptance path:
+
+| Increments | Owner | Examples | Tests |
+|---|---|---|---|
+| T01..T04 | **Finance, Ingrid Berg** | this file | `acceptance/test_acceptance.py` |
+| T05 | **Marketing** | [`acceptance/marketing/EXAMPLES.md`](marketing/EXAMPLES.md) | `acceptance/marketing/test_acceptance.py` |
+
+The owners are fictional business-context experts. The sections below are Finance's (T01..T04); each is an
+executable test class in `acceptance/test_acceptance.py`, which Ingrid reviewed and approved. Agents may read and
+run them but never change them. A change goes back to the owner of that increment.
+Owners release increments by naming them in the acceptance command (`.golden-path/config.json`), e.g. `python3 -m unittest acceptance.test_acceptance.T01`
+(Marketing's T05 would be `acceptance.marketing.test_acceptance.T05`; it is not enabled yet).
 
 ## T01: Percentage discount per line
 | Unit price | Qty | Discount | Net | VAT (25%) | Why |
@@ -22,17 +30,3 @@ Quantity 9 at 1.00 → 9.00. Quantity 10 at 1.00 → 9.50 (5% bulk). 10 × 0.33 
 ## T04: VAT summary
 Two standard lines at 0.10 and one food line at 10.00 → standard: net 0.20, VAT 0.06; food: net 10.00,
 VAT 1.50. The summary always adds up to the invoice VAT total.
-
-## T05: Review summary (owner: Marketing, intent: "invoices a human can approve at a glance")
-One summary per invoice with fixed fields: `lines`, `net`, `vat`, `gross`, `flags`, `recommendation`, `reason`.
-
-| Invoice | Gross | Flags | Recommendation | Why |
-|---|---|---|---|---|
-| A 100.00 × 2 | 250.00 | none | approve | Totals reconcile, nothing unusual |
-| A 100.00 × 1 twice | 250.00 | `duplicate_line` (names A) | review | Same line twice looks like double billing |
-| A 40 000.00 × 1 | 50 000.00 | none | approve | At the 50 000.00 threshold is not over it |
-| A 40 000.01 × 1 | 50 000.01 | `over_threshold` (states 50 000.00) | review | Large amounts need a second look |
-| no lines | 0.00 | `empty` | review | Nothing to approve |
-
-The `reason` is always one sentence (one line, ends with `.`, ≤ 200 characters) and names every flag.
-Not testable here, checked by Marketing reading real summaries: that a person "immediately understands" it.

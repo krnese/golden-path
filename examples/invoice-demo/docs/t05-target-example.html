@@ -11,7 +11,7 @@ code{background:#eaeef2;padding:1px 4px;border-radius:3px}.reason{font-style:ita
 .foot{padding:0 24px 18px;font-size:12px;color:#57606a}</style></head><body>
 <div class="banner">Illustration of the acceptance target, not real output; review_summary() is not implemented yet</div>
 <h1>T05 review summary: target example</h1>
-<p class="sub">Values from <code>acceptance/EXAMPLES.md</code> (section T05); fields from <code>tasks/T05.md</code>. Threshold 50 000.00, standard VAT 25%.</p>
+<p class="sub">Values from <code>acceptance/marketing/EXAMPLES.md</code> (section T05, owner Marketing); fields from <code>tasks/T05.md</code>. Threshold 50 000.00, standard VAT 25%.</p>
 <div class="row">
 <div class="card"><h2>Invoice 1: A 100.00 × 2</h2>
 <table><tr><th>SKU</th><th class="n">Unit price</th><th class="n">Qty</th><th class="n">Net</th></tr>
@@ -28,5 +28,5 @@ code{background:#eaeef2;padding:1px 4px;border-radius:3px}.reason{font-style:ita
 <p><b>recommendation:</b> <span class="pill rv">review</span></p>
 <div class="reason">reason: "Needs review (duplicate_line): SKU A is billed twice with identical details."</div></div>
 </div>
-<div class="foot">Other T05 rows (same rules): A 40 000.00 × 1 → gross 50 000.00, no flags, approve (at the threshold is not over it) · A 40 000.01 × 1 → gross 50 000.01, <code>over_threshold</code> (states 50 000.00), review · no lines → 0.00, <code>empty</code>, review. Reason wording is illustrative; the tests only fix its shape (one line, ends with ".", ≤ 200 chars, names every flag code).</div>
+<div class="foot">Other T05 rows (same rules): A 40 000.00 × 1 → gross 50 000.00, no flags, approve (at the threshold is not over it) · A 40 000.01 × 1 → gross 50 000.01, <code>over_threshold</code> (states 50000.00), review · no lines → 0.00, <code>empty</code>, review. Reason wording is illustrative; the tests only fix its shape (one line, ends with ".", ≤ 200 chars, names every flag code).</div>
 </body></html>

@@ -765,7 +765,7 @@ describe("Demo baseline: the demo installs and behaves as documented", { skip: p
   test("baseline: one hook script, acceptance red until T01 is implemented, research off", () => {
     assert.match(makeOut, /frozen tasks and acceptance examples verified/);
     const code = Object.keys(tree(d)).filter((p) => /\.(py|mjs)$/.test(p)).sort();
-    assert.deepEqual(code, [".github/hooks/golden-path/gate.mjs", "acceptance/test_acceptance.py", "invoice.py", "simulator/refusal_scenario.mjs", "tests/test_invoice.py"]);
+    assert.deepEqual(code, [".github/hooks/golden-path/gate.mjs", "acceptance/marketing/test_acceptance.py", "acceptance/test_acceptance.py", "invoice.py", "simulator/refusal_scenario.mjs", "tests/test_invoice.py"]);
     const r = run([NODE, path.join(d, ".github/hooks/golden-path/gate.mjs"), "check", "--base", gate.headSha(d)], d);
     assert.equal(r.status, 1);
     const res = Object.fromEntries(JSON.parse(r.stdout).results.map((x) => [x.name, x.ok]));
