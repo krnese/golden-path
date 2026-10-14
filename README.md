@@ -198,7 +198,7 @@ selects or switches the model; that is the host's job. L2 checks run the same re
   node examples/make-demo.mjs ~/golden-path-demo
   cd ~/golden-path-demo
   node simulator/refusal_scenario.mjs
-  code .   # then ask Copilot's default agent: "Do tasks/T05.md" (or T01; both are enabled and red)
+  code .   # then ask Copilot's default agent: "Do tasks/T05.md" (or T01 / T06; all are enabled and red)
   ```
 
 - **[Connecting your own reasoning boundaries](docs/examples/hybrid-workflow.md)**: one adopter's workflow

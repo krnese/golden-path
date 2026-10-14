@@ -762,10 +762,10 @@ describe("Demo baseline: the demo installs and behaves as documented", () => {
     makeOut = r.stdout;
   });
   after(() => rm(base));
-  test("baseline: one hook script, acceptance red until T01 and T05 are implemented, research off", () => {
+  test("baseline: one hook script, acceptance red until T01, T05 and T06 are implemented, research off", () => {
     assert.match(makeOut, /frozen tasks and acceptance examples verified/);
     const code = Object.keys(tree(d)).filter((p) => /\.(py|mjs)$/.test(p)).sort();
-    assert.deepEqual(code, [".github/hooks/golden-path/gate.mjs", "acceptance/marketing/t05.test.mjs", "acceptance/t01.test.mjs", "acceptance/t02.test.mjs", "acceptance/t03.test.mjs", "acceptance/t04.test.mjs", "invoice.mjs", "simulator/refusal_scenario.mjs", "tests/invoice.test.mjs"]);
+    assert.deepEqual(code, [".github/hooks/golden-path/gate.mjs", "acceptance/marketing/t05.test.mjs", "acceptance/marketing/t06.test.mjs", "acceptance/t01.test.mjs", "acceptance/t02.test.mjs", "acceptance/t03.test.mjs", "acceptance/t04.test.mjs", "invoice.mjs", "simulator/refusal_scenario.mjs", "tests/invoice.test.mjs"]);
     // The demo's checks are node:test runs; drop the runner's NODE_TEST_CONTEXT so they report like a user's shell.
     const { NODE_TEST_CONTEXT, ...env } = process.env;
     const r = run([NODE, path.join(d, ".github/hooks/golden-path/gate.mjs"), "check", "--base", gate.headSha(d)], d, { env });
@@ -774,12 +774,14 @@ describe("Demo baseline: the demo installs and behaves as documented", () => {
     assert.deepEqual(res, { check: true, acceptance: false, "test-integrity": true, "acceptance-integrity": true });
     const failed = JSON.parse(r.stdout).failed_tests;
     assert.ok(failed.some((t) => t.startsWith("T05 ")), "T05 is enabled and red: " + failed.join(", "));
+    assert.ok(failed.some((t) => t.startsWith("T06 ")), "T06 is enabled and red: " + failed.join(", "));
     assert.ok(failed.some((t) => t.startsWith("T01 ")), "T01 is enabled and red: " + failed.join(", "));
     assert.ok(!Object.keys(tree(d)).some((p) => p.endsWith(".py")), "the demo has no Python files");
     const c = JSON.parse(rd(d, ".golden-path/config.json"));
     assert.deepEqual(c.acceptance.paths, ["acceptance/**"]);
     assert.match(c.acceptance.command, /acceptance\/t01\.test\.mjs/);
     assert.match(c.acceptance.command, /acceptance\/marketing\/t05\.test\.mjs/);
+    assert.match(c.acceptance.command, /acceptance\/marketing\/t06\.test\.mjs/);
     assert.ok(!("research" in c));
   });
   test("the scripted refusal scenario refuses both acceptance edits and leaves acceptance untouched", () => {

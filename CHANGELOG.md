@@ -5,6 +5,9 @@ History of the kit. The current way to adopt it is in the [README](README.md); t
 
 ## Unreleased
 
+- **T06 (Marketing) acceptance: plain-language reasons, name every duplicated product.** New `tasks/T06.md`,
+  EXAMPLES section and `acceptance/marketing/t06.test.mjs`; added to the demo acceptance command (red until
+  implemented). Supersedes T05's "summary reason names every flag code" clause (T05 test amended). FREEZE re-pinned.
 - **Invoice demo ported to Node.js (no Python) and T05 (Marketing) enabled.** The app (`invoice.mjs`, exact
   `Decimal` money on BigInt, half-up rounding, JS numbers refused like Python floats), the developer tests
   (`tests/invoice.test.mjs`) and all acceptance tests (Finance `acceptance/t01..t04.test.mjs`, Marketing
