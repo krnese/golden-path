@@ -31,22 +31,22 @@ fs.mkdirSync(path.join(target, ".github"), { recursive: true });
 fs.writeFileSync(path.join(target, ".github", "CODEOWNERS"), [
   "# Finance (Ingrid Berg) owns T01..T04 acceptance (acceptance/t01..t04.test.mjs, acceptance/EXAMPLES.md)",
   "/acceptance/ @demo-finance-ingrid-berg",
-  "# Marketing owns T05 acceptance on its own path (acceptance/marketing/)",
+  "# Marketing owns T05..T06 acceptance on its own path (acceptance/marketing/)",
   "/acceptance/marketing/ @demo-marketing", ""].join("\n"));
 
 git("init", "-q");
 git("config", "core.autocrlf", "false");
 git("add", "-A");
-git("commit", "-qm", "Invoice demo baseline (acceptance examples by Finance T01..T04 and Marketing T05)");
+git("commit", "-qm", "Invoice demo baseline (acceptance examples by Finance T01..T04 and Marketing T05..T06)");
 
 // Enabled increments: the acceptance command names one test file per enabled increment (T01 by Finance,
-// T05 by Marketing). Add a file here to switch an increment on; the L2 stop gate holds the agent to all of them.
+// T05 and T06 by Marketing). Add a file here to switch an increment on; the L2 stop gate holds the agent to all of them.
 // TAP output lets the gate list each failing acceptance test by name.
 run(process.execPath, [path.join(kit, "install.mjs"), "--target", ".",
   "--check", 'node --test --test-reporter=tap "tests/**/*.test.mjs"',
   "--acceptance-path", "acceptance/**",
-  "--acceptance-owner", "Finance: Ingrid Berg (T01..T04, acceptance/); Marketing (T05, acceptance/marketing/)",
-  "--acceptance-command", "node --test --test-reporter=tap acceptance/t01.test.mjs acceptance/marketing/t05.test.mjs",
+  "--acceptance-owner", "Finance: Ingrid Berg (T01..T04, acceptance/); Marketing (T05..T06, acceptance/marketing/)",
+  "--acceptance-command", "node --test --test-reporter=tap acceptance/t01.test.mjs acceptance/marketing/t05.test.mjs acceptance/marketing/t06.test.mjs",
   ...extra]);
 git("add", "-A");
 git("commit", "-qm", "Install Golden Path kit");

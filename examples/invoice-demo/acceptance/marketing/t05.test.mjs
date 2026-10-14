@@ -49,7 +49,7 @@ test("T05 test_duplicate_line_flagged_with_plain_reason", () => {
   assert.deepEqual(codes(s), ["duplicate_line"]);
   assert.ok(s["flags"][0]["reason"].includes("A"));
   assert.equal(s["recommendation"], "review");
-  assert.ok(s["reason"].includes("duplicate_line"));
+  // superseded by T06: the summary reason no longer names flag codes
   assertOneSentence(s["reason"]);
 });
 
@@ -107,17 +107,17 @@ test("T05 test_empty_invoice_needs_review", () => {
   assert.equal(typeof s["flags"][0]["reason"], "string");
   assert.ok(s["flags"][0]["reason"].trim());
   assert.equal(s["recommendation"], "review");
-  assert.ok(s["reason"].includes("empty"));
+  // superseded by T06: the summary reason no longer names flag codes
   assertOneSentence(s["reason"]);
 });
 
-test("T05 test_every_flag_named_in_reason", () => {
+test("T05 test_every_flag_has_a_reason", () => {
   const s = new Invoice().add(new Line("A", "30000.00", 1)).add(new Line("A", "30000.00", 1))
     .reviewSummary();
   assert.deepEqual([...codes(s)].sort(), ["duplicate_line", "over_threshold"]);
   for (const f of s["flags"]) {
     assert.ok(f["reason"].trim());
-    assert.ok(s["reason"].includes(f["code"]));
+    // superseded by T06: the summary reason explains each flag in plain words instead of naming its code
   }
   assertOneSentence(s["reason"]);
 });
