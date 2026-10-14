@@ -12,6 +12,8 @@ const git = (args, cwd = temporary) => execFileSync("git", args, { cwd, encoding
 try {
   const sourceSha = git(["rev-parse", "HEAD"], repositoryRoot);
   git(["init", "--initial-branch=gh-pages"]);
+  git(["config", "core.autocrlf", "false"]);
+  fs.writeFileSync(path.join(temporary, ".git", "info", "attributes"), "* -text\n");
   git(["remote", "add", "origin", "https://github.com/krnese/golden-path.git"]);
   if (git(["ls-remote", "--heads", "origin", "refs/heads/gh-pages"])) {
     git(["fetch", "--depth=1", "origin", "gh-pages"]);

@@ -48,7 +48,9 @@ npm run deploy
 ```
 
 The dependency-free publisher re-verifies the build and pushes the output to
-`gh-pages`, with its source commit in the message. It does not force-push or
+`gh-pages`, with its source commit in the message. Its isolated git repository
+disables text normalization so published artifacts retain their exact build bytes,
+including recorded evidence on Windows. It does not force-push or
 change Pages settings. On first publication an administrator must select
 `gh-pages` and `/` as the GitHub Pages source. Wait for the Pages deployment,
 then verify the public page, stylesheet, script, image and gate JSON. A successful
