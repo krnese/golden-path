@@ -7,6 +7,12 @@ History of the kit. The current way to adopt it is in the [README](README.md); t
 
 ## Unreleased
 
+- **Repository: CODEOWNERS for the kit, enforcement off on purpose.** Added `.github/CODEOWNERS` (owner
+  `@krnese`) covering the default, `plugin/`, `.github/` (hooks, skills, prompts, workflows, scripts,
+  instructions, CODEOWNERS itself), `AGENTS.md`, `.golden-path/config.json`, `tests/` and the invoice demo's
+  acceptance and tasks. "Require review from Code Owners" stays off because the repository has a single
+  maintainer who can't approve their own PRs. `docs/LEVEL-2.md` gains "Code Owner review for single-maintainer
+  repos" with the safe way to enable it (second owner first, or an admin pull-request-only bypass).
 - **Gate: clearer acceptance-integrity failures; start a new session after an owner change.** In round 2 of the
   golden-loop trial the owner committed new acceptance (T06) inside a running Copilot session, and the gate
   correctly recorded FAILED against the session-start base, without saying which base it used or what to do. A
