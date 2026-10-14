@@ -1,0 +1,15 @@
+{
+ "blocks": [
+  ".github/copilot-instructions.md",
+  ".gitignore"
+ ],
+ "files": {
+  ".github/hooks/golden-path-loop.json": "30d50c9e1c7c2b741630e3b9edcedac52e893c80aa55b353bbe517ee543b6cd7",
+  ".github/hooks/golden-path/gate.mjs": "dbd5e95fe05f99a802e316000f01f5e274c4d73e70a0f2e9d801cf1a3b154fbe",
+  ".github/prompts/golden-path-task.prompt.md": "2af49ee2e3bfb7c8bd1abef564ee5a2dd7d307f94299e23fff872271a2cd5d33",
+  ".github/skills/golden-path/SKILL.md": "c17ee60d8cb34703c0268d2afd0b901eb41345da60a483421741f00ebcdc7dc0",
+  ".github/skills/golden-path/references/METHOD.md": "7064fce0ac328289261f2d00fa31d643de34526f69594c95f9f2ea3e4c9aca03"
+ },
+ "level": 2,
+ "version": "3.1.0-preview.1"
+}

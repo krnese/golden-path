@@ -1,0 +1,13 @@
+{
+  "check": "node --test",
+  "acceptance": {
+    "paths": [],
+    "owner": "the acceptance owner",
+    "command": null
+  },
+  "protected": [
+    "tests/**"
+  ],
+  "max_blocks": 5,
+  "hook_budget_sec": 100
+}

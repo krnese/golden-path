@@ -5,4 +5,10 @@ coverage/
 /.vscode/settings.json
 __pycache__/
 *.pyc
-.golden-path/
+
+# golden-path:begin
+.golden-path/state/
+.golden-path/ledger.jsonl
+.golden-path/proposals/
+.golden-path/ab/
+# golden-path:end
