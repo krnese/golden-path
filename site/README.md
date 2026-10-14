@@ -54,6 +54,12 @@ Repository acceptance tests under `tests/` are unchanged.
 - Check desktop and mobile for overflow, loaded images, visible focus, keyboard
   order, native controls, no console errors, reduced motion and script-disabled
   fallback. Screenshots in a PR complement, not replace, these behavior checks.
+- At 1366 x 768 and 1440 x 900, the smaller AI headline and all six initial
+  diagram cards must fit without scrolling. Wide screens put the introduction
+  beside the diagram. Narrow screens stack them, with the longer partnership and
+  adoption explanation following the walkthrough; the introduction still
+  explains the partnership and benefit first. At 390 x 844 the headline
+  and first invoice card must fit. Keep full step descriptions and tool glyphs.
 
 Official tool glyphs and their license are documented in
 [the icon attribution](public/icons/README.md). They do not imply vendor endorsement.
@@ -64,6 +70,8 @@ Review captures from the local build: [desktop](../docs/assets/landing-loop-desk
 [mobile](../docs/assets/landing-loop-mobile.png), and
 [recorded evidence detail](../docs/assets/landing-loop-evidence.png).
 These screenshots show the proposed page, not a newly published version.
+First-screen review captures: [1366 x 768 desktop](../docs/assets/landing-first-viewport-desktop.png)
+and [390 x 844 mobile](../docs/assets/landing-first-viewport-mobile.png).
 
 ## Publish on GitHub Pages
 
