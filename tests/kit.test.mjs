@@ -762,7 +762,7 @@ describe("Demo baseline: the demo installs and behaves as documented", { skip: p
     makeOut = r.stdout;
   });
   after(() => rm(base));
-  test("baseline: one hook script, acceptance red until T01 is implemented, research off", () => {
+  test("baseline: one hook script, acceptance red until T01 and T05 are implemented, research off", () => {
     assert.match(makeOut, /frozen tasks and acceptance examples verified/);
     const code = Object.keys(tree(d)).filter((p) => /\.(py|mjs)$/.test(p)).sort();
     assert.deepEqual(code, [".github/hooks/golden-path/gate.mjs", "acceptance/marketing/test_acceptance.py", "acceptance/test_acceptance.py", "invoice.py", "simulator/refusal_scenario.mjs", "tests/test_invoice.py"]);
@@ -772,6 +772,8 @@ describe("Demo baseline: the demo installs and behaves as documented", { skip: p
     assert.deepEqual(res, { check: true, acceptance: false, "test-integrity": true, "acceptance-integrity": true });
     const c = JSON.parse(rd(d, ".golden-path/config.json"));
     assert.deepEqual(c.acceptance.paths, ["acceptance/**"]);
+    assert.match(c.acceptance.command, /acceptance\.test_acceptance\.T01\b/);
+    assert.match(c.acceptance.command, /acceptance\.marketing\.test_acceptance\.T05\b/);
     assert.ok(!("research" in c));
   });
   test("the scripted refusal scenario refuses both acceptance edits and leaves acceptance untouched", () => {

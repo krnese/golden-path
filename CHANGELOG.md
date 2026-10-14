@@ -5,6 +5,10 @@ History of the kit. The current way to adopt it is in the [README](README.md); t
 
 ## Unreleased
 
+- **Demo: T05 (Marketing) enabled.** `examples/make-demo.sh` now passes
+  `python3 -m unittest acceptance.test_acceptance.T01 acceptance.marketing.test_acceptance.T05` as the acceptance
+  command, so the L2 stop gate holds the agent to T05 as well as T01. T05 tests are unchanged (still red until
+  implemented).
 - **Self-install (dogfooding).** The repository has its own kit installed at Level 2 (skill, instructions
   block, hook, `.golden-path/config.json` with `node --test` as the check), so a fork or clone works with
   Copilot in VS Code on open. `plugin/` stays the source of truth; `tests/self-install.test.mjs` (also a CI

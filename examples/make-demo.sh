@@ -11,6 +11,8 @@ fi
 mkdir -p "$target"
 cp -R "$here/invoice-demo/." "$target/"
 cd "$target"
+# Enabled increments: the acceptance command lists one unittest class per enabled increment (T01 by Finance,
+# T05 by Marketing). Add a class here to switch an increment on; the L2 stop gate holds the agent to all of them.
 # Per-increment acceptance ownership. The kit config takes ONE acceptance.owner string (used in agent-facing
 # messages); per-path owners are expressed in CODEOWNERS, which the authorised-revision check reads (last
 # matching line wins; individual @user owners only). The handles below are fictional demo placeholders.
@@ -28,7 +30,7 @@ node "$kit/install.mjs" --target . \
   --check "python3 -m unittest discover -s tests" \
   --acceptance-path "acceptance/**" \
   --acceptance-owner "Finance: Ingrid Berg (T01..T04, acceptance/); Marketing (T05, acceptance/marketing/)" \
-  --acceptance-command "python3 -m unittest acceptance.test_acceptance.T01" \
+  --acceptance-command "python3 -m unittest acceptance.test_acceptance.T01 acceptance.marketing.test_acceptance.T05" \
   "$@"
 git add -A
 git -c user.name=demo -c user.email=demo@local commit -qm "Install Golden Path kit"

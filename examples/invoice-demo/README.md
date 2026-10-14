@@ -8,8 +8,9 @@ Python; the kit's hook script is Node.js.
   - *Finance: Ingrid Berg* owns T01..T04: `acceptance/EXAMPLES.md` and `acceptance/test_acceptance.py`.
   - *Marketing* owns T05: `acceptance/marketing/EXAMPLES.md` and `acceptance/marketing/test_acceptance.py`.
 - The test modules are the protected acceptance tests built from those examples, one class per
-  increment. The owner enables increments in the acceptance command (`acceptance.test_acceptance.T01`); T05
-  (`acceptance.marketing.test_acceptance.T05`) is not enabled yet.
+  increment. Owners enable increments in the acceptance command; enabled now: T01
+  (`acceptance.test_acceptance.T01`) and T05 (`acceptance.marketing.test_acceptance.T05`). Both are red until
+  implemented, so the stop gate holds the agent to them.
 - `make-demo.sh` protects all of `acceptance/**` and writes a `CODEOWNERS` with one line per owner path. The kit's
   config holds a single `acceptance.owner` string, so per-path owners come from `CODEOWNERS` (used by the
   authorised-revision check); the config string names both owners for the agent-facing messages.
