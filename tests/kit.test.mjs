@@ -752,30 +752,39 @@ describe("Weakening detection: protected tests cannot be quietly weakened", () =
 });
 
 // ---------- demo end to end (level 2, no Python kit code) ----------
-describe("Demo baseline: the demo installs and behaves as documented", { skip: process.platform === "win32" ? "the demo uses bash and python3; covered on Linux" : false }, () => {
+describe("Demo baseline: the demo installs and behaves as documented", () => {
   let base, d, makeOut;
   before(() => {
     base = fs.mkdtempSync(path.join(os.tmpdir(), "gp-demo-"));
     d = path.join(base, "demo");
-    const r = run(["bash", path.join(REPO, "examples/make-demo.sh"), d], REPO, { env: { ...process.env, PATH: path.dirname(NODE) + path.delimiter + process.env.PATH } });
+    const r = run([NODE, path.join(REPO, "examples/make-demo.mjs"), d], REPO);
     assert.equal(r.status, 0, r.stdout + r.stderr);
     makeOut = r.stdout;
   });
   after(() => rm(base));
-  test("baseline: one hook script, acceptance red until T01 is implemented, research off", () => {
+  test("baseline: one hook script, acceptance red until T01 and T05 are implemented, research off", () => {
     assert.match(makeOut, /frozen tasks and acceptance examples verified/);
     const code = Object.keys(tree(d)).filter((p) => /\.(py|mjs)$/.test(p)).sort();
-    assert.deepEqual(code, [".github/hooks/golden-path/gate.mjs", "acceptance/marketing/test_acceptance.py", "acceptance/test_acceptance.py", "invoice.py", "simulator/refusal_scenario.mjs", "tests/test_invoice.py"]);
-    const r = run([NODE, path.join(d, ".github/hooks/golden-path/gate.mjs"), "check", "--base", gate.headSha(d)], d);
-    assert.equal(r.status, 1);
+    assert.deepEqual(code, [".github/hooks/golden-path/gate.mjs", "acceptance/marketing/t05.test.mjs", "acceptance/t01.test.mjs", "acceptance/t02.test.mjs", "acceptance/t03.test.mjs", "acceptance/t04.test.mjs", "invoice.mjs", "simulator/refusal_scenario.mjs", "tests/invoice.test.mjs"]);
+    // The demo's checks are node:test runs; drop the runner's NODE_TEST_CONTEXT so they report like a user's shell.
+    const { NODE_TEST_CONTEXT, ...env } = process.env;
+    const r = run([NODE, path.join(d, ".github/hooks/golden-path/gate.mjs"), "check", "--base", gate.headSha(d)], d, { env });
+    assert.equal(r.status, 1, r.stdout);
     const res = Object.fromEntries(JSON.parse(r.stdout).results.map((x) => [x.name, x.ok]));
     assert.deepEqual(res, { check: true, acceptance: false, "test-integrity": true, "acceptance-integrity": true });
+    const failed = JSON.parse(r.stdout).failed_tests;
+    assert.ok(failed.some((t) => t.startsWith("T05 ")), "T05 is enabled and red: " + failed.join(", "));
+    assert.ok(failed.some((t) => t.startsWith("T01 ")), "T01 is enabled and red: " + failed.join(", "));
+    assert.ok(!Object.keys(tree(d)).some((p) => p.endsWith(".py")), "the demo has no Python files");
     const c = JSON.parse(rd(d, ".golden-path/config.json"));
     assert.deepEqual(c.acceptance.paths, ["acceptance/**"]);
+    assert.match(c.acceptance.command, /acceptance\/t01\.test\.mjs/);
+    assert.match(c.acceptance.command, /acceptance\/marketing\/t05\.test\.mjs/);
     assert.ok(!("research" in c));
   });
   test("the scripted refusal scenario refuses both acceptance edits and leaves acceptance untouched", () => {
-    const r = run([NODE, "simulator/refusal_scenario.mjs"], d, { env: { ...process.env, GOLDEN_PATH_SESSION: "refusal-1" } });
+    const { NODE_TEST_CONTEXT, ...env } = process.env; // the scenario's gate runs node:test; report like a user's shell
+    const r = run([NODE, "simulator/refusal_scenario.mjs"], d, { env: { ...env, GOLDEN_PATH_SESSION: "refusal-1" } });
     assert.equal(r.status, 0, r.stdout + r.stderr);
     assert.match(r.stdout, /RESULT: as expected/);
     const ev = ledger(d).filter((x) => x.session === "refusal-1").map((x) => x.event);

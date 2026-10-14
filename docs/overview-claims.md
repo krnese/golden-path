@@ -7,10 +7,10 @@ model; where it goes beyond what is shipped, the gap is labelled here and in the
 | Element | Status | Backing |
 |---|---|---|
 | Human accountability: intent first, merge decision last | Method + GitHub controls | Skill (`plugin/skills/golden-path/SKILL.md`); merge is your branch protection |
-| Product / domain expert own acceptance examples | Shipped (method + demo) | `examples/invoice-demo/acceptance/EXAMPLES.md`; frozen by `examples/make-demo.sh` ("frozen tasks and acceptance examples verified") |
+| Product / domain expert own acceptance examples | Shipped (method + demo) | `examples/invoice-demo/acceptance/EXAMPLES.md`; frozen by `examples/make-demo.mjs` ("frozen tasks and acceptance examples verified") |
 | Legal / Compliance, Marketing & Sales as owners | Labelled: method only, no tooling | Nothing in the kit is specific to them |
 | Owners approve their part | GitHub control you configure | CODEOWNERS + "Require review from Code Owners" ([docs](https://docs.github.com/en/repositories/managing-your-repositorys-settings-and-features/customizing-your-repository/about-code-owners)); tests "Code Owner approval on the current head authorises", "label without approval (triage adds label) fails" |
-| Shared acceptance record | Labelled: it is files, not a separate record | Demo: `examples/invoice-demo/tasks/T01.md` (intent) + `acceptance/EXAMPLES.md` + `acceptance/test_acceptance.py` (acceptance); constraints and claims are your process |
+| Shared acceptance record | Labelled: it is files, not a separate record | Demo: `examples/invoice-demo/tasks/T01.md` (intent) + `acceptance/EXAMPLES.md` + `acceptance/t01.test.mjs` (acceptance); constraints and claims are your process |
 | Coding agent "any harness, any model" | Labelled: target model, not yet validated | Verified: Copilot in VS Code (hook schema tests "hooks.json uses the documented schema…", "a snake_case (VS Code style) stop payload is understood"). Other agents get the skill/instructions only; untested |
 | Implement / test / remediate "until checks pass" | Shipped and tested, **L2 only**, bounded | "the stop gate blocks while checks are red, then allows once they are green"; "block limit is recorded as FAILED…" (`max_blocks`, default 5). L1 enforces nothing |
 | Model choice: local or cloud | Labelled: optional skill that only recommends | `plugin/optional/skills/golden-path-local-models` (`--with-local-models`); test "local-model skill: separate, … recommends only" |
@@ -22,6 +22,9 @@ model; where it goes beyond what is shipped, the gap is labelled here and in the
 | Discipline: measured outcomes | Labelled: target model; Level 3 is guidance only | `docs/LEVEL-3-EXPERIMENTS.md`; installer refuses `--level 3` (test "level 3 is docs only…") |
 
 ## End-to-end check (2026-10-14)
+
+(Run on the earlier Python version of the demo, before it was ported to Node.js; file names below are
+the Python ones. The port keeps the same steps; the kit's demo tests and CI re-run the refusal scenario.)
 
 In a fresh clone: `bash examples/make-demo.sh <dir>` then `node simulator/refusal_scenario.mjs` →
 an agent edit and a `sed -i` on `acceptance/test_acceptance.py` were **denied** (naming the owner); stopping

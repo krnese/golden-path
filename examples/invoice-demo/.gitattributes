@@ -1,0 +1,3 @@
+# Keep LF on every OS (Windows clones and `git restore` included), so FREEZE.sha256 and the refusal scenario match.
+* text=auto eol=lf
+*.png binary

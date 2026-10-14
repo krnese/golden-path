@@ -39,7 +39,7 @@ jobs:
           fi
 
   # Golden Path v3.1 kit: the one Node.js hook script and installer (node --test, built-ins only),
-  # on the supported LTS lines and on Windows (CRLF, PowerShell path). The demo app itself is Python (Linux only).
+  # on the supported LTS lines and on Windows (CRLF, PowerShell path). The demo app is Node.js too (no Python), so it runs on every OS.
   kit-tests:
     name: "Kit guarantees (${{ matrix.os }}, Node ${{ matrix.node }})"
     strategy:
@@ -72,8 +72,16 @@ jobs:
         if: always()
         shell: bash
         run: node .github/scripts/test-summary.mjs "$RUNNER_TEMP/kit.tap" "Kit guarantees (${{ matrix.os }}, Node ${{ matrix.node }})"
-      - name: "Demo works for an adopter: install, frozen hashes, scripted refusal scenario"
-        if: runner.os == 'Linux'
+      - name: "Demo works for an adopter: install, frozen hashes, scripted refusal scenario (no Python)"
+        shell: bash
         run: |
-          bash examples/make-demo.sh "$RUNNER_TEMP/golden-path-demo"
+          node examples/make-demo.mjs "$RUNNER_TEMP/golden-path-demo"
           cd "$RUNNER_TEMP/golden-path-demo" && node simulator/refusal_scenario.mjs
+          node --test "tests/**/*.test.mjs"
+          if node --test acceptance/t01.test.mjs acceptance/marketing/t05.test.mjs > acceptance.log; then
+            echo "acceptance unexpectedly green: T01 and T05 are not implemented in the demo" >&2; exit 1
+          fi
+          grep -q "T05 test_" acceptance.log
+      - name: "Demo also builds with the bash wrapper (examples/make-demo.sh)"
+        if: runner.os == 'Linux'
+        run: bash examples/make-demo.sh "$RUNNER_TEMP/golden-path-demo-sh"

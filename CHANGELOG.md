@@ -5,6 +5,15 @@ History of the kit. The current way to adopt it is in the [README](README.md); t
 
 ## Unreleased
 
+- **Invoice demo ported to Node.js (no Python) and T05 (Marketing) enabled.** The app (`invoice.mjs`, exact
+  `Decimal` money on BigInt, half-up rounding, JS numbers refused like Python floats), the developer tests
+  (`tests/invoice.test.mjs`) and all acceptance tests (Finance `acceptance/t01..t04.test.mjs`, Marketing
+  `acceptance/marketing/t05.test.mjs`) are `node:test` ports of the Python files with the same examples and
+  assertions, one file per increment. New cross-platform builder `examples/make-demo.mjs` (`make-demo.sh` is now a
+  wrapper). The acceptance command runs T01 and T05 (`node --test --test-reporter=tap acceptance/t01.test.mjs
+  acceptance/marketing/t05.test.mjs`), so the L2 stop gate holds the agent to both; both stay red until
+  implemented. Tasks, EXAMPLES, `FREEZE.sha256`, refusal scenario, kit demo test (now also on Windows) and CI
+  (demo on Ubuntu and Windows) updated. The ported acceptance files need owner approval (Finance, Marketing).
 - **Self-install (dogfooding).** The repository has its own kit installed at Level 2 (skill, instructions
   block, hook, `.golden-path/config.json` with `node --test` as the check), so a fork or clone works with
   Copilot in VS Code on open. `plugin/` stays the source of truth; `tests/self-install.test.mjs` (also a CI

@@ -25,7 +25,7 @@ PR, and owners approve any outward change.
   (`plugin/scripts/gate.mjs`; tests in `tests/kit.test.mjs` such as "the stop gate blocks while checks are red,
   then allows once they are green" and "editing, creating or absolute-path editing an acceptance test is
   denied and names the owner"), the installer (`plugin/install.mjs`), and the invoice demo with its scripted
-  refusal scenario (`examples/make-demo.sh`, `simulator/refusal_scenario.mjs`). Verified with Copilot in VS Code.
+  refusal scenario (`examples/make-demo.mjs`, `simulator/refusal_scenario.mjs`). Verified with Copilot in VS Code.
 - *Your GitHub settings:* CI, branch protection and Code Owner review. The kit adds no gate of its own.
 - *Target model, not yet validated:* "any harness, any model" (other agents get the skill only, untested),
   the golden loop (being validated with a real end-to-end trial), and measured outcomes (Level 3 is guidance
@@ -190,14 +190,15 @@ selects or switches the model; that is the host's job. L2 checks run the same re
 
 ## Examples
 
-- **[Invoice demo](examples/invoice-demo/README.md)** (L2, about 10 minutes; needs Node.js 22+, Python 3,
-  git, bash): a fictional finance owner's examples become protected tests, and a scripted agent is refused
+- **[Invoice demo](examples/invoice-demo/README.md)** (L2, about 10 minutes; needs Node.js 22+ and git,
+  any OS including Windows; no Python): a fictional finance owner's examples become protected tests, and a scripted agent is refused
   when it tries to edit one.
 
   ```bash
-  examples/make-demo.sh ~/golden-path-demo
-  cd ~/golden-path-demo && node simulator/refusal_scenario.mjs
-  code .   # then ask Copilot's default agent: "Do tasks/T01.md"
+  node examples/make-demo.mjs ~/golden-path-demo
+  cd ~/golden-path-demo
+  node simulator/refusal_scenario.mjs
+  code .   # then ask Copilot's default agent: "Do tasks/T05.md" (or T01; both are enabled and red)
   ```
 
 - **[Connecting your own reasoning boundaries](docs/examples/hybrid-workflow.md)**: one adopter's workflow
