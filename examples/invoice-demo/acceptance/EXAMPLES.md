@@ -4,14 +4,14 @@ Ownership is per increment, and each owner has their own acceptance path:
 
 | Increments | Owner | Examples | Tests |
 |---|---|---|---|
-| T01..T04 | **Finance, Ingrid Berg** | this file | `acceptance/test_acceptance.py` |
-| T05 | **Marketing** | [`acceptance/marketing/EXAMPLES.md`](marketing/EXAMPLES.md) | `acceptance/marketing/test_acceptance.py` |
+| T01..T04 | **Finance, Ingrid Berg** | this file | `acceptance/t01.test.mjs` .. `acceptance/t04.test.mjs` |
+| T05 | **Marketing** | [`acceptance/marketing/EXAMPLES.md`](marketing/EXAMPLES.md) | `acceptance/marketing/t05.test.mjs` |
 
 The owners are fictional business-context experts. The sections below are Finance's (T01..T04); each is an
-executable test class in `acceptance/test_acceptance.py`, which Ingrid reviewed and approved. Agents may read and
+executable test file `acceptance/t0N.test.mjs` (Node.js `node:test`), which Ingrid reviewed and approved. Agents may read and
 run them but never change them. A change goes back to the owner of that increment.
-Owners release increments by naming them in the acceptance command (`.golden-path/config.json`), e.g. `python3 -m unittest acceptance.test_acceptance.T01`
-(Marketing's T05 would be `acceptance.marketing.test_acceptance.T05`; it is not enabled yet).
+Owners release increments by naming them in the acceptance command (`.golden-path/config.json`), e.g. `node --test acceptance/t01.test.mjs`
+(Marketing's T05 is `acceptance/marketing/t05.test.mjs`). Enabled in the demo: T01 and T05.
 
 ## T01: Percentage discount per line
 | Unit price | Qty | Discount | Net | VAT (25%) | Why |

@@ -7,3 +7,6 @@ plugin/** text eol=lf
 .github/copilot-instructions.md text eol=lf
 .golden-path/*.json text eol=lf
 *.png binary
+# The demo's frozen files are pinned by FREEZE.sha256 (LF bytes); keep them LF on Windows clones too.
+examples/invoice-demo/** text eol=lf
+examples/invoice-demo/docs/*.png binary
