@@ -11,8 +11,8 @@ export function verify(output = path.join(siteRoot, "dist")) {
   assert.equal((html.match(/<\/main>/g) || []).length, 1, "The main landmark must close once");
   assert.ok(html.indexOf("</main>") > html.indexOf('id="quickstart"'), "Main must include the whole user journey");
   assert.deepEqual([...html.matchAll(/data-step="(\d)"/g)].map(match => match[1]), ["1", "2", "3", "4", "5", "6"]);
-  assert.ok(html.indexOf('class="workflow"') < html.indexOf('class="actions"'), "Show the loop before the CTAs");
-  assert.ok(html.indexOf('class="what-you-install"') < html.indexOf('class="workflow"'), "Explain installation before the walkthrough");
+  assert.ok(html.indexOf('class="actions"') < html.indexOf('class="workflow"'), "The primary action must precede the walkthrough");
+  assert.ok(html.indexOf('class="what-you-install"') > html.indexOf('id="proof"'), "Setup belongs after the concrete evidence");
   assert.ok(!html.includes("Install in 5 minutes"), "The CTA must match the first-task journey");
   assert.ok(!/\{\{/.test(html), "No unrendered template fields");
   assert.ok(!/astro|starlight|pagefind/i.test(html), "Plain static HTML, no framework output");
@@ -21,6 +21,9 @@ export function verify(output = path.join(siteRoot, "dist")) {
   }
   assert.equal((html.match(/data-select="[0-5]" disabled/g) || []).length, 6, "All six static steps remain readable without JavaScript");
   assert.ok(html.includes('class="story-controls" hidden'), "Unavailable interaction must stay hidden without JavaScript");
+  assert.ok(html.includes("Verified with GitHub Copilot in VS Code"), "Identify the verified integration without branding the generic coding agent");
+  assert.ok(html.includes("Owner feedback &rarr; next approved examples."), "Label the owner loop separately from repair");
+  assert.ok(html.includes('class="setup-details evidence-inspection"><summary>Inspect the evidence</summary>'), "Technical evidence must be expandable");
   assert.ok(fs.existsSync(path.join(output, "story.js")), "The playback module must be published");
   const ids = [...html.matchAll(/\bid="([^"]+)"/g)].map(match => match[1]);
   assert.equal(new Set(ids).size, ids.length, "No duplicate HTML IDs");
