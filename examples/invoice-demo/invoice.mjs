@@ -62,7 +62,7 @@ export class Line {
     this.unitPrice = toMoney(unitPrice);
     this.quantity = quantity;
     this.vatClass = vatClass;
-    if (!Number.isInteger(quantity)) throw new TypeError("quantity must be an integer");
+    if (!Number.isSafeInteger(quantity)) throw new TypeError("quantity must be a safe integer");
     if (quantity <= 0) throw new RangeError("quantity must be positive");
     if (!Object.hasOwn(VAT_RATES, vatClass)) throw new RangeError(`unknown vat class: ${vatClass}`);
     Object.freeze(this);
