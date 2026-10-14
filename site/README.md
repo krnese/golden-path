@@ -33,6 +33,12 @@ pause, repair and owner-feedback routes, reduced motion, custom-domain
 URLs, invalid configuration, evidence integrity and stale output.
 Repository acceptance tests under `tests/` are unchanged.
 
+The visual direction is Fluent-inspired: a system Segoe UI stack, upright
+headings, cool neutral surfaces and blue actions. Gold distinguishes the path
+and owner-feedback return; red/green checks retain both text and symbols.
+This is Golden Path's own design, not Microsoft branding or endorsement.
+No external fonts, Fluent runtime, new vendor assets or dependencies are loaded.
+
 ## Page acceptance and manual review
 
 - The hero has one AI-led promise, two short sentences and one visible

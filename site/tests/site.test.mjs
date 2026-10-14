@@ -74,6 +74,21 @@ test("the visual story has concrete invoice artifacts, owner feedback and a veri
     assert.ok(evidence.includes('class="trial"'));
   });
 });
+test("the Fluent-inspired theme is self-contained and shares its colors with SVG artifacts", () => {
+  withBuild({}, output => {
+    const css = fs.readFileSync(path.join(output, "styles.css"), "utf8");
+    const script = fs.readFileSync(path.join(output, "main.js"), "utf8");
+    assert.match(css, /font-family: "Segoe UI", system-ui/);
+    assert.match(css, /h1 em \{ font-style: normal; color: var\(--brand\); \}/);
+    assert.ok(!/Georgia|Times New Roman|@import|@font-face/.test(css));
+    for (const selector of [".path-arrow-head", ".owner-arrow-head", ".repair-arrow-head", ".work-token rect", ".repair-label"]) {
+      assert.ok(css.includes(selector), `Missing shared SVG style: ${selector}`);
+    }
+    assert.ok(!/#[0-9a-f]{6}\b/i.test(script), "SVG rendering must not embed a competing palette");
+    assert.match(css, /\.primary \{ background: var\(--brand\); color: var\(--paper\); \}/);
+    assert.match(css, /\.flow-track.owner-loop \{ stroke: var\(--gold\);/);
+  });
+});
 test("enlarged recorded details preserve full evidence and have accessible titles and readable transcripts", () => {
   withBuild({}, (_, html) => {
     assert.equal((html.match(/<svg role="img" aria-labelledby="(?:before|after)-detail-title"/g) || []).length, 2);

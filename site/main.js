@@ -98,12 +98,12 @@ function drawLines() {
   motionMoment = null;
   const namespace = "http://www.w3.org/2000/svg";
   const defs = document.createElementNS(namespace, "defs");
-  for (const [id, color] of [["path-arrow", "#85977c"], ["owner-arrow", "#f0ca79"], ["repair-arrow", "#e49e89"]]) {
+  for (const id of ["path-arrow", "owner-arrow", "repair-arrow"]) {
     const marker = document.createElementNS(namespace, "marker");
     for (const [name, value] of Object.entries({ id, viewBox: "0 0 8 8", refX: "7", refY: "4", markerWidth: id === "owner-arrow" ? "5" : "6", markerHeight: id === "owner-arrow" ? "5" : "6", orient: "auto" })) marker.setAttribute(name, value);
     const head = document.createElementNS(namespace, "path");
     head.setAttribute("d", "M 0 0 L 8 4 L 0 8 Z");
-    head.setAttribute("fill", color);
+    head.setAttribute("class", `${id}-head`);
     marker.append(head);
     defs.append(marker);
   }
@@ -128,10 +128,9 @@ function drawLines() {
     token.dataset.edge = edge;
     token.dataset.kind = edge === "repair" ? "failed evidence" : edge === "loop" ? "owner feedback" : edge === "0-1" || edge === "1-2" ? "request" : "evidence";
     const paper = document.createElementNS(namespace, "rect");
-    for (const [name, value] of Object.entries({ x: "-10", y: "-13", width: "20", height: "26", rx: "3", fill: "#f6f5ee", stroke: edge === "repair" ? "#b24d38" : "#b38831", "stroke-width": "2" })) paper.setAttribute(name, value);
+    for (const [name, value] of Object.entries({ x: "-10", y: "-13", width: "20", height: "26", rx: "3" })) paper.setAttribute(name, value);
     const writing = document.createElementNS(namespace, "path");
     writing.setAttribute("d", "M -5 -5 H 5 M -5 0 H 5 M -5 5 H 2");
-    writing.setAttribute("stroke", "#53635c");
     const animation = document.createElementNS(namespace, "animateMotion");
     for (const [name, value] of Object.entries({ path: tokenPath, dur: "6s", begin: "0s", fill: "freeze" })) animation.setAttribute(name, value);
     token.append(paper, writing, animation);
@@ -163,7 +162,7 @@ function drawLines() {
     : `M ${check.right} ${check.y} L ${right} ${check.y} L ${right} ${implementation.y} L ${implementation.right} ${implementation.y}`, "repair");
   const repairLabel = document.createElementNS(namespace, "text");
   repairLabel.textContent = "repair code";
-  repairLabel.setAttribute("fill", "#e8c0af");
+  repairLabel.setAttribute("class", "repair-label");
   repairLabel.setAttribute("font-size", "10");
   repairLabel.setAttribute("text-anchor", "middle");
   repairLabel.setAttribute("x", String(Math.abs(check.y - implementation.y) < 2 ? (check.x + implementation.x) / 2 : origin.width - 8));
