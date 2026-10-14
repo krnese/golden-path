@@ -7,6 +7,13 @@ History of the kit. The current way to adopt it is in the [README](README.md); t
 
 ## Unreleased
 
+- **A clearer first-use experience and static landing page.** The README explains the everyday
+  conversation, and [Your first task](docs/USER-GUIDE.md) leads with goals, agreed examples and real
+  results rather than this repository's test suite. A dependency-free [landing page](site/README.md)
+  shows the checked loop, actual trial evidence, repository authority and honest limits. Builds
+  support GitHub Pages and a later custom domain; source checks do not automatically deploy or merge.
+  No runtime behavior or protected acceptance tests changed.
+
 - **Positioning, adoption and licensing.** Golden Path is positioned as a lightweight kit for
   owner-controlled acceptance, for engineering leads working with domain owners. README makes L2 the
   primary path and distinguishes check-only installation from configured acceptance and GitHub review.
