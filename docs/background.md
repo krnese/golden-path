@@ -424,8 +424,10 @@ rulesets have explicit bypass lists ([about rulesets](https://docs.github.com/en
 **Golden Path relies on these settings. It does not create them.**
 
 To be honest about this repository: on 14 October 2026 its `main` branch was governed by rulesets with no bypass
-actors that require a pull request and the whitespace check, and that request Copilot code review automatically.
-They do not require Code Owner review or approvals, which is a deliberate single-maintainer setting, and the kit tests are not a required check.
+actors that require a pull request and that request Copilot code review automatically.
+A `.github/CODEOWNERS` file names `@krnese` as owner (added in PR #23), but the rulesets don't require Code Owner
+review or approvals, a deliberate single-maintainer setting (see `docs/LEVEL-2.md`, section "Code Owner review for
+single-maintainer repos"). The whitespace check and the Kit guarantees jobs are required checks.
 The private demo repository used in the trial was generated without the optional CI workflow, so the trial's gate
 verdicts were reproduced afterwards with `gate.mjs check --base`, not by a required check. An adopter who wants the
 anchor described above has to configure it.

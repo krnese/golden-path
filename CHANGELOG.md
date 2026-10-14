@@ -16,6 +16,9 @@ History of the kit. The current way to adopt it is in the [README](README.md); t
   diagrams labelled Verified / Partly verified / Proposed; historical ideas, findings, current implementation and
   future direction are labelled separately, with first-hand and public sources. Added to the README
   documentation index.
+- **Background: repository ruleset honesty.** `docs/background.md` now records that the Kit guarantees
+  jobs and the whitespace check are required on `main`, that `.github/CODEOWNERS` names `@krnese` (PR #23),
+  and that Code Owner review stays off on purpose for a single maintainer (see `docs/LEVEL-2.md`).
 - **Gate: clearer acceptance-integrity failures; start a new session after an owner change.** In round 2 of the
   golden-loop trial the owner committed new acceptance (T06) inside a running Copilot session, and the gate
   correctly recorded FAILED against the session-start base, without saying which base it used or what to do. A
