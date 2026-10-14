@@ -182,6 +182,24 @@ export function acceptanceChanges(root, patterns, base = "HEAD") {
   return out;
 }
 
+/** Acceptance files that differ between the base and HEAD, i.e. changes already COMMITTED after the base
+ * (as opposed to uncommitted working-tree changes). Used only to explain a failure, never to excuse one. */
+export function committedSinceBase(root, patterns, base) {
+  if (!patterns || !patterns.length) return [];
+  return gitStrict(root, "diff", "--name-only", "--no-renames", base, "HEAD").split("\n").filter((r) => r && matches(r, patterns));
+}
+/** Human label for where the comparison commit came from (session start, first stop, --base). */
+export function baseLabel(source) {
+  const s = String(source || "");
+  if (s === "session-start") return "session start";
+  if (s.startsWith("first-stop")) return "first stop" + s.slice("first-stop".length);
+  return s || "HEAD (no fixed base)";
+}
+export const NEW_SESSION_GUIDANCE = "These acceptance changes were committed after this session started. If an owner made them, " +
+  "start a NEW chat/session so the owner commit becomes the base; the gate will not accept acceptance changes mid-session.";
+const CI_GUIDANCE = "These acceptance changes are committed between the base and HEAD. An owner's change belongs in its own PR " +
+  "(authorised acceptance revision, docs/LEVEL-2.md); work built on it is checked with that owner commit as the base.";
+
 const FAILED_TEST_RE = /^(?:FAIL|ERROR): (\S+)|^FAILED (?!\()(\S+)|^\s*✕ (.+)$|^--- FAIL: (\S+)|^not ok \d+ - (.+)$/gm;
 const TIMEOUT_MARK = "\u0000golden-path-timeout\u0000";
 const SUPERVISOR = `const { spawn, spawnSync } = require("node:child_process"); let s = "";
@@ -215,7 +233,8 @@ function runCmd(name, cmd, root, deadline) {
 /** Everything in one hook run (commands, git calls, integrity checks) shares ONE deadline.
  * base must be a fixed commit recorded before the work started. Unreadable evidence is UNVERIFIED, never PASS.
  * opts.allowAcceptanceChange: an owner-authorised acceptance revision (see README); acceptance-integrity is
- * then reported as skipped, and the authorisation must come from CODEOWNERS review, not from this flag. */
+ * then reported as skipped, and the authorisation must come from CODEOWNERS review, not from this flag.
+ * opts.baseSource: where base came from ("session-start", "first-stop ...", "--base"); shown in failure messages. */
 export function runChecks(root, cfg, base = "HEAD", started = Date.now(), opts = {}) {
   const deadline = started + 1000 * Number(cfg.hook_budget_sec ?? cfg.check_timeout_sec ?? 100);
   setDeadline(deadline);
@@ -231,6 +250,7 @@ export function runChecks(root, cfg, base = "HEAD", started = Date.now(), opts =
     }
   };
   const b = resolveBase(root, base);
+  const baseSource = opts.baseSource || (base === "HEAD" ? "HEAD (no fixed base)" : "caller-supplied base");
   if (b.error) res.push({ name: "baseline", ok: false, unverified: true, started_ms: 0, output: `baseline UNVERIFIED: ${b.error}` });
   step("check", () => cfg.check ? runCmd("check", cfg.check, root, deadline)
     : { name: "config", ok: false, output: "No check command configured in .golden-path/config.json ('check')." });
@@ -243,9 +263,30 @@ export function runChecks(root, cfg, base = "HEAD", started = Date.now(), opts =
   integrity("test-integrity", (sha) => testIntegrity(root, cfg.protected || [], sha));
   if (opts.allowAcceptanceChange) res.push({ name: "acceptance-integrity", ok: true, skipped: true, status: "SKIPPED", owner: acc.owner, started_ms: Date.now() - started,
     output: "SKIPPED (not checked, not a pass): authorised acceptance revision; authority is the current-head Code Owner approval verified by authorize-acceptance-revision" });
-  else integrity("acceptance-integrity", (sha) => acceptanceChanges(root, acc.paths || [], sha), { owner: acc.owner });
+  else step("acceptance-integrity", () => {
+    if (b.error) throw new EvidenceError("no valid baseline to compare with");
+    const v = acceptanceChanges(root, acc.paths || [], b.sha);
+    const r = { name: "acceptance-integrity", ok: !v.length, base_sha: b.sha, base_source: baseSource, output: "" };
+    if (!v.length) return r;
+    // Explain the failure (which base, how it was chosen, and whether the change is already committed); never excuse it.
+    const changed = new Set(v.map((x) => x.slice(0, x.lastIndexOf(": "))));
+    const short = b.sha.slice(0, 7), lines = [`Compared with base ${short} (${baseLabel(baseSource)}).`, ...v];
+    try { r.committed_since_base = committedSinceBase(root, acc.paths || [], b.sha).filter((f) => changed.has(f)); }
+    catch (e) {
+      if (!(e instanceof EvidenceError)) throw e;
+      r.committed_since_base = null; // the failure stands; only the explanation is missing
+      lines.push(`(Could not tell whether these changes are committed: ${e.message})`);
+    }
+    if (r.committed_since_base?.length) {
+      const head = (headSha(root) || "HEAD").slice(0, 7);
+      lines.push(`Committed between base ${short} and HEAD ${head}: ${r.committed_since_base.join(", ")}.`,
+        /^--base|GOLDEN_PATH_BASE/.test(baseSource) ? CI_GUIDANCE : NEW_SESSION_GUIDANCE);
+    }
+    r.output = lines.join("\n");
+    return r;
+  }, { owner: acc.owner });
   const ok = res.every((r) => r.ok), unverified = res.some((r) => r.unverified), skipped = res.filter((r) => r.skipped).map((r) => r.name);
-  return { ok, outcome: !ok ? (unverified ? "UNVERIFIED" : "FAILED") : skipped.length ? "PASSED_WITH_SKIPPED" : "PASSED", skipped, base, base_sha: b.sha || null, results: res,
+  return { ok, outcome: !ok ? (unverified ? "UNVERIFIED" : "FAILED") : skipped.length ? "PASSED_WITH_SKIPPED" : "PASSED", skipped, base, base_sha: b.sha || null, base_source: baseSource, results: res,
     failed: res.filter((r) => !r.ok).map((r) => r.name), unverified: res.filter((r) => r.unverified).map((r) => r.name),
     failed_tests: [...new Set(res.flatMap((r) => r.failed_tests || []))].sort(), budget_sec: (deadline - started) / 1000,
     deadline_ms: deadline - started };
@@ -289,12 +330,14 @@ export function onStop(payload) {
   if (!st.base_sha) { st.base_sha = headSha(root); st.base_source = "first-stop (sessionStart did not run; base may include agent commits)"; }
   st.blocks = st.blocks || 0;
   st.attempts = (st.attempts || 0) + 1;
-  const res = runChecks(root, cfg, st.base_sha || "HEAD", t0);
+  const res = runChecks(root, cfg, st.base_sha || "HEAD", t0, { baseSource: st.base_source });
   const owner = cfg.acceptance.owner, limit = Number(cfg.max_blocks ?? 5);
   const rec = { session: sid, task: st.task || process.env.GOLDEN_PATH_TASK || null, attempt: st.attempts, ok: res.ok,
     failed: res.failed, unverified: res.unverified, failed_tests: res.failed_tests, elapsed_sec: Math.round(1000 * (t0 / 1000 - st.started)) / 1000,
     base_sha: st.base_sha, base_source: st.base_source, head_sha: headSha(root), diff_hash: diffHash(root),
     stop_hook_active: !!field(payload, "stop_hook_active", "stop_hook_active") };
+  const accRes = res.results.find((r) => r.name === "acceptance-integrity");
+  if (accRes?.committed_since_base?.length) rec.acceptance_committed_since_base = accRes.committed_since_base;
   if (rec.head_sha === null || rec.diff_hash === null) rec.provenance_unavailable = Date.now() >= t0 + 1000 * res.budget_sec
     ? "the hook time budget was used up before provenance could be read" : "git could not provide HEAD or the diff";
   let out = {};
@@ -310,11 +353,15 @@ export function onStop(payload) {
     ledger(root, "gate_red", { outcome: res.unverified.length ? "UNVERIFIED" : "RED", ...rec });
     let extra = "";
     // Only a real detected change is an attempt; acceptance-integrity that could not run is UNVERIFIED, not an attempt.
-    if (res.results.some((r) => r.name === "acceptance-integrity" && !r.ok && !r.unverified)) {
+    const ai = res.results.find((r) => r.name === "acceptance-integrity" && !r.ok && !r.unverified);
+    if (ai) {
       ledger(root, "acceptance_change_attempt", { owner, ...rec });
-      extra = `\n\nProtected acceptance tests were changed. Restore them (git restore <path>). If you believe an acceptance ` +
+      extra = `\n\nProtected acceptance tests differ from base ${String(st.base_sha).slice(0, 7)} (${baseLabel(st.base_source)}). ` +
+        "Restore uncommitted changes (git restore <path>). If you believe an acceptance " +
         `example is wrong, that is a DELEGATION CHANGE: stop and report to ${owner}: what changed, why, consequence, ` +
         "evidence, unknowns, decision required.";
+      if ((ai.committed_since_base || []).length) extra += "\nSome of these changes are already committed (see below). Tell the user " +
+        "what the gate says; do not revert, reset or rewrite those commits to make the gate pass.";
     }
     const last = st.blocks < limit ? "" : `\nThis is the last block. If you stop while red, the run is recorded as FAILED ` +
       `and requires review by ${owner}.`;
@@ -485,7 +532,8 @@ export function main(argv) {
     const base = i >= 0 ? argv[i + 1] : process.env.GOLDEN_PATH_BASE;
     const root = repoRoot();
     const res = runChecks(root, loadConfig(root), base || "HEAD", Date.now(),
-      { allowAcceptanceChange: argv.includes("--authorized-acceptance-revision") });
+      { allowAcceptanceChange: argv.includes("--authorized-acceptance-revision"),
+        baseSource: i >= 0 ? "--base" : base ? "--base (GOLDEN_PATH_BASE)" : "HEAD (no --base)" });
     if (!base) res.warning = "no --base given: compared with HEAD, which includes any agent commits. Pass a fixed commit.";
     process.stdout.write(JSON.stringify(res, null, 1) + "\n");
     return res.ok ? 0 : 1;

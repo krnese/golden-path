@@ -564,6 +564,52 @@ describe("Acceptance integrity", () => {
       hook(d, "start", { sessionId: "s2", cwd: d, source: "new" });
       assert.deepEqual(stop("s2"), {});
     });
+    test("an OWNER commit landing mid-session still fails, and the message names the base and says to start a new session", () => {
+      // Real trial, round 2: the owner committed new acceptance inside a running session. Fail closed, but explain why.
+      const base = gate.headSha(d).slice(0, 7);
+      w(d, "acceptance/test_t01.py", "def test_x():\n    assert 2\n");
+      w(d, "acceptance/test_t06.py", "def test_y():\n    assert 1\n");
+      git(d, "add", "-A"); git(d, "commit", "-qm", "Owner: add T06 acceptance");
+      const o = stop();
+      assert.equal(o.decision, "block", "commit authorship is not owner authority: the check is not weakened");
+      assert.match(o.reason, /acceptance\/test_t01\.py: protected acceptance file modified/);
+      assert.match(o.reason, /acceptance\/test_t06\.py: new file under protected acceptance paths/);
+      assert.match(o.reason, new RegExp(`Compared with base ${base} \\(session start\\)`));
+      assert.match(o.reason, /committed after this session started\. If an owner made them, start a NEW chat\/session so the owner commit becomes the base/);
+      assert.match(o.reason, /do not revert, reset or rewrite those commits/);
+      const rec = ledger(d).find((r) => r.event === "acceptance_change_attempt");
+      assert.equal(rec.base_source, "session-start");
+      assert.deepEqual(rec.acceptance_committed_since_base, ["acceptance/test_t01.py", "acceptance/test_t06.py"]);
+      // The recorded result (library/CI shape) carries the base and how it was chosen.
+      const res = gate.runChecks(d, gate.loadConfig(d), gate.state(d, "s").base_sha, Date.now(), { baseSource: "session-start" });
+      const a = res.results.find((r) => r.name === "acceptance-integrity");
+      assert.equal(res.outcome, "FAILED");
+      assert.equal(a.base_sha.slice(0, 7), base);
+      assert.equal(a.base_source, "session-start");
+      // The fix is a NEW session, which already passes: see "an expert-committed change is the new base for the NEXT session".
+      hook(d, "start", { sessionId: "s3", cwd: d, source: "new" });
+      assert.deepEqual(stop("s3"), {});
+    });
+    test("uncommitted acceptance edits name the base but get no new-session advice", () => {
+      w(d, "acceptance/test_t01.py", "def test_x():\n    pass\n");
+      const o = stop();
+      assert.equal(o.decision, "block");
+      assert.match(o.reason, /Compared with base [0-9a-f]{7} \(session start\)/);
+      assert.doesNotMatch(o.reason, /start a NEW chat/);
+    });
+    test("check --base reports the base and its source, and points owner commits to the revision PR", () => {
+      const base = gate.headSha(d);
+      w(d, "acceptance/test_t01.py", "def test_x():\n    assert 2\n"); git(d, "commit", "-qam", "owner change");
+      const r = run([NODE, GATE, "check", "--base", base], d);
+      assert.equal(r.status, 1);
+      const res = JSON.parse(r.stdout), a = res.results.find((x) => x.name === "acceptance-integrity");
+      assert.equal(res.base_source, "--base");
+      assert.equal(a.base_source, "--base");
+      assert.deepEqual(a.committed_since_base, ["acceptance/test_t01.py"]);
+      assert.match(a.output, new RegExp(`Compared with base ${base.slice(0, 7)} \\(--base\\)`));
+      assert.match(a.output, /authorised acceptance revision/);
+      assert.equal(JSON.parse(run([NODE, GATE, "check", "--base", gate.headSha(d)], d).stdout).outcome, "PASSED", "with the owner commit as base it passes");
+    });
     test("CRLF checkout of unchanged acceptance tests is not a change (Windows core.autocrlf)", () => {
       git(d, "config", "core.autocrlf", "true");
       fs.rmSync(path.join(d, "acceptance/test_t01.py"));

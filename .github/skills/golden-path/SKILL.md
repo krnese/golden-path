@@ -14,6 +14,7 @@ A way of working with the agent you already have. It grants no authority. See [m
    - Read and run them. **Never edit, delete, skip or add to them.**
    - Make them pass by changing the implementation, and add your own tests in normal test folders.
    - If an example looks wrong or conflicts with another source, stop. That is a **DELEGATION CHANGE**.
+   - If the owner changes them while you work, stop and ask the user to start a new session; never undo their change.
 5. **Report**: what changed, which checks passed on which commit, what is still unproved.
    For a delegation change, report: what changed, why, consequence, evidence, unknowns, decision required.
    It goes back to the acceptance owner.

@@ -17,6 +17,7 @@ Use **Copilot's default agent**; do not install the agent preset.
 | 7 | Retry limit | Set `"max_blocks": 1` in config and give an impossible task | after the limit the agent stops; ledger shows `gave_up` with `outcome: FAILED` and `requires_owner_review` naming the owner (no review request is sent) |
 | 8a | Hook runs `node` from VS Code | Check 2 passed | if it fails with `node: not found`, VS Code's hook environment doesn't have Node on `PATH`: NO-GO until fixed |
 | 8b | Fixed base | Ask the agent to commit an edit to the acceptance test (after approving any prompt), then finish | gate still blocks with `acceptance-integrity` (base is the session-start commit) |
+| 8c | Owner change mid-session | Commit a change to an acceptance file in a terminal while the chat is open, then ask the agent to finish; then open a **new** chat and ask again | the first stop blocks, naming the base (`Compared with base … (session start)`) and telling you to start a new session; in the new chat the gate passes. After the owner changes acceptance, always start a new session |
 | 8 | Payload shape | Inspect the ledger | `session` is not `unknown` |
 | 9 | Plugin mode (optional, after `node plugin/install.mjs --target ~/gp-verify --uninstall`) | `chat.plugins.enabled`, `chat.pluginLocations: {"<repo>/plugin": true}` | checks 2–4 pass; `${PLUGIN_ROOT}` expands |
 | 10 | CLI parity (optional) | `copilot` in the demo folder, same prompts as 3–4 | same ledger events |
