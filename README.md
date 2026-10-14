@@ -6,17 +6,32 @@ reviewable engineering acceptance, then connect it to the controls they already 
 > **Core principle:** the expert and engineer decide what needs to be true; automation checks the parts
 > they have made executable.
 
-![Golden Path overview: owners, acceptance record, coding agent, pull request, durable boundary, outcomes](docs/assets/golden-path-overview.png)
+![Golden Path overview: business functions, shared acceptance record, coding agent, pull request, durable boundary, outcomes, golden loop](docs/assets/golden-path-overview.png)
 
-Left to right: **owners** (the product owner or domain expert) write intent and concrete examples; those become
-the **acceptance record** (in the demo, `examples/invoice-demo/tasks/T01.md` and
-`examples/invoice-demo/acceptance/EXAMPLES.md` plus the acceptance tests). **Your coding agent** implements and
-tests; at Level 2 a stop gate keeps it working while checks are red (up to `max_blocks`, default 5) and
-denies edits to protected acceptance tests. The **pull request** carries the change and its evidence, and your
-**durable boundary** (CI, branch protection, Code Owner review, all GitHub settings you configure) decides
-the merge. Verified with Copilot in VS Code; other agents get the skill only. Dashed parts of the picture
-(legal and marketing as owners, the feedback loop, measurement) are your process, not tooling in the kit.
-Each claim is checked in [docs/overview-claims.md](docs/overview-claims.md).
+Left to right: **business owners** (product, the domain expert) write intent and concrete examples; those
+become the **shared acceptance record**, which in this kit is plain files (in the demo,
+`examples/invoice-demo/tasks/T01.md` and `examples/invoice-demo/acceptance/EXAMPLES.md` plus the acceptance
+tests). **The coding agent** implements and tests; at Level 2 a stop gate keeps it working while checks are
+red (up to `max_blocks`, default 5) and denies edits to protected acceptance tests. The **pull request** carries
+the change and evidence, and the **durable boundary** (CI, branch protection, Code Owner review: GitHub
+settings you configure) decides the merge.
+
+The **golden loop** is a process that starts outside the repository: a business owner (for example marketing)
+works with an agent outside the repo, which turns their intent into a PR; Copilot in the repo picks up that
+PR, and owners approve any outward change.
+
+**What's verified today.**
+- *Shipped and tested:* the skill and instructions (`plugin/skills/golden-path/`), the L2 guard and stop gate
+  (`plugin/scripts/gate.mjs`; tests in `tests/kit.test.mjs` such as "the stop gate blocks while checks are red,
+  then allows once they are green" and "editing, creating or absolute-path editing an acceptance test is
+  denied and names the owner"), the installer (`plugin/install.mjs`), and the invoice demo with its scripted
+  refusal scenario (`examples/make-demo.sh`, `simulator/refusal_scenario.mjs`). Verified with Copilot in VS Code.
+- *Your GitHub settings:* CI, branch protection and Code Owner review. The kit adds no gate of its own.
+- *Target model, not yet validated:* "any harness, any model" (other agents get the skill only, untested),
+  the golden loop (being validated with a real end-to-end trial), and measured outcomes (Level 3 is guidance
+  only). Legal/Compliance and Marketing/Sales as owners are part of the method; the kit has no tooling for them.
+
+Every element is checked in [docs/overview-claims.md](docs/overview-claims.md).
 
 ## Two ways to use Golden Path
 
