@@ -7,6 +7,15 @@ History of the kit. The current way to adopt it is in the [README](README.md); t
 
 ## Unreleased
 
+- **Landing page: a visual story, not six text panels.** A short AI-led promise and visible first-task
+  action lead into changing invoice, acceptance, implementation and review artifacts. Six captions
+  match six stages; failure, code repair and pass happen within the checks stage. A moving paper
+  token carries work and evidence, with a separate coral repair route and a prominent gold owner-feedback
+  return. The approved examples stay fixed during repair. Technical mechanics and full trial records
+  are expandable, while enlarged before/after evidence and honest limits stay visible. Copilot
+  verification is a support label, not a claim about other integrations. Protected acceptance and
+  deployment settings are unchanged.
+
 - **Landing page: intent first, with an interactive invoice story.** Explain the installed components,
   expert–engineer partnership and value alongside existing tests and repository controls. A six-step,
   clearly illustrative walkthrough shows repair back to implementation and owner feedback back to the

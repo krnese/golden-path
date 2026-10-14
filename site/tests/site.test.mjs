@@ -25,10 +25,13 @@ test("GitHub Pages build has one page, six ordered steps, valid anchors and no f
     assert.ok(!fs.existsSync(path.join(output, "CNAME")));
   });
 });
-test("the page explains adoption before the story, and its CTA matches the guided destination", () => {
+test("the short hero shows its action before the story, with setup after the evidence", () => {
   withBuild({}, (_, html) => {
-    assert.match(html, /<h1 id="promise">[^<]*<br>to AI-written code<br>/);
-    assert.ok(html.indexOf("Already have tests and branch protection?") < html.indexOf('id="walkthrough"'));
+    assert.match(html, /<h1 id="promise">AI writes the code\. <em>You define success\.<\/em><\/h1>/);
+    assert.ok(html.indexOf('class="actions"') < html.indexOf('id="walkthrough"'));
+    assert.ok(html.indexOf('class="what-you-install"') > html.indexOf('id="proof"'));
+    assert.ok(html.indexOf('id="proof"') < html.indexOf('id="quickstart"'));
+    assert.ok(html.indexOf('id="quickstart"') < html.indexOf('class="container section authority"'));
     assert.match(html, /class="button primary" href="#quickstart">Try your first task/);
     assert.ok(!html.includes("five-minute"));
     assert.ok(!html.includes("Install in 5 minutes"));
@@ -45,12 +48,30 @@ test("the static page contains the whole invoice path, repair boundary and owner
     assert.ok(html.includes("data-fixed-controls"));
   });
 });
-test("the compact introduction preserves the partnership and benefit before the walkthrough", () => {
+test("the opening contains only the short promise, two sentences and one primary action", () => {
   withBuild({}, (_, html) => {
-    const opening = html.slice(0, html.indexOf('<figure class="workflow"'));
-    assert.match(opening, /class="hero-copy"/);
-    assert.match(opening, /class="hero-intro">[^<]*Owners define examples; an engineer configures checks against protected acceptance\. AI gets feedback; you review the actual result and its evidence\./);
-    assert.match(opening, /What you install:<\/strong> a small repository kit with a skill, optional Copilot hooks, and a CI workflow template\./);
+    const opening = html.slice(html.indexOf('class="hero-copy"'), html.indexOf('<figure class="workflow"'));
+    assert.equal((opening.match(/<a\b/g) || []).length, 1);
+    assert.equal(/class="hero-intro">([^<]*)/.exec(opening)[1].split(/\.\s+/).length, 2);
+    assert.ok(!opening.includes("What you install"));
+    assert.ok(!opening.includes("A partnership"));
+    assert.ok(!opening.includes("Already have tests"));
+  });
+});
+test("the visual story has concrete invoice artifacts, owner feedback and a verified-integration support label", () => {
+  withBuild({}, (_, html) => {
+    assert.equal((html.match(/<tr><td>A<\/td><td>1<\/td><\/tr>/g) || []).length, 2);
+    assert.equal((html.match(/class="example"/g) || []).length, 2);
+    for (const phase of ["fail", "repair", "pass"]) assert.ok(html.includes(`data-check-phase="${phase}"`));
+    assert.ok(html.includes("duplicate &rarr; approve"));
+    assert.ok(html.includes("duplicate &rarr; review"));
+    assert.ok(html.includes("Owner feedback &rarr; next approved examples."));
+    assert.ok(html.includes("Verified with GitHub Copilot in VS Code"));
+    assert.ok(html.includes("The coding agent implements"));
+    assert.ok(html.includes('class="workflow-mechanics"><summary>How the checks and ownership work</summary>'));
+    const evidence = html.slice(html.indexOf('class="setup-details evidence-inspection"'), html.indexOf('class="evidence-limit"'));
+    assert.ok(evidence.includes('class="gate-records"'));
+    assert.ok(evidence.includes('class="trial"'));
   });
 });
 test("enlarged recorded details preserve full evidence and have accessible titles and readable transcripts", () => {

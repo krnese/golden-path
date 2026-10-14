@@ -27,7 +27,7 @@ The build extracts the owner-controlled acceptance install command from
 the actual trial images and JSON records byte for byte. Missing evidence fails
 the build. The records are reproduced local checks, not live CI output.
 
-The verifier checks the single-page shape, six-step diagram order, static fallback,
+The verifier checks the single-page shape, six-stage diagram order, static fallback,
 required copy, local links, assets and anchors. Site tests also cover playback,
 pause, repair and owner-feedback routes, reduced motion, custom-domain
 URLs, invalid configuration, evidence integrity and stale output.
@@ -35,31 +35,44 @@ Repository acceptance tests under `tests/` are unchanged.
 
 ## Page acceptance and manual review
 
-- Explain the benefit, installed components and domain-expert/engineer partnership
-  before the illustrative walkthrough. The primary CTA opens the first-task section.
-- Keep all six invoice steps and both loops readable without JavaScript. The
-  walkthrough is labelled illustrative and distinct from recorded evidence.
-- Playback starts only on request, highlights one step at a time, and stops after
-  the owner approves the next increment. Pause, replay and next-scene buttons work.
-  Select any step with Tab and Enter/Space, or use arrows, Home and End.
-- Failed checks return work to implementation. Changing acceptance requires owner
-  approval and a new implementation session. Acceptance and repository-control
-  labels remain fixed while work moves.
-- Reduced motion disables the moving pulse and timed playback, including when the
+- The hero has one AI-led promise, two short sentences and one visible
+  "Try your first task" action. Installation and partnership details belong in
+  setup, after the enlarged real before/after evidence.
+- Show changing artifacts, not paragraph-filled cards: the invoice has two
+  product-A lines; the two approved examples distinguish them from quantity two;
+  implementation changes from approve to review; the check fails, repairs and
+  passes; a person reviews; the owner inspects the result and asks for names.
+- Six visible stages have exactly six captions. Failure, repair and pass are
+  moments within the checks stage, not additional numbered stages. Owner feedback
+  and the next approved increment likewise stay within the result stage.
+- A paper request/evidence token moves between artifacts. The prominent gold
+  return arrow is labelled "Owner feedback -> next approved examples"; the smaller
+  coral repair route returns evidence to implementation, never weaker acceptance.
+  The approved examples must remain unchanged through all repair moments.
+- Keep one short caption and one persistent ownership statement. Put detailed
+  mechanics in an expandable explanation. Required CI and human review still
+  govern merge; owner revisions require approval and a new implementation session.
+- Playback starts only on request and stops after the next owner-approved
+  increment. Pause freezes both the token and pulse. Replay and Next work;
+  select any stage with Tab and Enter/Space, or arrows, Home and End.
+- Reduced motion disables moving tokens, pulses and timed playback, including when the
   preference changes mid-playback. Manual exploration still works. Backgrounding
   the page pauses playback; it does not resume without a user action.
+- Keep the entire static story readable without JavaScript; controls stay hidden
+  and stage buttons disabled. The illustrative walkthrough is distinct from trial
+  evidence. "Verified with GitHub Copilot in VS Code" is a support label; the main
+  story says "coding agent" and claims no verification of other integrations.
 - Recorded before/after details are SVG viewports of the original comparison, not
   newly generated output. Verbatim transcripts remain readable on narrow screens,
-  and the full image, JSON records and trial limitations stay available.
+  and "Inspect the evidence" reveals technical verdicts and full images. Trial
+  limitations remain visible when that disclosure is closed.
 - Check desktop and mobile for overflow, loaded images, visible focus, keyboard
   order, native controls, no console errors, reduced motion and script-disabled
   fallback. Screenshots in a PR complement, not replace, these behavior checks.
-- At 1366 x 768 and 1440 x 900, the smaller AI headline and all six initial
-  diagram cards must fit without scrolling. Wide screens put the introduction
-  beside the diagram. Narrow screens stack them, with the longer partnership and
-  adoption explanation following the walkthrough; the introduction still
-  explains the partnership and benefit first. At 390 x 844 the headline
-  and first invoice card must fit. Keep full step descriptions and tool glyphs.
+- At 1366 x 768 and 1440 x 900, the headline, primary action and all six enhanced
+  visual artifacts fit without scrolling. Mobile uses readable rows in DOM order;
+  at 390 x 844 the headline, action and first enhanced artifact fit. The expanded
+  static fallback may need scrolling; do not truncate its explanation to fit.
 
 Official tool glyphs and their license are documented in
 [the icon attribution](public/icons/README.md). They do not imply vendor endorsement.
@@ -72,6 +85,8 @@ Review captures from the local build: [desktop](../docs/assets/landing-loop-desk
 These screenshots show the proposed page, not a newly published version.
 First-screen review captures: [1366 x 768 desktop](../docs/assets/landing-first-viewport-desktop.png)
 and [390 x 844 mobile](../docs/assets/landing-first-viewport-mobile.png).
+Story-frame captures show [code repair with unchanged examples](../docs/assets/landing-loop-repair.png)
+and [the next owner-approved increment](../docs/assets/landing-loop-next-approved.png).
 
 ## Publish on GitHub Pages
 
