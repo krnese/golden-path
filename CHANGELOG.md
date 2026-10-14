@@ -7,6 +7,12 @@ History of the kit. The current way to adopt it is in the [README](README.md); t
 
 ## Unreleased
 
+- **Landing page: Fluent-inspired visual treatment.** Segoe UI and upright headings,
+  cool neutral surfaces, blue actions, subtle borders and lighter shadows replace
+  the warm serif/cream/forest-green palette. The gold path and owner-feedback loop,
+  invoice story, controls, recorded evidence and static fallbacks remain. SVG colors
+  share the stylesheet's theme rather than retaining the previous palette.
+
 - **Landing page: a visual story, not six text panels.** A short AI-led promise and visible first-task
   action lead into changing invoice, acceptance, implementation and review artifacts. Six captions
   match six stages; failure, code repair and pass happen within the checks stage. A moving paper
