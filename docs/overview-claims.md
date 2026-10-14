@@ -1,5 +1,7 @@
 # What the overview diagram claims, and what backs each claim
 
+← [Golden Path README](../README.md) · [Documentation index](../README.md#documentation)
+
 Every element of [`docs/assets/golden-path-overview.png`](assets/golden-path-overview.png) (source:
 [`golden-path-overview.html`](assets/golden-path-overview.html)), checked against the kit. The image shows the target
 model; where it goes beyond what is shipped, the gap is labelled here and in the README. Test names are in `tests/kit.test.mjs` unless noted.

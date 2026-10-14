@@ -1,5 +1,7 @@
 # The golden loop, end to end: a real trial
 
+← [Golden Path README](../../../README.md) · [Documentation index](../../../README.md#documentation)
+
 This walkthrough follows one business intent from a sentence to shipped, checked code, and then round again,
 using the real artefacts from a trial run on 14 October 2026. Kristian Nese (KN) played the business owner
 (Marketing). Implementation was done by GitHub Copilot's default agent in VS Code on Windows.
@@ -257,3 +259,7 @@ the demo already contains T05 and T06 (both rounds), and T01, T05 and T06 are al
 | [gate-verdict.png](gate-verdict.png) | Gate verdicts rendered from the two JSON files below ([HTML source](gate-verdict.html)) |
 | [gate-check-base-65ef920.json](gate-check-base-65ef920.json) | `gate.mjs check --base 65ef920` on `6b65a1d`: FAILED (acceptance integrity) |
 | [gate-check-base-921979e.json](gate-check-base-921979e.json) | `gate.mjs check --base 921979e` on `6b65a1d`: PASSED |
+
+---
+
+Next: [How your acceptance suite grows itself](../../how-acceptance-evolves.md) →

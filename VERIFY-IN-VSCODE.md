@@ -1,5 +1,7 @@
 # Verify in VS Code: 10-minute go/no-go (v3.1)
 
+← [Golden Path README](README.md) · [Documentation index](README.md#documentation)
+
 Everything here needs a signed-in VS Code with Copilot and was **not** verified on the build box.
 Record GO or NO-GO for each. Use VS Code Stable, and note the exact version: ______
 

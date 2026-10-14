@@ -1,5 +1,7 @@
 # Level 2 reference: checked completion
 
+← [Golden Path README](../README.md) · [Documentation index](../README.md#documentation)
+
 The detail behind the [README](../README.md) quickstart. Level 2 needs Node.js 22+ and nothing from npm.
 
 Agent harnesses already support custom controls: Copilot has
@@ -74,3 +76,7 @@ The PR-base comparison blocks agent edits to protected acceptance tests. Legitim
 5. After merge, later PRs compare against the new base.
 
 Locally, the stop gate never skips: the agent can't revise acceptance tests.
+
+---
+
+Next: [Level 3: learning and measurement](LEVEL-3-EXPERIMENTS.md) →

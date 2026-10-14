@@ -30,6 +30,23 @@ works with an agent outside the repo, which turns their intent into a PR; Copilo
 PR, and owners approve any outward change. Evidence goes back to the owner, whose next intent starts the next
 round.
 
+## Documentation
+
+| Document | What it covers |
+| --- | --- |
+| [README](README.md) | This page: what Golden Path is, quickstart, adoption levels, limits |
+| [The golden loop, end to end](docs/examples/golden-loop/README.md) | Walkthrough of a real two-round trial: intent → acceptance → build → evidence, including the gate failing closed |
+| [How your acceptance suite grows itself](docs/how-acceptance-evolves.md) | Why a repo's acceptance tests accrue per task, owner-approved, and what that means for teams and brownfield adoption |
+| [Example: connecting your own reasoning boundaries](docs/examples/hybrid-workflow.md) | One adopter's hybrid workflow, mapped so you can map yours |
+| [Level 2 reference: checked completion](docs/LEVEL-2.md) | The stop gate, protected paths, CI check and authorised acceptance revision via CODEOWNERS |
+| [Level 3: learning and measurement](docs/LEVEL-3-EXPERIMENTS.md) | How to run a matched experiment on your own work (docs only) |
+| [Evidence](docs/evidence.md) | Honest summary of what is and isn't proven, with links to the archived studies |
+| [What the overview diagram claims](docs/overview-claims.md) | Each element of the overview image checked against the kit, with gaps labelled |
+| [Verify in VS Code](VERIFY-IN-VSCODE.md) | 10-minute go/no-go checklist for a signed-in VS Code with Copilot |
+| [Invoice demo](examples/invoice-demo/README.md) | The demo adopter repo used throughout: app, tasks, owner acceptance, demo builders |
+| [Golden Path skill](plugin/skills/golden-path/SKILL.md) and [method](plugin/skills/golden-path/references/METHOD.md) | The agent-facing skill the installer adds under `.github/skills/` |
+| [Changelog](CHANGELOG.md) | History of the kit, by version |
+
 ## See it work
 
 In a real trial, one sentence from Marketing ("I need invoices to be as simple as possible, so humans can

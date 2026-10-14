@@ -1,5 +1,7 @@
 # Changelog
 
+← [Golden Path README](README.md) · [Documentation index](README.md#documentation)
+
 History of the kit. The current way to adopt it is in the [README](README.md); the evidence summary is in
 [docs/evidence.md](docs/evidence.md). Version numbers follow `plugin/plugin.json`.
 

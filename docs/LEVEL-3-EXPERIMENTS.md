@@ -1,5 +1,7 @@
 # Level 3: learning and measurement (docs only)
 
+← [Golden Path README](../README.md) · [Documentation index](../README.md#documentation)
+
 Level 3 has no code. If you want to know whether Golden Path helps on your work, run a matched experiment with the tools you already have. The retired Python runner is in [archive/research-runner](../archive/research-runner/README.md); revive it only for a specific, approved experiment.
 
 ## A matched experiment
@@ -20,3 +22,7 @@ Level 3 has no code. If you want to know whether Golden Path helps on your work,
 6. **Report honestly.** Per-arm counts with n, the failures, what was unverified, and "inconclusive" when the arms don't differ beyond run-to-run noise. Lessons on/off measures only the benefit of retained lessons; the vs-plain comparison is primary.
 
 Scripts can't tell whether the tests represent customer needs. Passing them doesn't prove business correctness, deployment readiness or authorisation.
+
+---
+
+← Previous: [Level 2 reference: checked completion](LEVEL-2.md)

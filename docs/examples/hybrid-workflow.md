@@ -1,5 +1,7 @@
 # Example: connecting your own reasoning boundaries
 
+← [Golden Path README](../../README.md) · [Documentation index](../../README.md#documentation)
+
 This is **one** adopter's workflow, Kristian Nese's (KN), shown so you can map your own. Golden Path does not
 require this shape, these agents or these tools. The question it helps you answer is: *where do your agents
 reason, where is the handoff, where does the model choice sit, and where do acceptance checks and humans
@@ -58,3 +60,7 @@ To start from this shape: install L1, write the expert's examples, then move to 
 - **The hook is fast feedback; the PR boundary is the authority.** Branch protection, Code Owner review and
   required CI decide. Passing the checks shows the executable examples are met, not that the change is
   correct for the business.
+
+---
+
+← Previous: [How your acceptance suite grows itself](../how-acceptance-evolves.md)
