@@ -186,8 +186,25 @@ export function acceptanceChanges(root, patterns, base = "HEAD") {
  * (as opposed to uncommitted working-tree changes). Used only to explain a failure, never to excuse one. */
 export function committedSinceBase(root, patterns, base) {
   if (!patterns || !patterns.length) return [];
+  // An endpoint diff alone doesn't prove the changes were committed AFTER the base: after a branch switch or reset,
+  // HEAD may not descend from the base at all. Callers check headDescendsFrom() before giving session guidance.
   return gitStrict(root, "diff", "--name-only", "--no-renames", base, "HEAD").split("\n").filter((r) => r && matches(r, patterns));
 }
+/** True when HEAD descends from (or equals) the base; false after a branch switch/reset to a diverged commit. */
+export function headDescendsFrom(root, base) {
+  const [code, , err] = git(root, "merge-base", "--is-ancestor", base, "HEAD");
+  if (code === 0) return true;
+  if (code === 1) return false;
+  throw new EvidenceError(`git merge-base --is-ancestor failed (${code}): ${String(err).trim().slice(0, 300)}`);
+}
+/** Only these base sources come from an agent session; any other fixed base gets the revision/CI guidance. */
+export function isSessionBase(source) {
+  const s = String(source || "");
+  return s === "session-start" || s.startsWith("first-stop");
+}
+const DIVERGED_GUIDANCE = "HEAD does not descend from the base (branch switch or reset?), so these files were not necessarily " +
+  "committed after the base. Do not start a new session to clear this: it would adopt this unrelated HEAD as the base. " +
+  "Return to the branch the session started on, or ask the owner.";
 /** Human label for where the comparison commit came from (session start, first stop, --base). */
 export function baseLabel(source) {
   const s = String(source || "");
@@ -271,7 +288,10 @@ export function runChecks(root, cfg, base = "HEAD", started = Date.now(), opts =
     // Explain the failure (which base, how it was chosen, and whether the change is already committed); never excuse it.
     const changed = new Set(v.map((x) => x.slice(0, x.lastIndexOf(": "))));
     const short = b.sha.slice(0, 7), lines = [`Compared with base ${short} (${baseLabel(baseSource)}).`, ...v];
-    try { r.committed_since_base = committedSinceBase(root, acc.paths || [], b.sha).filter((f) => changed.has(f)); }
+    try {
+      r.head_descends_from_base = headDescendsFrom(root, b.sha);
+      r.committed_since_base = committedSinceBase(root, acc.paths || [], b.sha).filter((f) => changed.has(f));
+    }
     catch (e) {
       if (!(e instanceof EvidenceError)) throw e;
       r.committed_since_base = null; // the failure stands; only the explanation is missing
@@ -279,8 +299,13 @@ export function runChecks(root, cfg, base = "HEAD", started = Date.now(), opts =
     }
     if (r.committed_since_base?.length) {
       const head = (headSha(root) || "HEAD").slice(0, 7);
-      lines.push(`Committed between base ${short} and HEAD ${head}: ${r.committed_since_base.join(", ")}.`,
-        /^--base|GOLDEN_PATH_BASE/.test(baseSource) ? CI_GUIDANCE : NEW_SESSION_GUIDANCE);
+      if (r.head_descends_from_base === false) {
+        r.guidance = DIVERGED_GUIDANCE;
+        lines.push(`Differ between base ${short} and HEAD ${head}: ${r.committed_since_base.join(", ")}.`, r.guidance);
+      } else {
+        r.guidance = isSessionBase(baseSource) ? NEW_SESSION_GUIDANCE : CI_GUIDANCE;
+        lines.push(`Committed between base ${short} and HEAD ${head}: ${r.committed_since_base.join(", ")}.`, r.guidance);
+      }
     }
     r.output = lines.join("\n");
     return r;
@@ -360,8 +385,10 @@ export function onStop(payload) {
         "Restore uncommitted changes (git restore <path>). If you believe an acceptance " +
         `example is wrong, that is a DELEGATION CHANGE: stop and report to ${owner}: what changed, why, consequence, ` +
         "evidence, unknowns, decision required.";
-      if ((ai.committed_since_base || []).length) extra += "\nSome of these changes are already committed (see below). Tell the user " +
+      if ((ai.committed_since_base || []).length) extra += (ai.head_descends_from_base === false ? "\nHEAD does not descend from this base (see below). Tell the user " : "\nSome of these changes are already committed (see below). Tell the user ") +
         "what the gate says; do not revert, reset or rewrite those commits to make the gate pass.";
+      // Repeat the action here, outside the truncated detail, so a long file list can't hide it.
+      if (ai.guidance) extra += `\n${ai.guidance}`;
     }
     const last = st.blocks < limit ? "" : `\nThis is the last block. If you stop while red, the run is recorded as FAILED ` +
       `and requires review by ${owner}.`;

@@ -51,7 +51,7 @@ Step by step:
 
 ## A concrete walkthrough: T05, then T06
 
-This part is grounded in the kit repository and the trial evidence (`golden-loop-evidence/report.md`, `golden-loop-evidence/round2/report.md`). The trial ran on a demo repo, `krnese/golden-path-demo`, generated from the kit's invoice demo by `examples/make-demo.mjs`. The round 2 verification found the demo's `acceptance/`, `tasks/`, `FREEZE.sha256` and CODEOWNERS byte-identical to a fresh `make-demo.mjs` build. Kit paths below are under `examples/invoice-demo/` unless stated otherwise.
+This part is grounded in the kit repository and the trial evidence. The public account of the trial is [the golden loop walkthrough](examples/golden-loop/README.md), and its gate verdicts are checked in as [gate-check-base-65ef920.json](examples/golden-loop/gate-check-base-65ef920.json) and [gate-check-base-921979e.json](examples/golden-loop/gate-check-base-921979e.json). Some details below come from the trial's verification notes ("round 1 notes" and "round 2 notes"), and the round 1 gate output. Those are not published in this repository. Where a claim rests only on them, it says so. The trial ran on a demo repo, `krnese/golden-path-demo`, generated from the kit's invoice demo by `examples/make-demo.mjs`. The round 2 verification found the demo's `acceptance/`, `tasks/`, `FREEZE.sha256` and CODEOWNERS byte-identical to a fresh `make-demo.mjs` build. Kit paths below are under `examples/invoice-demo/` unless stated otherwise.
 
 **Two owners, one repo.** `examples/make-demo.mjs` writes this `.github/CODEOWNERS` into the demo (the handles are fictional placeholders):
 
@@ -66,8 +66,8 @@ The last matching line wins, so Marketing owns `acceptance/marketing/` and Finan
 
 **Round 1: intent becomes T05.** Marketing's intent, verbatim: *"I need invoices to be as simple as possible, so humans can immediately understand and approve/reject them without requiring deep investigation."* That became `tasks/T05.md`, the examples in `acceptance/marketing/EXAMPLES.md` (section T05), and the protected tests in `acceptance/marketing/t05.test.mjs`: a `reviewSummary()` with a fixed set of fields, flags for empty invoices, duplicate lines and amounts over the threshold, and a one-line reason.
 
-- The agent (Copilot) changed only `invoice.mjs` and `tests/invoice.test.mjs`. Nothing under `acceptance/`, `tasks/`, `.github/`, `.golden-path/` or `FREEZE.sha256` changed (`report.md`, check (a)).
-- `FREEZE.sha256`: all 12 entries OK. Acceptance (T01 + T05): 18/18 pass. `gate.mjs check --base main`: passed (`report.md`, checks (b)–(e); `gate-check-node22.json`).
+- The agent (Copilot) changed only `invoice.mjs` and `tests/invoice.test.mjs`. Nothing under `acceptance/`, `tasks/`, `.github/`, `.golden-path/` or `FREEZE.sha256` changed (the round 1 notes, check (a)).
+- `FREEZE.sha256`: all 12 entries OK. Acceptance (T01 + T05): 18/18 pass. `gate.mjs check --base main`: passed (the round 1 notes, checks (b)–(e); round 1 gate output, not published).
 - **The evidence back to the owner was honest.** Every tested criterion was met. But the summary reason read *"Review required for over_threshold."*, a code rather than plain words, and only the first duplicated SKU was named. Whether that's clear enough was marked *"Partly, for KN to judge."*
 
 That's the important moment. The tests passed, and the owner still wasn't fully served, because the tests encoded the intent only as far as it had been written down. That limit is stated in the kit's own README: *"Cases the examples don't cover are not checked."*
@@ -78,12 +78,12 @@ That's the important moment. The tests passed, and the owner still wasn't fully 
 
 - `T05 test_duplicate_line_flagged_with_plain_reason`: *"the summary reason no longer names flag codes"*
 - `T05 test_empty_invoice_needs_review`: *"the summary reason no longer names flag codes"*
-- `T05 test_every_flag_has_a_reason`: *"the summary reason explains each flag in plain words instead of naming its code"* (in the round 1 run this test was `T05 test_every_flag_named_in_reason`, per `golden-loop-evidence/gate-check-node22.json`)
+- `T05 test_every_flag_has_a_reason`: *"the summary reason explains each flag in plain words instead of naming its code"* (in the round 1 run this test was `T05 test_every_flag_named_in_reason`, per the round 1 gate output (not published))
 
-The rest of each test still runs, for example the one-sentence check on the reason. The amendment came in through the owner's acceptance commit (`921979e`, PR #3 in the demo). Inside the agent session, the gate saw that same commit as *"acceptance/marketing/t05.test.mjs: protected acceptance file modified"* plus a new `t06.test.mjs` (`round2/gc-65.json`). The agent didn't retire these checks. The owner did, in a change that's visible on its own.
+The rest of each test still runs, for example the one-sentence check on the reason. The amendment came in through the owner's acceptance commit (`921979e`, PR #3 in the demo). Inside the agent session, the gate saw that same commit as *"acceptance/marketing/t05.test.mjs: protected acceptance file modified"* plus a new `t06.test.mjs` ([gate-check-base-65ef920.json](examples/golden-loop/gate-check-base-65ef920.json)). The agent didn't retire these checks. The owner did, in a change that's visible on its own.
 
-- Copilot's implementation commit `6b65a1d` touched only `invoice.mjs` and `tests/invoice.test.mjs`. `FREEZE.sha256` (now 14 entries) passed 14/14. Acceptance (T01 + T05 + T06): 26/26. Against the owner commit, `gate.mjs check --base 921979e` passed (`round2/report.md`; `round2/gc-92.json`).
-- **The gate also failed closed, and that's worth telling.** Inside the agent session, the stop gate compared against the commit the session *started* on (`65ef920`), which was before the owner's T06 files existed. So it refused: *"protected acceptance file modified"* (`round2/gc-65.json`). The verification concluded the gate *"behaved correctly and failed closed. Commit authorship is not trusted"*, because a Copilot-co-authored commit can't prove owner authority. Copilot reported the failure honestly instead of editing around it. The practical lesson: commit owner acceptance outside the agent session, then start a new chat (`round2/report.md`, "Gate root cause").
+- Copilot's implementation commit `6b65a1d` touched only `invoice.mjs` and `tests/invoice.test.mjs`. `FREEZE.sha256` (now 14 entries) passed 14/14. Acceptance (T01 + T05 + T06): 26/26. Against the owner commit, `gate.mjs check --base 921979e` passed (the round 2 notes; [gate-check-base-921979e.json](examples/golden-loop/gate-check-base-921979e.json)).
+- **The gate also failed closed, and that's worth telling.** Inside the agent session, the stop gate compared against the commit the session *started* on (`65ef920`), which was before the owner's T06 files existed. So it refused: *"protected acceptance file modified"* ([gate-check-base-65ef920.json](examples/golden-loop/gate-check-base-65ef920.json)). The verification concluded the gate *"behaved correctly and failed closed. Commit authorship is not trusted"*, because a Copilot-co-authored commit can't prove owner authority. Copilot reported the failure honestly instead of editing around it. The practical lesson: commit owner acceptance outside the agent session, then start a new chat (the round 2 notes, "Gate root cause").
 - The evidence went back to the owner again, with remaining wording weak spots ("Products A appear more than once", no counts) listed for Marketing to judge.
 
 After two rounds, the repo has more acceptance than it started with. The new tests are owner-approved, protected, and tied to a named task and a recorded reason. Nobody sat down to "write the test suite".
@@ -94,7 +94,7 @@ After two rounds, the repo has more acceptance than it started with. The new tes
 
 - **Owners define done.** The person accountable for the outcome approves what "correct" means. The agent and the implementing engineer work to that definition. They don't get to redefine it.
 - **A living, owner-approved spec.** `EXAMPLES.md` plus the tests next to it make a specification that's readable and executable at the same time. It changes only when an owner approves a change.
-- **Regression protection.** Every finished task leaves tests behind. T06 had to keep T05's behaviour, and T01's acceptance kept running throughout (`round2/gc-92.json` lists T01, T05 and T06 all passing).
+- **Regression protection.** Every finished task leaves tests behind. T06 had to keep T05's behaviour, and T01's acceptance kept running throughout ([gate-check-base-921979e.json](examples/golden-loop/gate-check-base-921979e.json) lists T01, T05 and T06 all passing).
 - **An audit trail.** Each test traces to a task file, an acceptance PR, and a Code Owner approval on a specific commit. You can see who decided, and when.
 - **Agent-agnostic.** The binding boundary is your own branch protection, Code Owner review and required CI check. The README puts it this way: *"Golden Path adds no new gate; it connects the expert's acceptance to those existing controls."* Switch agents and the suite still holds.
 
@@ -112,7 +112,7 @@ After two rounds, the repo has more acceptance than it started with. The new tes
 
 - Use individual `@user` owners in CODEOWNERS. Teams and emails aren't resolved, so they fail closed (`docs/LEVEL-2.md`).
 - Owner acceptance changes go in their own PR (the `golden-path:acceptance-revision` path in `docs/LEVEL-2.md`), and then the agent starts a fresh session.
-- Use Node 22 or later. On Node 20, the `check` step failed for environment reasons (`report.md`, check (e)).
+- Use Node 22 or later. On Node 20, the `check` step failed for environment reasons (the round 1 notes, check (e)).
 
 **The plugin direction.** The kit installs from `plugin/` (`plugin/install.mjs`, `plugin/skills/golden-path`, the optional hook in `plugin/com.github.copilot/hooks/`, and `plugin/extras/workflows/golden-path-check.yml`). The split matters:
 
@@ -127,10 +127,10 @@ When several developers (and their agents) work in the same repo at once, it hel
 
 - **The source of truth is the acceptance tests on protected `main`.** They got there through an owner-approved change: CODEOWNERS plus branch protection that requires Code Owner review (`docs/LEVEL-2.md`). Nothing on a developer's laptop outranks them.
 - **CI on the PR gives the authoritative verdict. A local green is a hint.** `plugin/extras/workflows/golden-path-check.yml` runs `gate.mjs check --base "$BASE_SHA"` against the PR's base commit and, for owner revisions, `authorize-acceptance-revision --base … --head …`. Its own header calls the in-session hook *"feedback, not the boundary"*. A passing local session is encouraging, but only the required check on the PR decides.
-- **Tampering is visible, and the verdict can be recomputed.** Any edit to a protected acceptance file shows up in the PR diff. Because the check takes only commits (base and head) and the PR's reviews as input, anyone can rerun it and get the same verdict. That's how the round 2 verification reproduced both results (`round2/gc-65.json`, `round2/gc-92.json`).
+- **Tampering is visible, and the verdict can be recomputed.** Any edit to a protected acceptance file shows up in the PR diff. Because the check takes only commits (base and head) and the PR's reviews as input, anyone can rerun it and get the same verdict. That's how the round 2 verification reproduced both results ([gate-check-base-65ef920.json](examples/golden-loop/gate-check-base-65ef920.json), [gate-check-base-921979e.json](examples/golden-loop/gate-check-base-921979e.json)).
 - **The ledger is a local diagnostic, never the record.** The gate writes `.golden-path/ledger.jsonl` (`LEDGER_REL` in `plugin/scripts/gate.mjs`, line 29), and the installer adds it to `.gitignore` along with `.golden-path/state/`. Each developer has their own copy on their own machine. It's useful for "why did my session block?", but it isn't committed, isn't shared, and isn't evidence for anyone else. The record is the commits, the PR, the reviews and the CI result.
 
-**The gap: a base that moves mid-session (verified, round 2).** The local gate compares against the commit the session *started* on. If an owner's acceptance change lands while a session is open, the gate sees protected files that differ from its base and fails closed. That's exactly what happened with T06 (`round2/report.md`, "Gate root cause"). It's safe but confusing. To avoid it:
+**The gap: a base that moves mid-session (verified, round 2).** The local gate compares against the commit the session *started* on. If an owner's acceptance change lands while a session is open, the gate sees protected files that differ from its base and fails closed. That's exactly what happened with T06 (the round 2 notes, "Gate root cause"). It's safe but confusing. To avoid it:
 
 - Start a new agent session after an owner's acceptance change lands. Since PR #21 the gate says so itself: a failing acceptance-integrity result now names the base it compared against and how that base was chosen (`base_sha`, `base_source`). When the changed acceptance files were committed after the session started, it tells you to start a new chat or session so the owner commit becomes the base. The check itself is unchanged and still fails closed. See [the golden loop walkthrough](examples/golden-loop/README.md#the-gate-refused-a-mid-session-acceptance-change-correctly) and [LEVEL-2](LEVEL-2.md).
 - Turn on the branch-protection setting **"Require branches to be up to date before merging"**, so CI judges each PR against the latest protected `main`, including any acceptance that was merged in the meantime.
@@ -141,7 +141,7 @@ When several developers (and their agents) work in the same repo at once, it hel
 
 ## Honest limits
 
-- **The evidence is narrow.** One model, one task per round, one demo repo (`report.md` and `round2/report.md` both say so). Treat this as a working demonstration, not a study.
+- **The evidence is narrow.** One model, one task per round, one demo repo (the round 1 notes and the round 2 notes both say so). Treat this as a working demonstration, not a study.
 - **No productivity claim.** Nothing here measures speed, cost or quality against another way of working.
 - **The gate didn't visibly enforce anything in round 1.** It apparently never fired, and gate state (`.golden-path/state/`, `.golden-path/ledger.jsonl`) is local and gitignored, so the repo holds no record of whether the stop gate fired. The evidence that it refuses edits comes from the scripted refusal scenario (`examples/invoice-demo/simulator/refusal_scenario.mjs`) and from the round 2 fail-closed result.
 - **Drafting can be automated. Approval deliberately can't.** An agent may draft an acceptance PR. Only a Code Owner's approval on the current head makes it count, and locally the gate never skips.
@@ -159,7 +159,7 @@ When several developers (and their agents) work in the same repo at once, it hel
 - **Proposed:** the agent drafts the acceptance PR straight from the owner's plain-language intent, with examples and tests, ready for the owner to approve. Approval stays human.
 - **Proposed:** turn today's prose-and-comment supersede notes (`tasks/T06.md`, `// superseded by T06` in `t05.test.mjs`) into a structured field the gate or reviewer tooling can list.
 - **Proposed:** owner configuration per acceptance path inside Golden Path, beyond CODEOWNERS.
-- **Proposed:** a stop-gate warning *before* the fail, when acceptance commits by someone other than the agent sit between the session base and HEAD (suggested in `round2/report.md`; naming the base and the new-session guidance shipped in PR #21).
+- **Proposed:** a stop-gate warning *before* the fail, when acceptance commits by someone other than the agent sit between the session base and HEAD (suggested in the round 2 notes; naming the base and the new-session guidance shipped in PR #21).
 - **Proposed:** a standard evidence pack (promised vs shipped, real output, open questions for the owner) produced at the end of each loop.
 
 The short version: install the kit, pick one task, ask its owner what "done" looks like, and let the suite grow from there.

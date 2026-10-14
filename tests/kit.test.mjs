@@ -597,6 +597,33 @@ describe("Acceptance integrity", () => {
       assert.match(o.reason, /Compared with base [0-9a-f]{7} \(session start\)/);
       assert.doesNotMatch(o.reason, /start a NEW chat/);
     });
+    test("HEAD that does not descend from the session base gets no new-session advice (branch switch/reset)", () => {
+      const start = gate.headSha(d);
+      git(d, "checkout", "-q", "--orphan", "other"); // a diverged history: HEAD no longer descends from the base
+      w(d, "acceptance/test_t01.py", "def test_x():\n    assert 3\n"); git(d, "add", "-A"); git(d, "commit", "-qm", "unrelated");
+      const o = stop();
+      assert.equal(o.decision, "block", "the integrity failure stands");
+      assert.match(o.reason, /does not descend from the base/);
+      assert.doesNotMatch(o.reason, /start a NEW chat/);
+      const a = gate.runChecks(d, gate.loadConfig(d), start, Date.now(), { baseSource: "session-start" }).results.find((r) => r.name === "acceptance-integrity");
+      assert.equal(a.head_descends_from_base, false);
+    });
+    test("a library caller with a fixed base but no baseSource gets the revision guidance, not session advice", () => {
+      const base = gate.headSha(d);
+      w(d, "acceptance/test_t01.py", "def test_x():\n    assert 2\n"); git(d, "commit", "-qam", "owner change");
+      const a = gate.runChecks(d, gate.loadConfig(d), base, Date.now()).results.find((r) => r.name === "acceptance-integrity");
+      assert.equal(a.base_source, "caller-supplied base");
+      assert.match(a.output, /authorised acceptance revision/);
+      assert.doesNotMatch(a.output, /start a NEW chat/);
+    });
+    test("new-session guidance survives truncation of a long change list", () => {
+      for (let i = 0; i < 300; i++) w(d, `acceptance/test_long_name_for_truncation_${String(i).padStart(4, "0")}.py`, "def test_z():\n    assert 1\n");
+      git(d, "add", "-A"); git(d, "commit", "-qm", "owner adds many acceptance files");
+      const o = stop();
+      assert.equal(o.decision, "block");
+      const at = o.reason.indexOf("start a NEW chat/session");
+      assert.ok(at >= 0 && at < o.reason.indexOf("[acceptance-integrity]"), "the action appears before the truncated detail");
+    });
     test("check --base reports the base and its source, and points owner commits to the revision PR", () => {
       const base = gate.headSha(d);
       w(d, "acceptance/test_t01.py", "def test_x():\n    assert 2\n"); git(d, "commit", "-qam", "owner change");
