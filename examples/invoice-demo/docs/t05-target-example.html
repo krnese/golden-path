@@ -1,0 +1,32 @@
+<!doctype html><html><head><meta charset="utf-8"><title>T05 target example</title><style>
+body{margin:0;font-family:"DejaVu Sans",Arial,sans-serif;background:#f4f5f7;color:#1f2328;width:1100px}
+.banner{background:#9a6700;color:#fff;padding:14px 24px;font-weight:bold;font-size:17px;text-align:center}
+h1{font-size:20px;margin:20px 24px 4px}.sub{margin:0 24px 16px;color:#57606a;font-size:13px}
+.row{display:flex;gap:20px;padding:0 24px 24px}.card{flex:1;background:#fff;border:1px solid #d0d7de;border-radius:8px;padding:18px}
+.card h2{margin:0 0 10px;font-size:17px}table{width:100%;border-collapse:collapse;font-size:14px;margin-bottom:12px}
+td,th{padding:5px 6px;border-bottom:1px solid #eaeef2;text-align:left}td.n,th.n{text-align:right;font-variant-numeric:tabular-nums}
+.tot td{font-weight:bold}.pill{display:inline-block;padding:4px 12px;border-radius:12px;font-weight:bold;color:#fff}
+.ok{background:#1a7f37}.rv{background:#cf222e}.flag{background:#fff8c5;border:1px solid #d4a72c;border-radius:6px;padding:6px 8px;font-size:13px;margin:4px 0}
+code{background:#eaeef2;padding:1px 4px;border-radius:3px}.reason{font-style:italic;margin-top:10px;font-size:14px}
+.foot{padding:0 24px 18px;font-size:12px;color:#57606a}</style></head><body>
+<div class="banner">Illustration of the acceptance target, not real output; review_summary() is not implemented yet</div>
+<h1>T05 review summary: target example</h1>
+<p class="sub">Values from <code>acceptance/EXAMPLES.md</code> (section T05); fields from <code>tasks/T05.md</code>. Threshold 50 000.00, standard VAT 25%.</p>
+<div class="row">
+<div class="card"><h2>Invoice 1: A 100.00 × 2</h2>
+<table><tr><th>SKU</th><th class="n">Unit price</th><th class="n">Qty</th><th class="n">Net</th></tr>
+<tr><td>A</td><td class="n">100.00</td><td class="n">2</td><td class="n">200.00</td></tr></table>
+<table><tr><td>lines</td><td class="n">1</td></tr><tr><td>net</td><td class="n">200.00</td></tr><tr><td>vat</td><td class="n">50.00</td></tr><tr class="tot"><td>gross</td><td class="n">250.00</td></tr></table>
+<div><b>flags:</b> none</div><p><b>recommendation:</b> <span class="pill ok">approve</span></p>
+<div class="reason">reason: "Totals reconcile and nothing unusual was found, so this invoice can be approved."</div></div>
+<div class="card"><h2>Invoice 2: A 100.00 × 1, twice</h2>
+<table><tr><th>SKU</th><th class="n">Unit price</th><th class="n">Qty</th><th class="n">Net</th></tr>
+<tr><td>A</td><td class="n">100.00</td><td class="n">1</td><td class="n">100.00</td></tr>
+<tr><td>A</td><td class="n">100.00</td><td class="n">1</td><td class="n">100.00</td></tr></table>
+<table><tr><td>lines</td><td class="n">2</td></tr><tr><td>net</td><td class="n">200.00</td></tr><tr><td>vat</td><td class="n">50.00</td></tr><tr class="tot"><td>gross</td><td class="n">250.00</td></tr></table>
+<div><b>flags:</b></div><div class="flag"><code>duplicate_line</code>: SKU A appears twice with the same price, quantity and VAT class, which looks like double billing.</div>
+<p><b>recommendation:</b> <span class="pill rv">review</span></p>
+<div class="reason">reason: "Needs review (duplicate_line): SKU A is billed twice with identical details."</div></div>
+</div>
+<div class="foot">Other T05 rows (same rules): A 40 000.00 × 1 → gross 50 000.00, no flags, approve (at the threshold is not over it) · A 40 000.01 × 1 → gross 50 000.01, <code>over_threshold</code> (states 50 000.00), review · no lines → 0.00, <code>empty</code>, review. Reason wording is illustrative; the tests only fix its shape (one line, ends with ".", ≤ 200 chars, names every flag code).</div>
+</body></html>
