@@ -6,16 +6,17 @@
 export class Decimal {
   /** @param {string|bigint|Decimal} value  JS numbers are rejected (see toMoney). */
   constructor(value) {
-    if (value instanceof Decimal) { this.coef = value.coef; this.exp = value.exp; return; }
-    if (typeof value === "bigint") { this.coef = value; this.exp = 0; return; }
+    if (value instanceof Decimal) { this.coef = value.coef; this.exp = value.exp; Object.freeze(this); return; }
+    if (typeof value === "bigint") { this.coef = value; this.exp = 0; Object.freeze(this); return; }
     if (typeof value !== "string") throw new TypeError(`Decimal needs a string, bigint or Decimal, got ${typeof value}`);
     const m = /^\s*([+-]?)(\d*)(?:\.(\d*))?(?:[eE]([+-]?\d+))?\s*$/.exec(value);
     if (!m || (m[2] === "" && (m[3] ?? "") === "")) throw new RangeError(`invalid decimal: ${JSON.stringify(value)}`);
     const frac = m[3] ?? "";
     this.coef = BigInt((m[1] === "-" ? "-" : "") + (m[2] + frac || "0"));
     this.exp = Number(m[4] ?? 0) - frac.length;
+    Object.freeze(this);
   }
-  static #of(coef, exp) { const d = Object.create(Decimal.prototype); d.coef = coef; d.exp = exp; return d; }
+  static #of(coef, exp) { const d = Object.create(Decimal.prototype); d.coef = coef; d.exp = exp; return Object.freeze(d); }
   static #align(a, b) {
     const e = Math.min(a.exp, b.exp);
     return [a.coef * 10n ** BigInt(a.exp - e), b.coef * 10n ** BigInt(b.exp - e), e];
