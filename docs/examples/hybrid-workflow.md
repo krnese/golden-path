@@ -40,6 +40,9 @@ decide?*
 | Review evidence, decide, merge | Humans | Your Code Owner review and required checks. Golden Path never merges |
 | Learning from merged PRs | Humans, through reviewed PRs | L3 guide, [LEVEL-3-EXPERIMENTS.md](../LEVEL-3-EXPERIMENTS.md), if you want to measure it |
 
+For this shape run for real (intent from Marketing, an outside agent writing the acceptance PR, Copilot
+implementing, evidence back, a second round), see [the golden loop, end to end](golden-loop/README.md).
+
 To start from this shape: install L1, write the expert's examples, then move to L2 with
 `--acceptance-path`, `--acceptance-owner` and `--with-ci` once the examples are tests (see the
 [README](../../README.md#three-adoption-levels)).

@@ -1,0 +1,27 @@
+<!doctype html><meta charset=utf-8><style>
+body{margin:0;font-family:"DejaVu Sans",sans-serif;background:#f3f4f6;color:#1f2328;width:1200px}
+.ban{background:#24292f;color:#fff;font-size:20px;font-weight:bold;padding:14px 24px}
+.ban span{font-weight:normal;font-size:14px;color:#c9d1d9;margin-left:10px}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:20px;padding:20px 24px 8px}
+.col{background:#fff;border-radius:10px;border:1px solid #d0d7de;overflow:hidden}
+.head{padding:14px 18px;color:#fff}.fail .head{background:#b42318}.pass .head{background:#1a7f37}
+.verdict{font-size:26px;font-weight:bold;letter-spacing:1px}.t{font-size:16px;margin-top:4px;font-weight:bold}.s{font-size:13px;opacity:.92;margin-top:3px}
+table{width:100%;border-collapse:collapse;font-size:14px}td{padding:10px 14px;border-top:1px solid #eaeef2;vertical-align:top}
+.icon{width:22px;font-size:18px;font-weight:bold}td.ok{color:#1a7f37 !important}td.no{color:#b42318 !important}
+td.icon{color:#1a7f37}
+.m{color:#57606a;font-size:12.5px;margin-top:2px}
+pre{white-space:pre-wrap;background:#fff1f0;border:1px solid #f4b4ae;border-radius:6px;padding:8px 10px;font-size:12px;margin:8px 0 0;color:#82071e}
+.foot{font-size:12.5px;color:#57606a;padding:6px 26px 18px;line-height:1.5}
+</style>
+<div class=ban>Gate verdict from the real trial<span>gate.mjs check, same code (6b65a1d), two different base commits</span></div>
+<div class=grid>
+<div class="col fail">
+<div class=head><div class=verdict>FAILED</div><div class=t>Base 65ef920: the base the running session had recorded</div><div class=s>Before the owner's T06 acceptance commit, so the owner's changes count as acceptance changes</div></div>
+<table><tr><td class="icon ok">✔</td><td><b>Developer tests (check)</b><div class=m>14 passed, 0 failed</div></td></tr><tr><td class="icon ok">✔</td><td><b>Acceptance tests T01 + T05 + T06</b><div class=m>26 passed, 0 failed</div></td></tr><tr><td class="icon ok">✔</td><td><b>Test integrity (protected tests not weakened)</b></td></tr><tr><td class="icon no">✘</td><td><b>Acceptance integrity (owner files unchanged vs base)</b><pre>acceptance/marketing/EXAMPLES.md: protected acceptance file modified
+acceptance/marketing/t05.test.mjs: protected acceptance file modified
+acceptance/marketing/t06.test.mjs: new file under protected acceptance paths</pre></td></tr></table></div>
+<div class="col pass">
+<div class=head><div class=verdict>PASSED</div><div class=t>Base 921979e: the owner's T06 acceptance commit</div><div class=s>The base a new session would have recorded after the owner commit</div></div>
+<table><tr><td class="icon ok">✔</td><td><b>Developer tests (check)</b><div class=m>14 passed, 0 failed</div></td></tr><tr><td class="icon ok">✔</td><td><b>Acceptance tests T01 + T05 + T06</b><div class=m>26 passed, 0 failed</div></td></tr><tr><td class="icon ok">✔</td><td><b>Test integrity (protected tests not weakened)</b></td></tr><tr><td class="icon ok">✔</td><td><b>Acceptance integrity (owner files unchanged vs base)</b></td></tr></table></div>
+</div>
+<div class=foot>Rendered from the JSON output of <code>node .github/hooks/golden-path/gate.mjs check --base &lt;sha&gt;</code>, run during independent verification on 14 Oct 2026 (Node 22.23.3, kit 79c08c7) in the private trial repo. Both runs check the same implementation. The left one reproduces the in-session FAILED result; the in-session ledger was not available. Messages are in the kit's wording before this fix. The current gate also prints the base and its source, and advises starting a new session.</div>

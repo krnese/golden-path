@@ -1,0 +1,43 @@
+{
+ "ok": false,
+ "outcome": "FAILED",
+ "skipped": [],
+ "base": "65ef920",
+ "base_sha": "65ef9200e8ea467f0187bb8d7064eab187db06ec",
+ "results": [
+  {
+   "name": "check",
+   "ok": true,
+   "failed_tests": [],
+   "output": "      type: 'test'\n      ...\n    # Subtest: rejects unsupported and out-of-range discounts\n    ok 2 - rejects unsupported and out-of-range discounts\n      ---\n      duration_ms: 0.398291\n      type: 'test'\n      ...\n    1..2\nok 3 - LineDiscountTests\n  ---\n  duration_ms: 1.315371\n  type: 'suite'\n  ...\n# Subtest: ReviewSummaryTests\n    # Subtest: returns reconciled totals and approval for a clean invoice\n    ok 1 - returns reconciled totals and approval for a clean invoice\n      ---\n      duration_ms: 1.603599\n      type: 'test'\n      ...\n    # Subtest: uses numeric equality when detecting duplicate prices\n    ok 2 - uses numeric equality when detecting duplicate prices\n      ---\n      duration_ms: 0.716252\n      type: 'test'\n      ...\n    # Subtest: rounds the effective threshold as money and rejects unsupported types\n    ok 3 - rounds the effective threshold as money and rejects unsupported types\n      ---\n      duration_ms: 1.550139\n      type: 'test'\n      ...\n    # Subtest: names every duplicated product without reporting unique products\n    ok 4 - names every duplicated product without reporting unique products\n      ---\n      duration_ms: 0.402498\n      type: 'test'\n      ...\n    # Subtest: explains duplicate and threshold concerns in one plain sentence\n    ok 5 - explains duplicate and threshold concerns in one plain sentence\n      ---\n      duration_ms: 0.180996\n      type: 'test'\n      ...\n    1..5\nok 4 - ReviewSummaryTests\n  ---\n  duration_ms: 4.731404\n  type: 'suite'\n  ...\n1..4\n# tests 14\n# suites 4\n# pass 14\n# fail 0\n# cancelled 0\n# skipped 0\n# todo 0\n# duration_ms 80.491756",
+   "started_ms": 3
+  },
+  {
+   "name": "acceptance",
+   "ok": true,
+   "failed_tests": [],
+   "output": "  duration_ms: 0.908817\n  type: 'test'\n  ...\n# Subtest: T06 test_empty_summary_reason_is_plain\nok 14 - T06 test_empty_summary_reason_is_plain\n  ---\n  duration_ms: 0.363612\n  type: 'test'\n  ...\n# Subtest: T06 test_several_problems_all_explained_in_plain_words\nok 15 - T06 test_several_problems_all_explained_in_plain_words\n  ---\n  duration_ms: 0.494345\n  type: 'test'\n  ...\n# Subtest: T06 test_approve_reason_is_plain\nok 16 - T06 test_approve_reason_is_plain\n  ---\n  duration_ms: 0.21696\n  type: 'test'\n  ...\n# Subtest: T06 test_t05_behaviour_unchanged\nok 17 - T06 test_t05_behaviour_unchanged\n  ---\n  duration_ms: 0.796082\n  type: 'test'\n  ...\n# Subtest: T01 test_discount_before_vat\nok 18 - T01 test_discount_before_vat\n  ---\n  duration_ms: 1.039118\n  type: 'test'\n  ...\n# Subtest: T01 test_rounding_after_discount\nok 19 - T01 test_rounding_after_discount\n  ---\n  duration_ms: 0.233163\n  type: 'test'\n  ...\n# Subtest: T01 test_default_unchanged\nok 20 - T01 test_default_unchanged\n  ---\n  duration_ms: 0.249648\n  type: 'test'\n  ...\n# Subtest: T01 test_range\nok 21 - T01 test_range\n  ---\n  duration_ms: 1.396566\n  type: 'test'\n  ...\n1..21\n# tests 26\n# suites 0\n# pass 26\n# fail 0\n# cancelled 0\n# skipped 0\n# todo 0\n# duration_ms 81.563659",
+   "started_ms": 184
+  },
+  {
+   "name": "test-integrity",
+   "ok": true,
+   "output": "",
+   "started_ms": 342
+  },
+  {
+   "name": "acceptance-integrity",
+   "ok": false,
+   "output": "acceptance/marketing/EXAMPLES.md: protected acceptance file modified\nacceptance/marketing/t05.test.mjs: protected acceptance file modified\nacceptance/marketing/t06.test.mjs: new file under protected acceptance paths",
+   "started_ms": 351,
+   "owner": "Finance: Ingrid Berg (T01..T04, acceptance/); Marketing (T05..T06, acceptance/marketing/)"
+  }
+ ],
+ "failed": [
+  "acceptance-integrity"
+ ],
+ "unverified": [],
+ "failed_tests": [],
+ "budget_sec": 100,
+ "deadline_ms": 100000
+}

@@ -25,6 +25,7 @@ Use **Copilot's default agent**; do not install the agent preset.
 **Not covered here (document, don't build):** branch protection with the `golden-path-check` workflow as a required check and human review are the durable boundary; verify them in your GitHub settings.
 
 **Decision rule.**
+
 - If 1–4 fail, it's NO-GO for the VS Code demo: use Copilot CLI (the documented hooks surface) and re-test.
 - If 4–5 fail but 6 passes, keep the demo and show the gate as the enforcement point.
 - File the tool-argument shape you observed.

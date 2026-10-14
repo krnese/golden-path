@@ -1,7 +1,16 @@
 # Golden Path (preview)
 
-**A better way of working with the agents you already have: help people express business intent as
-reviewable engineering acceptance, then connect it to the controls they already use.**
+**Keep "done" in the hands of the people who define it.** Golden Path is a small kit for teams that build with
+coding agents, starting with GitHub Copilot in VS Code. A business owner's intent becomes acceptance tests that
+the owner controls. The agent works until those tests pass, and it is not allowed to change them.
+
+**The problem it addresses.** Coding agents are good at making tests pass, and that includes quietly editing the
+tests that define "done". Meanwhile the business intent behind a change ("invoices a person can approve at a
+glance") rarely reaches the pull request intact.
+
+**Who it's for.** Two people working together: a **business-context expert** (product, finance, marketing,
+operations…) who owns the intent and the examples, and a **developer** who ships the change with the coding
+agent they already use.
 
 > **Core principle:** the expert and engineer decide what needs to be true; automation checks the parts
 > they have made executable.
@@ -18,20 +27,79 @@ settings you configure) decides the merge.
 
 The **golden loop** is a process that starts outside the repository: a business owner (for example marketing)
 works with an agent outside the repo, which turns their intent into a PR; Copilot in the repo picks up that
-PR, and owners approve any outward change.
+PR, and owners approve any outward change. Evidence goes back to the owner, whose next intent starts the next
+round.
 
-**What's verified today.**
+## See it work
+
+In a real trial, one sentence from Marketing ("I need invoices to be as simple as possible, so humans can
+immediately understand and approve/reject them…") became owner-approved acceptance tests. Copilot implemented
+them in VS Code on Windows without touching them. The real output went back to Marketing, and Marketing's
+follow-up became the next round.
+
+![Real output from the trial, round 1 next to round 2: after Marketing's second intent, review reasons are in plain words and every duplicated product is named](docs/examples/golden-loop/round1-vs-round2.png)
+
+**[Walk through the golden loop, step by step →](docs/examples/golden-loop/README.md)** It covers who decided
+at each step, the screenshots, the gate verdicts, and what the trial does and doesn't prove.
+
+## What you get
+
+- **Acceptance the owner controls.** Business examples become protected tests with a named owner. With CODEOWNERS
+  and branch protection set up, changing them takes that owner's Code Owner approval on the PR's current head commit
+  ([authorised revision](docs/LEVEL-2.md#changing-acceptance-tests-on-purpose-authorised-revision)).
+- **An agent that can't quietly redefine "done".** At Level 2 the guard denies edits to acceptance tests and names
+  the owner. The stop gate keeps the agent working while checks are red, and compares against the commit the
+  session started from, so committing an edit doesn't hide it ([what Level 2 does](docs/LEVEL-2.md#what-level-2-does-exactly)).
+- **Results you can trust, including the bad ones.** Unreadable evidence is UNVERIFIED and a run that gives up is
+  FAILED, never an implicit pass. An acceptance failure says which base it compared with and what to do next.
+- **Fits the controls you already have.** Branch protection, CODEOWNERS and required CI stay the authority. An
+  optional workflow re-runs the checks against the PR base (`--with-ci`).
+- **Works with Copilot's default agent.** No special agent to pick and no new runtime
+  ([details](#works-with-your-default-agent)).
+- **Small enough to review.** One Node.js script with no npm packages, a conflict-refusing installer and a clean
+  uninstall. CI runs the kit tests on Ubuntu and Windows, Node 22 and 24.
+- **Evidence back to the owner.** The method's Report step says what changed, which checks passed on which commit
+  and what is still unproved. The [walkthrough](docs/examples/golden-loop/README.md) shows this in practice.
+
+## Quickstart (30 seconds)
+
+Needs Node.js 22+ and git, on any OS. From a clone of this repository:
+
+```bash
+node plugin/install.mjs --target <your-repo> --level 2 --check "<your test command>"
+```
+
+Open `<your-repo>` in VS Code and give Copilot a task as usual. Add `--dry-run` to preview, or use `--level 1`
+for the method only. To try it on a ready-made example first:
+
+```bash
+node examples/make-demo.mjs ~/golden-path-demo   # PowerShell: $HOME\golden-path-demo
+cd ~/golden-path-demo && node simulator/refusal_scenario.mjs && code .
+```
+
+## What's verified today
+
 - *Shipped and tested:* the skill and instructions (`plugin/skills/golden-path/`), the L2 guard and stop gate
   (`plugin/scripts/gate.mjs`; tests in `tests/kit.test.mjs` such as "the stop gate blocks while checks are red,
   then allows once they are green" and "editing, creating or absolute-path editing an acceptance test is
   denied and names the owner"), the installer (`plugin/install.mjs`), and the invoice demo with its scripted
   refusal scenario (`examples/make-demo.mjs`, `simulator/refusal_scenario.mjs`). Verified with Copilot in VS Code.
+- *Run end to end in a real trial:* the golden loop, **twice**, with Copilot's default agent in VS Code on
+  Windows (14 October 2026). Each round went from intent, to an acceptance-only PR written by an agent outside
+  the repo, to review, owner merge, implementation and evidence back to the owner. Copilot passed 18/18 and then
+  26/26 acceptance tests and changed only implementation files. The acceptance files matched a fresh build byte
+  for byte. The gate correctly refused an acceptance change that landed mid-session.
+  *Limits:* one model, one task, a demo repository, and one person playing the owner. "Immediately
+  understandable" is the owner's judgement, not a test result. Nothing about productivity was measured. The
+  agent never tried to change acceptance, so refusals are shown by the scripted scenario and kit tests, not by
+  the trial. Details: [the walkthrough](docs/examples/golden-loop/README.md).
 - *Your GitHub settings:* CI, branch protection and Code Owner review. The kit adds no gate of its own.
 - *Target model, not yet validated:* "any harness, any model" (other agents get the skill only, untested),
-  the golden loop (being validated with a real end-to-end trial), and measured outcomes (Level 3 is guidance
-  only). Legal/Compliance and Marketing/Sales as owners are part of the method; the kit has no tooling for them.
+  the golden loop beyond that one trial, and measured outcomes (Level 3 is guidance only). Business owners
+  such as Legal/Compliance and Marketing/Sales are part of the method (Marketing was the owner in the trial);
+  the kit has no tooling specific to them.
 
-Every element is checked in [docs/overview-claims.md](docs/overview-claims.md).
+Every element of the overview is checked in [docs/overview-claims.md](docs/overview-claims.md).
 
 ## Two ways to use Golden Path
 
@@ -90,10 +158,8 @@ the repository:
 
 Today this depends on files committed to your repository (in this repository they are already committed).
 
-Golden Path is for two people working together: a **business-context expert** (product owner, finance,
-operations…) who owns the intent and the acceptance examples, and a **developer** who turns them into
-tests and ships the change with whatever coding agent they already use. It adds one skill, and optionally
-one hook script, to that agent. It does not replace your agent, your CI or your review process.
+Golden Path adds one skill, and optionally one hook script, to the agent you already use. It does not replace
+your agent, your CI or your review process.
 
 It is complementary to spec-driven tools such as [Spec Kit](https://github.com/github/spec-kit) and
 [Kiro specs](https://kiro.dev/docs/specs.md): they structure spec → plan → tasks; Golden Path is only about
@@ -148,6 +214,8 @@ node plugin/install.mjs --target <repo> --level 2 --check "npm test" \
 
 - `--with-ci` adds `.github/workflows/golden-path-check.yml` to your repository, which re-runs the checks against the PR base
   commit. Make it a required status check.
+- **After the owner changes acceptance, start a new agent session.** The gate compares with the commit the
+  session started from, so an acceptance commit made mid-session fails, even the owner's.
 - The protected-test checks are **heuristics**: they catch the common ways an agent edits or weakens a test,
   not every workaround.
 - Optional extras: `--with-reviewer` (reviewer agent), `--with-agent-preset` (custom agent; Copilot's
@@ -200,6 +268,10 @@ selects or switches the model; that is the host's job. L2 checks run the same re
   node simulator/refusal_scenario.mjs
   code .   # then ask Copilot's default agent: "Do tasks/T05.md" (or T01 / T06; all are enabled and red)
   ```
+
+- **[The golden loop, end to end](docs/examples/golden-loop/README.md)**: a real two-round trial with Copilot in
+  VS Code on Windows (intent → acceptance PR → review → build → evidence → next intent), with screenshots and
+  limits.
 
 - **[Connecting your own reasoning boundaries](docs/examples/hybrid-workflow.md)**: one adopter's workflow
   (own agents → PR → Copilot → reviewable PR → human merge) mapped onto Golden Path levels and files.
