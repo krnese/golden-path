@@ -1,0 +1,36 @@
+name: Landing page checks
+
+on:
+  pull_request:
+    paths:
+      - "site/**"
+      - "README.md"
+      - "docs/examples/golden-loop/**"
+      - ".github/workflows/site.yml"
+  push:
+    branches-ignore: [gh-pages]
+    paths:
+      - "site/**"
+      - "README.md"
+      - "docs/examples/golden-loop/**"
+      - ".github/workflows/site.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    name: Static landing page
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1
+        with:
+          node-version: "22"
+      - run: node --test "site/tests/*.test.mjs"
+      - run: node site/scripts/build.mjs
+      - run: node site/scripts/check-site.mjs
