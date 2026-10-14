@@ -405,7 +405,10 @@ export function onStop(payload) {
   // No-change fast path: a session that changed nothing (e.g. a read-only review) has nothing to check. Only while
   // it has not been blocked yet; once red, a session that later "has no changes" (work discarded) runs the checks.
   // Not a pass: outcome SKIPPED_NO_CHANGES. A sessionStart-less first stop takes base = HEAD, which is fine here.
-  if (!st.blocks && cfg.check && unchangedSinceBase(root, st.base_sha)) {
+  // Only a base captured at sessionStart proves "unchanged since the session began". A base synthesised on
+  // this first stop (sessionStart missed) equals HEAD *after* any earlier agent commits, so skipping would
+  // hide that work — fail closed and run the checks.
+  if (!st.blocks && cfg.check && st.base_source === "session-start" && unchangedSinceBase(root, st.base_sha)) {
     ledger(root, "gate_skipped_no_changes", { outcome: "SKIPPED_NO_CHANGES", session: sid, task: st.task || null,
       attempt: st.attempts, base_sha: st.base_sha, base_source: st.base_source,
       note: "HEAD equals the session base and the working tree is clean; no check or acceptance command run" });

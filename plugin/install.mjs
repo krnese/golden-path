@@ -169,7 +169,9 @@ export function uninstall(target, force = false, purge = false) {
   const manPath = path.join(target, MANIFEST);
   if (!exists(manPath)) { console.log("not installed (no manifest); nothing to do"); return 0; }
   const manifest = JSON.parse(read(manPath));
-  const modified = Object.entries(manifest.files).filter(([rel, h]) => exists(path.join(target, rel)) && sha(readSrc(path.join(target, rel))) !== h).map(([r]) => r);
+  // Accept the raw hash (legacy Windows manifests hashed CRLF bytes) and the LF-canonical hash.
+  const matchesHash = (p, h) => { const raw = read(p); return sha(raw) === h || sha(raw.replace(/\r\n/g, "\n")) === h; };
+  const modified = Object.entries(manifest.files).filter(([rel, h]) => exists(path.join(target, rel)) && !matchesHash(path.join(target, rel), h)).map(([r]) => r);
   if (modified.length && !force) { console.log("REFUSING: files modified since install (use --force to remove anyway):\n  " + modified.join("\n  ")); return 2; }
   for (const rel of Object.keys(manifest.files)) fs.rmSync(path.join(target, rel), { force: true });
   for (const rel of manifest.blocks || []) {

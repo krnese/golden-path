@@ -422,6 +422,15 @@ describe("Gate & time budget", () => {
       assert.equal(stop().decision, "block");
       assert.equal(ledger(d).at(-1).event, "gate_red");
     });
+    test("without sessionStart the gate does not skip checks (base would equal HEAD after agent commits)", () => {
+      cfg(d, { check: FAIL });
+      w(d, ".gitignore", ".golden-path/state/\n.golden-path/ledger.jsonl\n");
+      git(d, "add", "-A"); git(d, "commit", "-qm", "config");
+      w(d, "work.txt", "x\n"); git(d, "add", "-A"); git(d, "commit", "-qm", "agent work before first stop");
+      // No start: first stop would synthesise base = HEAD (after the commit) and wrongly skip if allowed.
+      assert.equal(stop().decision, "block");
+      assert.ok(!ledger(d).some((r) => r.event === "gate_skipped_no_changes"));
+    });
     test("when git cannot prove there are no changes, the gate falls back to running the checks", () => {
       committedSession();
       const st = path.join(d, ".golden-path/state/s1.json");

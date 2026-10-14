@@ -5,7 +5,8 @@ import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
-import { plannedFiles, install } from "../plugin/install.mjs";
+import { createHash } from "node:crypto";
+import { plannedFiles, install, uninstall } from "../plugin/install.mjs";
 
 const REPO = path.dirname(path.dirname(fileURLToPath(import.meta.url)));
 const FIX = "installed kit is out of sync with plugin/ - rerun node plugin/install.mjs --target . (from the repo root) and commit the result";
@@ -57,5 +58,24 @@ test("self-install: CRLF-only differences in kit sources or installed copies are
     try { assert.equal(install(tmp, { dryRun: true }), 0); } finally { console.log = log; }
     assert.equal(out.join("\n"), "nothing to do");
     for (const c of Object.values(plannedFiles({ level: 2 }))) assert.ok(!c.includes("\r"), "planned kit content is LF");
+  } finally { fs.rmSync(tmp, { recursive: true, force: true }); }
+});
+
+test("self-install: uninstall accepts a legacy CRLF hash still on disk", () => {
+  const tmp = fs.mkdtempSync(path.join(os.tmpdir(), "gp-crlf-un-"));
+  try {
+    const log = console.log; console.log = () => {};
+    try { assert.equal(install(tmp, { check: "node -e 0" }), 0); } finally { console.log = log; }
+    const manPath = path.join(tmp, ".golden-path/install-manifest.json");
+    const manifest = JSON.parse(fs.readFileSync(manPath, "utf8"));
+    const rel = Object.keys(manifest.files)[0];
+    const p = path.join(tmp, rel);
+    const crlf = fs.readFileSync(p, "utf8").replace(/\n/g, "\r\n");
+    fs.writeFileSync(p, crlf);
+    manifest.files[rel] = createHash("sha256").update(crlf).digest("hex"); // legacy: hashed CRLF bytes
+    fs.writeFileSync(manPath, JSON.stringify(manifest, null, 1) + "\n");
+    console.log = () => {};
+    try { assert.equal(uninstall(tmp), 0); } finally { console.log = log; }
+    assert.ok(!fs.existsSync(p), "legacy CRLF-hashed install should uninstall without --force");
   } finally { fs.rmSync(tmp, { recursive: true, force: true }); }
 });
