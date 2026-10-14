@@ -35,6 +35,7 @@ round.
 | Document | What it covers |
 | --- | --- |
 | [README](README.md) | This page: what Golden Path is, quickstart, adoption levels, limits |
+| [Background of Golden Path](docs/background.md) | Why it exists and how the idea evolved under evidence: from outcome-first workloads to a bridge between any AI interface and the repository controls that hold authority |
 | [The golden loop, end to end](docs/examples/golden-loop/README.md) | Walkthrough of a real two-round trial: intent → acceptance → build → evidence, including the gate failing closed |
 | [How your acceptance suite grows itself](docs/how-acceptance-evolves.md) | Why a repo's acceptance tests accrue per task, owner-approved, and what that means for teams and brownfield adoption |
 | [Example: connecting your own reasoning boundaries](docs/examples/hybrid-workflow.md) | One adopter's hybrid workflow, mapped so you can map yours |
