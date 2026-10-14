@@ -6,6 +6,18 @@ reviewable engineering acceptance, then connect it to the controls they already 
 > **Core principle:** the expert and engineer decide what needs to be true; automation checks the parts
 > they have made executable.
 
+![Golden Path overview: owners, acceptance record, coding agent, pull request, durable boundary, outcomes](docs/assets/golden-path-overview.png)
+
+Left to right: **owners** (the product owner or domain expert) write intent and concrete examples; those become
+the **acceptance record** (in the demo, `examples/invoice-demo/tasks/T01.md` and
+`examples/invoice-demo/acceptance/EXAMPLES.md` plus the acceptance tests). **Your coding agent** implements and
+tests; at Level 2 a stop gate keeps it working while checks are red (up to `max_blocks`, default 5) and
+denies edits to protected acceptance tests. The **pull request** carries the change and its evidence, and your
+**durable boundary** (CI, branch protection, Code Owner review, all GitHub settings you configure) decides
+the merge. Verified with Copilot in VS Code; other agents get the skill only. Dashed parts of the picture
+(legal and marketing as owners, the feedback loop, measurement) are your process, not tooling in the kit.
+Each claim is checked in [docs/overview-claims.md](docs/overview-claims.md).
+
 ## Two ways to use Golden Path
 
 1. **Fork or clone this repository.** It works with Copilot in VS Code right away: the kit is already
