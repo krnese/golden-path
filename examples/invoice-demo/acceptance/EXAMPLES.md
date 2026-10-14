@@ -1,9 +1,17 @@
 # Acceptance examples: invoice calculator
 
-Owner: **Finance, Ingrid Berg** (a fictional business-context expert). These examples are the
-acceptance criteria. Each section is an executable test class in `acceptance/test_acceptance.py`, which Ingrid reviewed
-and approved. Agents may read and run them but never change them. A change goes back to Ingrid.
-Ingrid releases increments by naming them in the acceptance command (`.golden-path/config.json`), e.g. `python3 -m unittest acceptance.test_acceptance.T01`.
+Ownership is per increment, and each owner has their own acceptance path:
+
+| Increments | Owner | Examples | Tests |
+|---|---|---|---|
+| T01..T04 | **Finance, Ingrid Berg** | this file | `acceptance/test_acceptance.py` |
+| T05 | **Marketing** | [`acceptance/marketing/EXAMPLES.md`](marketing/EXAMPLES.md) | `acceptance/marketing/test_acceptance.py` |
+
+The owners are fictional business-context experts. The sections below are Finance's (T01..T04); each is an
+executable test class in `acceptance/test_acceptance.py`, which Ingrid reviewed and approved. Agents may read and
+run them but never change them. A change goes back to the owner of that increment.
+Owners release increments by naming them in the acceptance command (`.golden-path/config.json`), e.g. `python3 -m unittest acceptance.test_acceptance.T01`
+(Marketing's T05 would be `acceptance.marketing.test_acceptance.T05`; it is not enabled yet).
 
 ## T01: Percentage discount per line
 | Unit price | Qty | Discount | Net | VAT (25%) | Why |
