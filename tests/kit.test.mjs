@@ -783,7 +783,8 @@ describe("Demo baseline: the demo installs and behaves as documented", () => {
     assert.ok(!("research" in c));
   });
   test("the scripted refusal scenario refuses both acceptance edits and leaves acceptance untouched", () => {
-    const r = run([NODE, "simulator/refusal_scenario.mjs"], d, { env: { ...process.env, GOLDEN_PATH_SESSION: "refusal-1" } });
+    const { NODE_TEST_CONTEXT, ...env } = process.env; // the scenario's gate runs node:test; report like a user's shell
+    const r = run([NODE, "simulator/refusal_scenario.mjs"], d, { env: { ...env, GOLDEN_PATH_SESSION: "refusal-1" } });
     assert.equal(r.status, 0, r.stdout + r.stderr);
     assert.match(r.stdout, /RESULT: as expected/);
     const ev = ledger(d).filter((x) => x.session === "refusal-1").map((x) => x.event);
