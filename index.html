@@ -3,18 +3,18 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="description" content="AI writes the code. Your repo's controls decide what's proved. Golden Path connects owner-approved acceptance tests to Copilot feedback and required CI.">
+  <meta name="description" content="From business intent to AI-written code you can review. Golden Path connects owner-defined examples, protected acceptance, agent feedback and evidence returned to the owner.">
   <meta name="theme-color" content="#13211f">
-  <meta property="og:title" content="Golden Path | AI writes. Your repo verifies.">
-  <meta property="og:description" content="Stop treating an agent's 'done' as proof. Keep executable acceptance under owner control.">
+  <meta property="og:title" content="Golden Path | AI-written code you can review">
+  <meta property="og:description" content="Owners define the examples. Agents implement. Repository checks verify them. Real results inform the owner's next decision.">
   <meta property="og:type" content="website">
   <meta property="og:url" content="https://krnese.github.io/golden-path/">
   <meta property="og:image" content="https://krnese.github.io/golden-path/evidence/round1-vs-round2.png">
   <link rel="canonical" href="https://krnese.github.io/golden-path/">
   <link rel="icon" type="image/svg+xml" href="./favicon.svg">
   <link rel="stylesheet" href="./styles.css">
-  <script src="./main.js" defer></script>
-  <title>Golden Path | AI writes. Your repo verifies.</title>
+  <script src="./main.js" type="module"></script>
+  <title>Golden Path | AI-written code you can review</title>
 </head>
 <body>
   <a class="skip-link" href="#main">Skip to content</a>
@@ -27,29 +27,53 @@
   <main id="main">
     <div class="hero-shell">
       <section class="container hero" aria-labelledby="promise">
-        <p class="eyebrow"><span class="signal" aria-hidden="true"></span>Owner-controlled acceptance for AI-assisted development</p>
-        <h1 id="promise">AI writes the code.<br><em>Your repo decides<br class="desktop-break"> what's proved.</em></h1>
-        <p class="hero-intro">An AI agent can claim &ldquo;done&rdquo; when nothing proves it.<br>Golden Path connects owner-approved tests to agent feedback and your repository controls.</p>
+        <div class="hero-copy">
+          <p class="eyebrow"><span class="signal" aria-hidden="true"></span>Owner-controlled acceptance for AI-assisted development</p>
+          <h1 id="promise">From business intent<br>to AI-written code<br><em>you can review.</em></h1>
+          <p class="hero-intro">An AI agent's &ldquo;done&rdquo; is not proof. Owners define examples; an engineer configures checks against protected acceptance. AI gets feedback; you review the actual result and its evidence.</p>
+          <p class="what-you-install"><strong>What you install:</strong> a small repository kit with a skill, optional Copilot hooks, and a CI workflow template.</p>
+          <p class="partnership"><strong>A partnership, not another agent:</strong> the domain expert defines success. An engineer helps turn examples into tests, configures the controls, and maintains them.</p>
+          <div class="adoption-note"><h2>Already have tests and branch protection?</h2><p>Keep them. Golden Path connects your owner's examples to protected acceptance, gives the agent feedback while it works, and returns evidence to the owner. The benefit is a shared target and a reviewable result&mdash;not another authority or a promised productivity gain.</p></div>
+        </div>
 
-        <figure class="workflow" aria-labelledby="workflow-title">
-          <figcaption id="workflow-title"><span>From a task to a checked verdict</span><span class="diagram-note">Agent claims are not evidence.</span></figcaption>
-          <ol class="steps">
-            <li data-step="1"><span class="step-number">01 / INTENT</span><h2>Task</h2><p>The owner defines examples and approves acceptance.</p><span class="step-role">Owner sets the target</span></li>
-            <li data-step="2"><span class="step-number">02 / IMPLEMENTATION</span><h2>Agent works</h2><p>Copilot writes code to meet the approved tests.</p><span class="step-role">Agent changes implementation</span></li>
-            <li data-step="3"><span class="step-number">03 / LOCAL FEEDBACK</span><h2>Gate checks</h2><p>Run tests. Check acceptance integrity against the fixed baseline.</p><span class="step-role">Bounded feedback, not authority</span></li>
-            <li class="verdict-step" data-step="4"><span class="step-number">04 / REPOSITORY CONTROL</span><h2>CI on the PR</h2><p>Required checks give the executable verdict against the PR base.</p><span class="step-role">PASS / FAIL / UNVERIFIED</span></li>
-          </ol>
-          <div class="loop-note"><span aria-hidden="true">&larr;</span><strong>Red checks?</strong> Fix code and recheck within the local retry budget.<span class="owner-change">Need different acceptance? The owner approves it. Start a new session.</span></div>
-          <p class="diagram-boundary">Configure required CI and protected acceptance on main. Branch protection and human review govern merge.</p>
+        <figure class="workflow" id="walkthrough" aria-labelledby="workflow-title">
+          <figcaption id="workflow-title"><strong>One invoice. A path forward. A loop back.</strong><span class="illustrative-label">Illustrative walkthrough &mdash; not a recorded run</span></figcaption>
+          <div class="story-controls" hidden>
+            <button type="button" id="story-play">Play walkthrough</button>
+            <button type="button" id="story-replay">Replay</button>
+            <button type="button" id="story-next">Next scene</button>
+            <span id="story-help">Select a step to explore. Arrow keys move between steps.</span>
+          </div>
+          <div class="story-stage">
+            <svg class="story-lines" aria-hidden="true" focusable="false"></svg>
+            <ol class="steps" aria-label="Illustrative invoice walkthrough">
+              <li data-step="1"><span class="step-number">01 / OWNER INTENT</span><h2><button type="button" data-select="0" disabled>Define the outcome</button></h2><p>&ldquo;Flag duplicate invoice lines.&rdquo;</p><span class="step-role">The expert brings the business rule</span></li>
+              <li data-step="2"><span class="step-number">02 / APPROVED ACCEPTANCE</span><h2><button type="button" data-select="1" disabled>Agree the examples</button></h2><p>A product on two lines needs review. One line with quantity two does not. The owner approves these examples.</p><span class="step-role">Owner-controlled target, not agent-editable</span></li>
+              <li data-step="3"><span class="step-number">03 / IMPLEMENTATION</span><h2><button type="button" data-select="2" disabled>Agent builds to them</button></h2><p>GitHub Copilot implements against the approved acceptance, without rewriting that rule.</p><span class="step-role"><img class="tool-icon" src="./icons/copilot.svg" width="24" height="24" alt="">Copilot in Visual Studio Code</span></li>
+              <li class="controlled-step" data-step="4"><span class="step-number">04 / CHECKS AND EVIDENCE</span><h2><button type="button" data-select="3" disabled>Check, repair, recheck</button></h2><p>A failed check sends code back to implementation. Changing acceptance requires the owner's approval.</p><span class="step-role">Local feedback is bounded; required CI rechecks</span></li>
+              <li class="controlled-step" data-step="5"><span class="step-number">05 / REPOSITORY BOUNDARY</span><h2><button type="button" data-select="4" disabled>A person reviews</button></h2><p>Repository controls and human review govern merge. Passing checks alone do not approve a change.</p><span class="step-role"><img class="tool-icon" src="./icons/github.svg" width="24" height="24" alt="">Required checks + configured review rules</span></li>
+              <li data-step="6"><span class="step-number">06 / THE GOLDEN LOOP</span><h2><button type="button" data-select="5" disabled>Result back to the owner</button></h2><p>The owner inspects the actual result: &ldquo;Also name every duplicated product.&rdquo; They approve the next acceptance increment.</p><span class="step-role">New intent returns to owner-approved acceptance</span></li>
+            </ol>
+          </div>
+          <div class="story-detail" hidden><div class="story-content"><p class="story-scene" id="story-scene"></p><p class="scene-caption" id="story-caption" role="status" aria-live="polite" aria-atomic="true"></p></div></div>
+          <div class="fixed-controls" data-fixed-controls><div><span>ALWAYS OWNER-CONTROLLED</span><strong>Approved acceptance on protected main</strong></div><div><span>FIXED REPOSITORY CONTROLS</span><strong>Required CI &middot; branch protection &middot; human review</strong></div></div>
+          <div class="loop-note"><p><strong>The path:</strong> intent becomes a checked, reviewable change.</p><p><strong>The loop:</strong> real results go back to the owner; their next intent becomes the next approved increment.</p><p class="repair-note"><strong>Repair is not a new target:</strong> fix code and recheck within the retry budget. A needed acceptance revision goes to its owner; start a new implementation session afterwards.</p></div>
+          <p class="diagram-boundary">These controls need an engineer's setup. Method-only installation does not enforce them. This story illustrates the workflow; recorded trial evidence is below.</p>
         </figure>
 
-        <div class="actions"><a class="button primary" href="#quickstart">Install in 5 minutes <span aria-hidden="true">&rarr;</span></a><a class="button secondary" href="https://github.com/krnese/golden-path/blob/52b7187b9373657051d29dd12b5d420ea5f1d139/docs/background.md">Read the background <span aria-hidden="true">&nearr;</span></a></div>
-        <p class="hero-footnote">Your existing Copilot agent. Your own tests. Your repository's authority.</p>
+        <div class="actions"><a class="button primary" href="#quickstart">Try your first task <span aria-hidden="true">&rarr;</span></a><a class="button secondary" href="https://github.com/krnese/golden-path/blob/main/docs/background.md">Read the background <span aria-hidden="true">&nearr;</span></a></div>
+        <p class="hero-footnote">Works with your existing GitHub Copilot agent in Visual Studio Code. Your own tests. Your repository's authority.</p>
       </section>
     </div>
 
   <div class="page-content">
     <section id="proof" class="container section" aria-labelledby="proof-title">
+      <div class="section-heading"><p class="eyebrow">01 / RECORDED TRIAL EVIDENCE</p><h2 id="result-title">What the owner could actually see.</h2><p>In the real trial, tests passed but the owner still wanted clearer reasons. These enlarged details show the same duplicate-line invoice before and after that feedback.</p></div>
+      <div class="proof-details">
+        <figure class="proof-excerpt"><figcaption><strong>Before / round 1</strong><span>The reason uses a system identifier.</span></figcaption><svg role="img" aria-labelledby="before-detail-title" viewBox="566 475 504 165"><title id="before-detail-title">Enlarged round-one duplicate invoice detail, cropped from the recorded comparison.</title><image href="./evidence/round1-vs-round2.png" width="2200" height="1500"></image></svg><blockquote>Review required for duplicate_line.</blockquote></figure>
+        <figure class="proof-excerpt"><figcaption><strong>After / round 2</strong><span>The reason explains the issue and names the product.</span></figcaption><svg role="img" aria-labelledby="after-detail-title" viewBox="1655 375 516 145"><title id="after-detail-title">Enlarged round-two duplicate invoice detail, cropped from the same recorded comparison.</title><image href="./evidence/round1-vs-round2.png" width="2200" height="1500"></image></svg><blockquote>Review required because products A appear more than once.</blockquote></figure>
+      </div>
+      <p class="proof-context">The quotes are transcribed from the screenshots, not generated examples. <a href="./evidence/round1-vs-round2.png">Inspect the full recorded comparison &nearr;</a></p>
       <div class="section-heading"><p class="eyebrow">01 / PROOF, NOT ADJECTIVES</p><h2 id="proof-title">Green tests weren't enough.</h2><p>Both runs passed the same 14 developer tests and 26 acceptance tests. The baseline integrity check changed the verdict.</p></div>
       <div class="gate-records">
         <article class="gate-card failed"><div class="record-header"><h3>Old session baseline</h3><span class="status">FAILED</span></div><pre aria-label="Recorded failing gate check">base: 65ef920
@@ -78,7 +102,7 @@ outcome: PASSED</pre><a href="./evidence/gate-check-base-921979e.json">Inspect t
       <figure class="trial">
         <div class="trial-heading"><span class="eyebrow">REAL OUTPUT / TWO ROUNDS</span><span>Intent &rarr; evidence &rarr; the owner's next decision</span></div>
         <a href="./evidence/round1-vs-round2.png" aria-label="Open the full-size round-one and round-two output"><img src="./evidence/round1-vs-round2.png" width="2200" height="1500" loading="lazy" alt="Real invoice output, round one beside round two: the second round explains review reasons in plain words and names every duplicated product."></a>
-        <figcaption>Passing tests still left gaps the owner could see. Their follow-up became the next acceptance increment. <a href="https://github.com/krnese/golden-path/blob/52b7187b9373657051d29dd12b5d420ea5f1d139/docs/examples/golden-loop/README.md">Read the full trial and its limits &rarr;</a></figcaption>
+        <figcaption>Passing tests still left gaps the owner could see. Their follow-up became the next acceptance increment. <a href="https://github.com/krnese/golden-path/blob/main/docs/examples/golden-loop/README.md">Read the full trial and its limits &rarr;</a></figcaption>
       </figure>
       <p class="evidence-limit">One model. One demo task. One person playing the owner. No productivity gain measured.</p>
     </section>
@@ -97,7 +121,7 @@ outcome: PASSED</pre><a href="./evidence/gate-check-base-921979e.json">Inspect t
       <div class="section-heading"><p class="eyebrow">03 / THE HONEST LIMITS</p><h2 id="limits-title">What it doesn't do.</h2></div>
       <ul class="limit-grid">
         <li><h3>Replace engineering judgment</h3><p>Tests prove their examples, not every business outcome. Owners still inspect evidence and engineers still review changes.</p></li>
-        <li><h3>Make local hooks tamper-proof</h3><p>Protection is heuristic. Retry exhaustion or a host timeout can allow stopping without a pass. Required CI remains essential.</p></li>
+        <li><h3>Make local hooks tamper-proof</h3><p>Protection is heuristic. Unreadable evidence is UNVERIFIED, not a pass. Retry exhaustion or a host timeout can allow stopping without a pass. Required CI remains essential.</p></li>
         <li><h3>Turn Copilot review into approval</h3><p>Review comments are advice. Your configured review and merge rules remain the authority.</p></li>
         <li><h3>Promise a productivity boost</h3><p>The mechanism is tested and the workflow demonstrated. Incremental benefit over competent engineering is still unproved.</p></li>
       </ul>
@@ -110,9 +134,8 @@ outcome: PASSED</pre><a href="./evidence/gate-check-base-921979e.json">Inspect t
         <li><span>02</span><h3>Agree a few examples</h3><p>&ldquo;If a product appears twice, flag it for review and name the product.&rdquo;</p></li>
         <li><span>03</span><h3>Look at the result</h3><p>&ldquo;Show me the real output for our examples, and tell me what's still uncertain.&rdquo;</p></li>
       </ol>
-      <p class="guide-link"><a class="button guide-button" href="https://github.com/krnese/golden-path/blob/52b7187b9373657051d29dd12b5d420ea5f1d139/docs/USER-GUIDE.md">Walk me through my first task <span aria-hidden="true">&rarr;</span></a></p>
+      <p class="guide-link"><a class="button guide-button" href="https://github.com/krnese/golden-path/blob/main/docs/USER-GUIDE.md">Walk me through my first task <span aria-hidden="true">&rarr;</span></a></p>
       <p>The guide includes a setup request you can give Copilot. Start with the simple method-only option, then add automatic checks and protected acceptance with a teammate when you're ready. The full checked loop above needs that configured setup.</p>
-      <p class="small-note">The five-minute invitation is for initial installation, not a promise that your business examples and repository controls are already configured.</p>
       <details class="setup-details"><summary>Prefer the terminal? Installation and checked setup</summary>
       <p>Needs Node.js 22+ and git. From a clone of Golden Path, the simple starting option is:</p>
       <pre><code>node plugin/install.mjs --target "&lt;your-repo&gt;" --level 1</code></pre>
@@ -125,12 +148,12 @@ node plugin/install.mjs --target &quot;&lt;your-repo&gt;&quot; --level 2 --check
         <p id="copy-status" role="status" aria-live="polite"></p>
       </div>
       <p>Replace the placeholders with <strong>your repository, existing test commands and named acceptance owner</strong>. Approve the tests before installing. The installer preserves existing configuration.</p>
-      <p>Then configure CODEOWNERS, required CI and Code Owner review, and verify refusal plus legitimate owner revisions. <a href="https://github.com/krnese/golden-path/blob/52b7187b9373657051d29dd12b5d420ea5f1d139/docs/ADOPTION.md">Follow the adoption checklist &rarr;</a></p>
+      <p>Then configure CODEOWNERS, required CI and Code Owner review, and verify refusal plus legitimate owner revisions. <a href="https://github.com/krnese/golden-path/blob/main/docs/ADOPTION.md">Follow the adoption checklist &rarr;</a></p>
       </details>
-      <div class="quickstart-links"><a href="https://github.com/krnese/golden-path/blob/52b7187b9373657051d29dd12b5d420ea5f1d139/README.md#quickstart">Try the local invoice demo &nearr;</a><a href="https://github.com/krnese/golden-path/blob/52b7187b9373657051d29dd12b5d420ea5f1d139/README.md#documentation">Open the documentation index &nearr;</a></div>
+      <div class="quickstart-links"><a href="https://github.com/krnese/golden-path/blob/main/README.md#quickstart">Try the local invoice demo &nearr;</a><a href="https://github.com/krnese/golden-path/blob/main/README.md#documentation">Open the documentation index &nearr;</a></div>
     </section>
   </div>
   </main>
-  <footer class="container footer"><a class="brand" href="#main">Golden Path</a><p>AI implements. Owners define. Repository controls verify.</p><div><a href="https://github.com/krnese/golden-path">Source</a><a href="https://github.com/krnese/golden-path/blob/52b7187b9373657051d29dd12b5d420ea5f1d139/LICENSE">MIT License</a></div></footer>
+  <footer class="container footer"><a class="brand" href="#main">Golden Path</a><p>AI implements. Owners define. Repository controls verify.</p><div><a href="https://github.com/krnese/golden-path">Source</a><a href="https://github.com/krnese/golden-path/blob/main/LICENSE">MIT License</a></div></footer>
 </body>
 </html>
