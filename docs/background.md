@@ -328,7 +328,8 @@ What each party does:
 - **CI.** The optional `golden-path-check` workflow re-runs the checks against the PR's base commit.
 - **Optional session guidance and checking (Level 2).** A guard denies edits to acceptance files and names the
   owner. A stop gate keeps the agent working while checks are red, up to a limit, and records a run that gives up
-  as FAILED, never as a pass.
+  as FAILED, never as a pass. FAILED is terminal for that session: later stops are allowed without re-running
+  checks and the outcome stays FAILED; only a new session starts a new retry budget.
 
 **Hooks and instructions are assistance, not the final security or governance boundary.** The README is explicit:
 hooks run inside the agent session, can time out (and then fail open) and can be worked around; the protected-test
@@ -424,8 +425,10 @@ rulesets have explicit bypass lists ([about rulesets](https://docs.github.com/en
 **Golden Path relies on these settings. It does not create them.**
 
 To be honest about this repository: on 14 October 2026 its `main` branch was governed by rulesets with no bypass
-actors that require a pull request and the whitespace check, and that request Copilot code review automatically.
-They do not require Code Owner review or approvals, which is a deliberate single-maintainer setting, and the kit tests are not a required check.
+actors. Those rulesets require a pull request and request Copilot code review automatically.
+A `.github/CODEOWNERS` file names `@krnese` as owner (added in PR #23), but the rulesets don't require Code Owner
+review or approvals, a deliberate single-maintainer setting (see `docs/LEVEL-2.md`, section "Code Owner review for
+single-maintainer repos"). The whitespace check and the Kit guarantees jobs are required checks.
 The private demo repository used in the trial was generated without the optional CI workflow, so the trial's gate
 verdicts were reproduced afterwards with `gate.mjs check --base`, not by a required check. An adopter who wants the
 anchor described above has to configure it.

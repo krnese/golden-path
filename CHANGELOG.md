@@ -8,7 +8,18 @@ History of the kit. The current way to adopt it is in the [README](README.md); t
 ## Unreleased
 
 - **Gate: terminal FAILED after retries; this repo's check no longer picks up the demo.** After `max_blocks` the session stays FAILED: later stops in the same session allow at once, run no checks, keep outcome FAILED, and record `gate_terminal` (not a pass). A new session restarts the budget. The red-block reason now says results do not expand the user's assignment — repair only within the authorized scope, otherwise report the blocker and stop. This repository's `.golden-path/config.json` `check` is now `node --test tests/*.test.mjs` (kit + self-install only); the invoice demo's intentionally red acceptance stays out of the hook and is still asserted in CI and the demo kit test. New kit tests for terminal exhaustion, no post-terminal checks, new-session restart, ledger permanence, and scope wording.
-
+- **Background article** ([docs/background.md](docs/background.md)): why Golden Path exists and how it evolved,
+  from the outcome-first V0 lifecycle through the retired structured-state architecture, the NO CHANGE studies,
+  the demoted learning loop and retired research runner, to today's bridge (Intent → Context → Boundary →
+  Acceptance → Implementation → Proof → Report). States the central principle (separate the AI interface from the
+  repository controls that hold authority; the anchor is not any particular AI, including GitHub Copilot) and its
+  caveat (only if branch protection or rulesets and CODEOWNERS are enabled and not bypassable). Four Mermaid
+  diagrams labelled Verified / Partly verified / Proposed; historical ideas, findings, current implementation and
+  future direction are labelled separately, with first-hand and public sources. Added to the README
+  documentation index.
+- **Background: repository ruleset honesty.** `docs/background.md` now records that the Kit guarantees
+  jobs and the whitespace check are required on `main`, that `.github/CODEOWNERS` names `@krnese` (PR #23),
+  and that Code Owner review stays off on purpose for a single maintainer (see `docs/LEVEL-2.md`).
 - **Repository: CODEOWNERS for the kit, enforcement off on purpose.** Added `.github/CODEOWNERS` (owner
   `@krnese`) covering the default, `plugin/`, `.github/` (hooks, skills, prompts, workflows, scripts,
   instructions, CODEOWNERS itself), `AGENTS.md`, `.golden-path/config.json`, `tests/` and the invoice demo's
