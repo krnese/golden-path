@@ -262,4 +262,4 @@ the demo already contains T05 and T06 (both rounds), and T01, T05 and T06 are al
 
 ---
 
-Next: [How your acceptance suite grows itself](../../how-acceptance-evolves.md) →
+← Previous: [Background of Golden Path](../../background.md) · Next: [How your acceptance suite grows itself](../../how-acceptance-evolves.md) →

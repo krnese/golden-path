@@ -7,6 +7,15 @@ History of the kit. The current way to adopt it is in the [README](README.md); t
 
 ## Unreleased
 
+- **Background article** ([docs/background.md](docs/background.md)): why Golden Path exists and how it evolved,
+  from the outcome-first V0 lifecycle through the retired structured-state architecture, the NO CHANGE studies,
+  the demoted learning loop and retired research runner, to today's bridge (Intent → Context → Boundary →
+  Acceptance → Implementation → Proof → Report). States the central principle (separate the AI interface from the
+  repository controls that hold authority; the anchor is not any particular AI, including GitHub Copilot) and its
+  caveat (only if branch protection or rulesets and CODEOWNERS are enabled and not bypassable). Four Mermaid
+  diagrams labelled Verified / Partly verified / Proposed; historical ideas, findings, current implementation and
+  future direction are labelled separately, with first-hand and public sources. Added to the README
+  documentation index.
 - **Gate: clearer acceptance-integrity failures; start a new session after an owner change.** In round 2 of the
   golden-loop trial the owner committed new acceptance (T06) inside a running Copilot session, and the gate
   correctly recorded FAILED against the session-start base, without saying which base it used or what to do. A
