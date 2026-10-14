@@ -45,6 +45,14 @@ test("the static page contains the whole invoice path, repair boundary and owner
     assert.ok(html.includes("data-fixed-controls"));
   });
 });
+test("the compact introduction preserves the partnership and benefit before the walkthrough", () => {
+  withBuild({}, (_, html) => {
+    const opening = html.slice(0, html.indexOf('<figure class="workflow"'));
+    assert.match(opening, /class="hero-copy"/);
+    assert.match(opening, /class="hero-intro">[^<]*Owners define examples; an engineer configures checks against protected acceptance\. AI gets feedback; you review the actual result and its evidence\./);
+    assert.match(opening, /What you install:<\/strong> a small repository kit with a skill, optional Copilot hooks, and a CI workflow template\./);
+  });
+});
 test("enlarged recorded details preserve full evidence and have accessible titles and readable transcripts", () => {
   withBuild({}, (_, html) => {
     assert.equal((html.match(/<svg role="img" aria-labelledby="(?:before|after)-detail-title"/g) || []).length, 2);
