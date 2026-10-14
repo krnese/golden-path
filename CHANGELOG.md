@@ -7,6 +7,15 @@ History of the kit. The current way to adopt it is in the [README](README.md); t
 
 ## Unreleased
 
+- **Positioning, adoption and licensing.** Golden Path is positioned as a lightweight kit for
+  owner-controlled acceptance, for engineering leads working with domain owners. README makes L2 the
+  primary path and distinguishes check-only installation from configured acceptance and GitHub review.
+  New [adoption checklist](docs/ADOPTION.md) covers setup, owner-readable evidence, verification and revisions.
+  The evaluation guide adds a competent-practice baseline and owner/developer effort measures, without
+  claiming a pilot has run. Mechanism, workflow and incremental-benefit evidence are distinguished.
+  Added the [MIT License](LICENSE), copyright 2026 Kristian Nese, and aligned plugin metadata.
+  No runtime behavior or protected tests changed.
+
 - **Gate: no-change fast path; deliberate fast check; clearer timeouts.** A stop with HEAD still at the session base and a clean working tree (gitignored gate state/ledger ignored) allows immediately and records `gate_skipped_no_changes` — no check or acceptance command runs (not a pass; git failure falls back to running checks). The configured `check` must be a fast command that fits `hook_budget_sec` on a developer machine; full suites belong in CI. This repo's check is now the packaging + installer + self-install subset (~2s locally); the full kit suite stays in the required CI jobs. A check that overruns is UNVERIFIED, says plainly it is not a test failure, and still counts toward terminal FAILED. Installer treats CRLF-only drift as identical to LF kit sources (`.gitattributes` already pins `eol=lf`; stale Windows checkouts no longer look like real drift).
 
 - **Gate: terminal FAILED after retries; this repo's check no longer picks up the demo.** After `max_blocks` the session stays FAILED: later stops in the same session allow at once, run no checks, keep outcome FAILED, and record `gate_terminal` (not a pass). A new session restarts the budget. The red-block reason now says results do not expand the user's assignment — repair only within the authorized scope, otherwise report the blocker and stop. This repository's `.golden-path/config.json` `check` is now `node --test tests/*.test.mjs` (kit + self-install only); the invoice demo's intentionally red acceptance stays out of the hook and is still asserted in CI and the demo kit test. New kit tests for terminal exhaustion, no post-terminal checks, new-session restart, ledger permanence, and scope wording.
