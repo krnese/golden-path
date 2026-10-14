@@ -1,6 +1,6 @@
 # Golden Path landing page
 
-One plain-static HTML page, CSS and an optional clipboard script. No framework,
+One plain-static HTML page, CSS and optional interaction scripts. No framework,
 backend, tracking, external fonts or npm dependencies. The canonical user
 documentation stays in the repository; the page links to it rather than copying it.
 
@@ -27,10 +27,43 @@ The build extracts the owner-controlled acceptance install command from
 the actual trial images and JSON records byte for byte. Missing evidence fails
 the build. The records are reproduced local checks, not live CI output.
 
-The verifier checks the single-page shape, four-step diagram order, required
-copy, local links, assets and anchors. Site tests also cover custom-domain
+The verifier checks the single-page shape, six-step diagram order, static fallback,
+required copy, local links, assets and anchors. Site tests also cover playback,
+pause, repair and owner-feedback routes, reduced motion, custom-domain
 URLs, invalid configuration, evidence integrity and stale output.
 Repository acceptance tests under `tests/` are unchanged.
+
+## Page acceptance and manual review
+
+- Explain the benefit, installed components and domain-expert/engineer partnership
+  before the illustrative walkthrough. The primary CTA opens the first-task section.
+- Keep all six invoice steps and both loops readable without JavaScript. The
+  walkthrough is labelled illustrative and distinct from recorded evidence.
+- Playback starts only on request, highlights one step at a time, and stops after
+  the owner approves the next increment. Pause, replay and next-scene buttons work.
+  Select any step with Tab and Enter/Space, or use arrows, Home and End.
+- Failed checks return work to implementation. Changing acceptance requires owner
+  approval and a new implementation session. Acceptance and repository-control
+  labels remain fixed while work moves.
+- Reduced motion disables the moving pulse and timed playback, including when the
+  preference changes mid-playback. Manual exploration still works. Backgrounding
+  the page pauses playback; it does not resume without a user action.
+- Recorded before/after details are SVG viewports of the original comparison, not
+  newly generated output. Verbatim transcripts remain readable on narrow screens,
+  and the full image, JSON records and trial limitations stay available.
+- Check desktop and mobile for overflow, loaded images, visible focus, keyboard
+  order, native controls, no console errors, reduced motion and script-disabled
+  fallback. Screenshots in a PR complement, not replace, these behavior checks.
+
+Official tool glyphs and their license are documented in
+[the icon attribution](public/icons/README.md). They do not imply vendor endorsement.
+New source iterations require human review; updating a PR does not publish or merge
+the site.
+
+Review captures from the local build: [desktop](../docs/assets/landing-loop-desktop.png),
+[mobile](../docs/assets/landing-loop-mobile.png), and
+[recorded evidence detail](../docs/assets/landing-loop-evidence.png).
+These screenshots show the proposed page, not a newly published version.
 
 ## Publish on GitHub Pages
 

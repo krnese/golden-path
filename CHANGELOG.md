@@ -7,6 +7,14 @@ History of the kit. The current way to adopt it is in the [README](README.md); t
 
 ## Unreleased
 
+- **Landing page: intent first, with an interactive invoice story.** Explain the installed components,
+  expert–engineer partnership and value alongside existing tests and repository controls. A six-step,
+  clearly illustrative walkthrough shows repair back to implementation and owner feedback back to the
+  next approved acceptance increment. Playback is opt-in, with pause, replay, keyboard exploration,
+  reduced-motion and no-JavaScript fallbacks. Recorded evidence and limits remain separate; enlarged
+  before/after details and transcripts make the real trial easier to inspect. Protected acceptance,
+  runtime behavior and deployment settings are unchanged.
+
 - **A clearer first-use experience and static landing page.** The README explains the everyday
   conversation, and [Your first task](docs/USER-GUIDE.md) leads with goals, agreed examples and real
   results rather than this repository's test suite. A dependency-free [landing page](site/README.md)

@@ -3,7 +3,7 @@ import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
 import { test } from "node:test";
-import { build, canonicalUrl, escapeHtml, evidenceRoot, installationCommand, gateSummary } from "../scripts/build.mjs";
+import { build, canonicalUrl, escapeHtml, evidenceRoot, installationCommand, gateSummary, siteRoot } from "../scripts/build.mjs";
 import { verify } from "../scripts/check-site.mjs";
 
 function withBuild(env, callback) {
@@ -16,13 +16,46 @@ function withBuild(env, callback) {
   }
 }
 
-test("GitHub Pages build has one page, four ordered steps, valid anchors and no framework or kit copy", () => {
+test("GitHub Pages build has one page, six ordered steps, valid anchors and no framework", () => {
   withBuild({}, output => {
     const result = verify(output);
     assert.equal(result.canonical, "https://krnese.github.io/golden-path/");
     assert.ok(result.checked > 15);
     assert.deepEqual(fs.readdirSync(output).filter(name => name.endsWith(".html")), ["index.html"]);
     assert.ok(!fs.existsSync(path.join(output, "CNAME")));
+  });
+});
+test("the page explains adoption before the story, and its CTA matches the guided destination", () => {
+  withBuild({}, (_, html) => {
+    assert.match(html, /<h1 id="promise">[^<]*<br>to AI-written code<br>/);
+    assert.ok(html.indexOf("Already have tests and branch protection?") < html.indexOf('id="walkthrough"'));
+    assert.match(html, /class="button primary" href="#quickstart">Try your first task/);
+    assert.ok(!html.includes("five-minute"));
+    assert.ok(!html.includes("Install in 5 minutes"));
+    assert.ok(html.indexOf("Illustrative walkthrough") < html.indexOf("RECORDED TRIAL EVIDENCE"));
+  });
+});
+test("the static page contains the whole invoice path, repair boundary and owner feedback loop", () => {
+  withBuild({}, (_, html) => {
+    assert.equal((html.match(/data-select="[0-5]" disabled/g) || []).length, 6);
+    for (const example of ["Flag duplicate invoice lines.", "One line with quantity two does not.", "Changing acceptance requires the owner's approval.", "human review govern merge", "Also name every duplicated product.", "next acceptance increment"]) {
+      assert.ok(html.includes(example), `Missing static example: ${example}`);
+    }
+    assert.ok(html.includes('class="story-controls" hidden'));
+    assert.ok(html.includes("data-fixed-controls"));
+  });
+});
+test("enlarged recorded details preserve full evidence and have accessible titles and readable transcripts", () => {
+  withBuild({}, (_, html) => {
+    assert.equal((html.match(/<svg role="img" aria-labelledby="(?:before|after)-detail-title"/g) || []).length, 2);
+    assert.ok(html.includes("Review required for duplicate_line."));
+    assert.ok(html.includes("Review required because products A appear more than once."));
+    const image = fs.readFileSync(path.join(evidenceRoot, "round1-vs-round2.png"));
+    for (const [, x, y, width, height] of html.matchAll(/viewBox="(\d+) (\d+) (\d+) (\d+)"/g)) {
+      assert.ok(Number(x) + Number(width) <= image.readUInt32BE(16));
+      assert.ok(Number(y) + Number(height) <= image.readUInt32BE(20));
+    }
+    assert.ok(html.includes("Inspect the full recorded comparison"));
   });
 });
 test("custom domain builds use root-relative resolution without a project prefix", () => {
@@ -88,4 +121,14 @@ test("the verifier rejects missing assets and missing anchor destinations", () =
 test("build refuses stale artifacts and mismatched domain configuration", () => {
   withBuild({}, output => assert.throws(() => build(output, {}), /empty/));
   assert.throws(() => withBuild({ SITE_DOMAIN: "golden-path.io" }, () => {}), /SITE_DOMAIN/);
+});
+test("the playback module and licensed official glyphs are included unchanged in the build", () => {
+  withBuild({}, output => {
+    assert.deepEqual(fs.readFileSync(path.join(output, "story.js")), fs.readFileSync(path.join(siteRoot, "story.js")));
+    for (const name of ["copilot.svg", "github.svg", "LICENSE"]) {
+      assert.deepEqual(fs.readFileSync(path.join(output, "icons", name)), fs.readFileSync(path.join(siteRoot, "public", "icons", name)));
+    }
+    fs.rmSync(path.join(output, "story.js"));
+    assert.throws(() => verify(output), /playback module must be published/);
+  });
 });

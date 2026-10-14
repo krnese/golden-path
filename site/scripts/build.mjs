@@ -79,8 +79,9 @@ export function build(output = path.join(siteRoot, "dist"), env = process.env) {
   fs.mkdirSync(path.join(output, "evidence"));
   fs.writeFileSync(path.join(output, "index.html"), html);
   fs.writeFileSync(path.join(output, ".nojekyll"), "");
-  for (const name of ["styles.css", "main.js"]) fs.copyFileSync(path.join(siteRoot, name), path.join(output, name));
+  for (const name of ["styles.css", "main.js", "story.js"]) fs.copyFileSync(path.join(siteRoot, name), path.join(output, name));
   fs.copyFileSync(path.join(siteRoot, "public", "favicon.svg"), path.join(output, "favicon.svg"));
+  fs.cpSync(path.join(siteRoot, "public", "icons"), path.join(output, "icons"), { recursive: true });
   for (const name of ["round1-vs-round2.png", "gate-verdict.png", "gate-check-base-65ef920.json", "gate-check-base-921979e.json"]) {
     fs.copyFileSync(path.join(evidenceRoot, name), path.join(output, "evidence", name));
   }

@@ -10,14 +10,18 @@ export function verify(output = path.join(siteRoot, "dist")) {
   assert.equal((html.match(/<main\b/g) || []).length, 1, "There must be one main landmark");
   assert.equal((html.match(/<\/main>/g) || []).length, 1, "The main landmark must close once");
   assert.ok(html.indexOf("</main>") > html.indexOf('id="quickstart"'), "Main must include the whole user journey");
-  assert.deepEqual([...html.matchAll(/data-step="(\d)"/g)].map(match => match[1]), ["1", "2", "3", "4"]);
+  assert.deepEqual([...html.matchAll(/data-step="(\d)"/g)].map(match => match[1]), ["1", "2", "3", "4", "5", "6"]);
   assert.ok(html.indexOf('class="workflow"') < html.indexOf('class="actions"'), "Show the loop before the CTAs");
-  assert.ok(!/\bkit\b/i.test(html), "Landing-page copy must not say kit");
+  assert.ok(html.indexOf('class="what-you-install"') < html.indexOf('class="workflow"'), "Explain installation before the walkthrough");
+  assert.ok(!html.includes("Install in 5 minutes"), "The CTA must match the first-task journey");
   assert.ok(!/\{\{/.test(html), "No unrendered template fields");
   assert.ok(!/astro|starlight|pagefind/i.test(html), "Plain static HTML, no framework output");
-  for (const text of ["Install in 5 minutes", "Read the background", "FAILED", "PASSED", "UNVERIFIED", "14/14", "26/26", "What it doesn't do.", "Copilot review", "protected main"]) {
+  for (const text of ["Try your first task", "small repository kit", "skill, optional Copilot hooks, and a CI workflow template", "domain expert", "An engineer", "Read the background", "FAILED", "PASSED", "UNVERIFIED", "14/14", "26/26", "What it doesn't do.", "Copilot review", "protected main", "Illustrative walkthrough", "not a recorded run", "Flag duplicate invoice lines.", "Also name every duplicated product.", "data-fixed-controls"]) {
     assert.ok(html.includes(text), `Missing required content: ${text}`);
   }
+  assert.equal((html.match(/data-select="[0-5]" disabled/g) || []).length, 6, "All six static steps remain readable without JavaScript");
+  assert.ok(html.includes('class="story-controls" hidden'), "Unavailable interaction must stay hidden without JavaScript");
+  assert.ok(fs.existsSync(path.join(output, "story.js")), "The playback module must be published");
   const ids = [...html.matchAll(/\bid="([^"]+)"/g)].map(match => match[1]);
   assert.equal(new Set(ids).size, ids.length, "No duplicate HTML IDs");
   const canonical = /<link rel="canonical" href="([^"]+)"/.exec(html)?.[1];
@@ -43,7 +47,7 @@ export function verify(output = path.join(siteRoot, "dist")) {
     assert.equal(fs.readFileSync(cname, "utf8").trim(), current.hostname);
     assert.equal(current.pathname, "/");
   }
-  console.log(`Verified one static page, four ordered steps, real proof, and ${checked} local links/assets/anchors.`);
+  console.log(`Verified one static page, six ordered steps, static fallback, real proof, and ${checked} local links/assets/anchors.`);
   return { checked, canonical };
 }
 
