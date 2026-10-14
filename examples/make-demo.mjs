@@ -35,6 +35,7 @@ fs.writeFileSync(path.join(target, ".github", "CODEOWNERS"), [
   "/acceptance/marketing/ @demo-marketing", ""].join("\n"));
 
 git("init", "-q");
+git("config", "core.autocrlf", "false");
 git("add", "-A");
 git("commit", "-qm", "Invoice demo baseline (acceptance examples by Finance T01..T04 and Marketing T05)");
 
