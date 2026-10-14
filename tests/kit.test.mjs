@@ -388,6 +388,77 @@ describe("Gate & time budget", () => {
       assert.match(r, /report the blocker and stop/);
       assert.match(r, /do not revert or discard work, and do not implement unrelated features/);
     });
+    test("a session with no changes since its base skips the checks (marker file proves no command ran)", () => {
+      const marker = path.join(os.tmpdir(), `gp-nochange-${process.pid}-${Date.now()}.log`);
+      cfg(d, { check: nodeCmd(`require('fs').appendFileSync(${JSON.stringify(marker).replace(/"/g, "'")},'x');process.exit(1)`),
+        acceptance: { command: nodeCmd(`require('fs').appendFileSync(${JSON.stringify(marker).replace(/"/g, "'")},'a')`) } });
+      w(d, ".gitignore", ".golden-path/state/\n.golden-path/ledger.jsonl\n");
+      git(d, "add", "-A"); git(d, "commit", "-qm", "config");
+      hook(d, "start", { sessionId: "s1", cwd: d });
+      try {
+        assert.deepEqual(stop(), {});
+        assert.deepEqual(stop(), {});
+        assert.ok(!fs.existsSync(marker), "a check or acceptance command ran for an unchanged session");
+        const ev = ledger(d).filter((r) => r.event.startsWith("gate"));
+        assert.deepEqual(ev.map((r) => [r.event, r.outcome]), [["gate_skipped_no_changes", "SKIPPED_NO_CHANGES"], ["gate_skipped_no_changes", "SKIPPED_NO_CHANGES"]]);
+        assert.ok(!ledger(d).some((r) => r.outcome === "PASSED"), "skipping is not a pass");
+      } finally { fs.rmSync(marker, { force: true }); }
+    });
+    const committedSession = () => {
+      cfg(d, { check: FAIL });
+      w(d, ".gitignore", ".golden-path/state/\n.golden-path/ledger.jsonl\n");
+      git(d, "add", "-A"); git(d, "commit", "-qm", "config");
+      hook(d, "start", { sessionId: "s1", cwd: d });
+    };
+    test("an untracked file counts as a change, so the checks run", () => {
+      committedSession();
+      w(d, "notes.txt", "new\n");
+      assert.equal(stop().decision, "block");
+      assert.ok(!ledger(d).some((r) => r.event === "gate_skipped_no_changes"));
+    });
+    test("a commit since the session base counts as a change even with a clean tree", () => {
+      committedSession();
+      w(d, "src.txt", "x\n"); git(d, "add", "-A"); git(d, "commit", "-qm", "agent work");
+      assert.equal(stop().decision, "block");
+      assert.equal(ledger(d).at(-1).event, "gate_red");
+    });
+    test("without sessionStart the gate does not skip checks (base would equal HEAD after agent commits)", () => {
+      cfg(d, { check: FAIL });
+      w(d, ".gitignore", ".golden-path/state/\n.golden-path/ledger.jsonl\n");
+      git(d, "add", "-A"); git(d, "commit", "-qm", "config");
+      w(d, "work.txt", "x\n"); git(d, "add", "-A"); git(d, "commit", "-qm", "agent work before first stop");
+      // No start: first stop would synthesise base = HEAD (after the commit) and wrongly skip if allowed.
+      assert.equal(stop().decision, "block");
+      assert.ok(!ledger(d).some((r) => r.event === "gate_skipped_no_changes"));
+    });
+    test("when git cannot prove there are no changes, the gate falls back to running the checks", () => {
+      committedSession();
+      const st = path.join(d, ".golden-path/state/s1.json");
+      fs.writeFileSync(st, JSON.stringify({ ...JSON.parse(fs.readFileSync(st, "utf8")), base_sha: "0".repeat(40) }));
+      assert.equal(stop().decision, "block", "unresolvable base must not be treated as unchanged");
+      assert.equal(gate.unchangedSinceBase(d, null), false);
+      assert.equal(gate.unchangedSinceBase(path.join(os.tmpdir(), "gp-not-a-repo-" + Date.now()), gate.headSha(d)), false);
+    });
+    test("a session that was already blocked runs the checks again even with no changes", () => {
+      committedSession();
+      w(d, "notes.txt", "new\n");
+      assert.equal(stop().decision, "block");
+      fs.rmSync(path.join(d, "notes.txt"));
+      assert.equal(stop().decision, "block");
+    });
+    test("a check that exceeds the budget says plainly it timed out and is not a test failure", () => {
+      cfg(d, { check: SLEEP(3), hook_budget_sec: 1, max_blocks: 1 });
+      const o = stop();
+      assert.equal(o.decision, "block");
+      assert.match(o.reason, /check timed out after \d+(\.\d)?s \(budget 1s\); this is not a test failure - shorten the configured check or raise hook_budget_sec \(must stay below the host hook timeoutSec, 120\)/);
+      assert.equal(ledger(d).at(-1).outcome, "UNVERIFIED");
+      const g = stop();
+      assert.equal(g.decision, "allow", "timeouts still count towards terminal FAILED");
+      assert.match(g.reason, /this is not a test failure/);
+      assert.equal(ledger(d).at(-1).event, "gave_up");
+      assert.equal(stop().decision, "allow");
+      assert.equal(ledger(d).at(-1).event, "gate_terminal");
+    });
     test("a missing check command counts as red", () => assert.match(stop().reason, /No check command/));
     test("a check that times out counts as red", () => {
       cfg(d, { check: SLEEP(3), hook_budget_sec: 1 });

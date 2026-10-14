@@ -28,6 +28,10 @@ const VERSION = JSON.parse(fs.readFileSync(path.join(KIT, "plugin.json"), "utf8"
 const BEGIN = "golden-path:begin", END = "golden-path:end";
 const sha = (s) => createHash("sha256").update(s).digest("hex");
 const read = (p) => fs.readFileSync(p, "utf8");
+// Kit sources are hashed and copied as LF on every OS. A Windows clone made before .gitattributes pinned eol=lf
+// (or with core.autocrlf and files never re-checked-out) can hold CRLF sources; without this the installer and the
+// self-install test report those files as needing an update although only line endings differ.
+const readSrc = (p) => read(p).replace(/\r\n/g, "\n");
 const exists = (p) => fs.existsSync(p);
 
 function walk(dir) {
@@ -38,20 +42,20 @@ function walk(dir) {
 export function plannedFiles({ reviewer = false, ci = false, agent = false, localModels = false, level = 2 } = {}) {
   const files = {};
   const skill = path.join(KIT, "skills", "golden-path");
-  for (const src of walk(skill)) files[".github/skills/golden-path/" + path.relative(skill, src).split(path.sep).join("/")] = read(src);
+  for (const src of walk(skill)) files[".github/skills/golden-path/" + path.relative(skill, src).split(path.sep).join("/")] = readSrc(src);
   if (level >= 2) {
-    files[".github/hooks/golden-path/gate.mjs"] = read(path.join(KIT, "scripts", "gate.mjs"));
-    files[".github/hooks/golden-path-loop.json"] = read(path.join(KIT, "com.github.copilot", "hooks", "hooks.json"))
+    files[".github/hooks/golden-path/gate.mjs"] = readSrc(path.join(KIT, "scripts", "gate.mjs"));
+    files[".github/hooks/golden-path-loop.json"] = readSrc(path.join(KIT, "com.github.copilot", "hooks", "hooks.json"))
       .replaceAll("${PLUGIN_ROOT}/scripts/", ".github/hooks/golden-path/");
   }
   if (localModels) { // optional, separately discoverable skill; never part of the core method
     const lm = path.join(KIT, "optional", "skills", "golden-path-local-models");
-    for (const src of walk(lm)) files[".github/skills/golden-path-local-models/" + path.relative(lm, src).split(path.sep).join("/")] = read(src);
+    for (const src of walk(lm)) files[".github/skills/golden-path-local-models/" + path.relative(lm, src).split(path.sep).join("/")] = readSrc(src);
   }
-  if (agent) files[".github/agents/golden-path.agent.md"] = read(path.join(KIT, "optional", "agents", "golden-path.agent.md"));
-  if (reviewer && level >= 2) files[".github/agents/golden-path-reviewer.agent.md"] = read(path.join(KIT, "optional", "agents", "golden-path-reviewer.agent.md"));
-  files[".github/prompts/golden-path-task.prompt.md"] = read(path.join(KIT, "extras", "prompts", "golden-path-task.prompt.md"));
-  if (ci && level >= 2) files[".github/workflows/golden-path-check.yml"] = read(path.join(KIT, "extras", "workflows", "golden-path-check.yml"));
+  if (agent) files[".github/agents/golden-path.agent.md"] = readSrc(path.join(KIT, "optional", "agents", "golden-path.agent.md"));
+  if (reviewer && level >= 2) files[".github/agents/golden-path-reviewer.agent.md"] = readSrc(path.join(KIT, "optional", "agents", "golden-path-reviewer.agent.md"));
+  files[".github/prompts/golden-path-task.prompt.md"] = readSrc(path.join(KIT, "extras", "prompts", "golden-path-task.prompt.md"));
+  if (ci && level >= 2) files[".github/workflows/golden-path-check.yml"] = readSrc(path.join(KIT, "extras", "workflows", "golden-path-check.yml"));
   return files;
 }
 
@@ -118,7 +122,7 @@ export function install(target, o = {}) {
   for (const [rel, content] of Object.entries(files)) {
     const p = path.join(target, rel);
     if (!exists(p)) { actions.push(["create", rel]); continue; }
-    const cur = read(p);
+    const cur = readSrc(p); // CRLF-only differences (Windows checkout) are not modifications
     if (cur === content) continue;
     if (manifest.files[rel] === sha(cur)) actions.push(["update", rel]);
     else conflicts.push(`${rel}: exists with content not written by golden-path (or modified since install)`);
@@ -141,7 +145,7 @@ export function install(target, o = {}) {
   if (o.dryRun) { console.log(actions.map(([a, r]) => `${a}: ${r}`).join("\n") || "nothing to do"); return 0; }
   for (const [rel, content] of Object.entries(files)) {
     const p = path.join(target, rel);
-    if (!exists(p) || read(p) !== content) write(p, content);
+    if (!exists(p) || readSrc(p) !== content) write(p, content);
     manifest.files[rel] = sha(content);
   }
   for (const [rel, content] of Object.entries(newBlocks)) write(path.join(target, rel), content);
@@ -165,7 +169,9 @@ export function uninstall(target, force = false, purge = false) {
   const manPath = path.join(target, MANIFEST);
   if (!exists(manPath)) { console.log("not installed (no manifest); nothing to do"); return 0; }
   const manifest = JSON.parse(read(manPath));
-  const modified = Object.entries(manifest.files).filter(([rel, h]) => exists(path.join(target, rel)) && sha(read(path.join(target, rel))) !== h).map(([r]) => r);
+  // Accept the raw hash (legacy Windows manifests hashed CRLF bytes) and the LF-canonical hash.
+  const matchesHash = (p, h) => { const raw = read(p); return sha(raw) === h || sha(raw.replace(/\r\n/g, "\n")) === h; };
+  const modified = Object.entries(manifest.files).filter(([rel, h]) => exists(path.join(target, rel)) && !matchesHash(path.join(target, rel), h)).map(([r]) => r);
   if (modified.length && !force) { console.log("REFUSING: files modified since install (use --force to remove anyway):\n  " + modified.join("\n  ")); return 2; }
   for (const rel of Object.keys(manifest.files)) fs.rmSync(path.join(target, rel), { force: true });
   for (const rel of manifest.blocks || []) {

@@ -124,7 +124,7 @@ Every element of the overview is checked in [docs/overview-claims.md](docs/overv
 1. **Fork or clone this repository.** It works with Copilot in VS Code right away: the kit is already
    installed here at Level 2 (`.github/skills/golden-path/`, the marked block in
    `.github/copilot-instructions.md`, the hook in `.github/hooks/`, config in `.golden-path/config.json`,
-   whose check is this repo's own `node --test tests/*.test.mjs`, kit and self-install only). Those are installed *copies*; **`plugin/` is the source of
+   whose check is a **fast** packaging + installer + self-install subset that fits the hook budget; the full kit suite stays in CI). Those are installed *copies*; **`plugin/` is the source of
    truth**. After changing anything under `plugin/`, rerun `node plugin/install.mjs --target .` and commit;
    a test (`tests/self-install.test.mjs`) fails in CI if the copies drift.
 2. **Add it to your own repository** with `node plugin/install.mjs --target <your-repo>` (levels below). It
@@ -229,6 +229,8 @@ node plugin/install.mjs --target <repo> --level 2 --check "npm test" \
   --acceptance-command "npm run test:acceptance" \
   --with-ci
 ```
+
+**Choose a fast `--check`.** The stop gate shares one `hook_budget_sec` (default 100) with integrity and git; a command that overruns is stopped and recorded as UNVERIFIED, not as a failing test. Put the full suite in CI as a required check. This repository's own gate check runs only the packaging, installer and self-install tests (`--test-name-pattern="^(Packaging|Installer|self-install)"`); the required "Kit guarantees" CI jobs still run the full suite on Ubuntu and Windows.
 
 - `--with-ci` adds `.github/workflows/golden-path-check.yml` to your repository, which re-runs the checks against the PR base
   commit. Make it a required status check.

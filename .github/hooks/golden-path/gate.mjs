@@ -17,6 +17,8 @@
 // - After max_blocks (default 5, below the CLI's 8-consecutive-block override) the agent may stop, but the
 //   run is recorded as outcome FAILED, requires_owner_review. No review request is sent by this script. FAILED is
 //   terminal for that session: later stops are allowed at once, run no checks and stay FAILED; a new session retries.
+// - No-change fast path: HEAD still at the session base and a clean working tree => allow, ledger gate_skipped_no_changes,
+//   no check/acceptance run. Git failure falls back to running checks (fail closed).
 // - Protected-test checks are heuristics, not guarantees.
 // - method_files_present means the skill files existed; it does not show the agent read or followed them.
 import { spawnSync } from "node:child_process";
@@ -238,12 +240,13 @@ function runCmd(name, cmd, root, deadline) {
   // Run via a small node supervisor so a timeout kills the WHOLE process tree (taskkill /T on Windows,
   // process group on POSIX). A plain spawnSync timeout kills only the shell and leaves grandchildren running.
   trace("check: " + cmd, left);
+  const t = Date.now();
   const r = spawnSync(process.execPath, ["-e", SUPERVISOR], { cwd: root, encoding: "utf8", input: JSON.stringify({ cmd, ms: left }),
     timeout: left + 10000, maxBuffer: 64 << 20, windowsHide: true,
     env: { ...process.env, PYTHONDONTWRITEBYTECODE: "1" } }); // no stale bytecode for restored files
   const out = `${r.stdout || ""}\n${(r.stderr || "").replace(TIMEOUT_MARK, "")}`;
   if ((r.error && r.error.code === "ETIMEDOUT") || (r.stderr || "").includes(TIMEOUT_MARK))
-    return { name, ok: false, output: `${name} timed out: the hook time budget ran out (counted as RED)` };
+    return { name, ok: false, unverified: true, timed_out: true, elapsed_sec: Math.round((Date.now() - t) / 100) / 10, output: `${name} timed out: the hook time budget ran out (UNVERIFIED, counted as RED)` };
   const failed = [...new Set([...out.matchAll(FAILED_TEST_RE)].map((m) => m.slice(1).find(Boolean)))].sort();
   return { name, ok: r.status === 0, failed_tests: failed, output: out.trim().split("\n").slice(-60).join("\n") };
 }
@@ -351,6 +354,27 @@ export const GAVE_UP_MESSAGE = (owner) => `Golden Path stop gate: retries exhaus
 export const TERMINAL_MESSAGE = (owner) => `Golden Path stop gate: this run remains FAILED (retries exhausted in this ` +
   `session) and needs review by ${owner}. No checks were run. Stopping is allowed; it is not a pass. Start a new session to retry.`;
 
+/** Plain timeout explanation; a timeout is a configuration problem, not evidence that a test failed. */
+export function timeoutNote(res, cfg) {
+  const t = res.results.filter((r) => r.timed_out);
+  if (!t.length) return "";
+  const budget = Number(cfg.hook_budget_sec ?? DEFAULT_CONFIG.hook_budget_sec);
+  return t.map((r) => `${r.name} timed out after ${r.elapsed_sec}s (budget ${budget}s); this is not a test failure - ` +
+    "shorten the configured check or raise hook_budget_sec (must stay below the host hook timeoutSec, 120).").join("\n");
+}
+const IGNORED_STATE = (rel) => rel === LEDGER_REL || rel.startsWith(STATE_REL + "/");
+/** True only when git PROVES the session changed nothing since its base: HEAD equals the base and the working tree
+ * (tracked and untracked, not ignored) is clean apart from the gate's own state/ledger. Any git failure returns
+ * false, so the caller runs the checks (fail closed). Two cheap git calls. */
+export function unchangedSinceBase(root, base) {
+  if (!base) return false;
+  const [c1, head] = git(root, "rev-parse", "HEAD");
+  if (c1 !== 0 || head.trim() !== base) return false;
+  const [c2, out] = git(root, "status", "--porcelain=v1", "-z", "--untracked-files=all");
+  if (c2 !== 0) return false;
+  return out.split("\0").filter(Boolean).every((e) => IGNORED_STATE(e.slice(3).replace(/\\/g, "/")));
+}
+
 export function onStop(payload) {
   // The budget covers the WHOLE hook: repo lookup, checks, and provenance git reads. There is no extra
   // bookkeeping allowance; once the budget is used up no git process is started and provenance is recorded
@@ -378,6 +402,20 @@ export function onStop(payload) {
   if (!st.base_sha) { st.base_sha = headSha(root); st.base_source = "first-stop (sessionStart did not run; base may include agent commits)"; }
   st.blocks = st.blocks || 0;
   st.attempts = (st.attempts || 0) + 1;
+  // No-change fast path: a session that changed nothing (e.g. a read-only review) has nothing to check. Only while
+  // it has not been blocked yet; once red, a session that later "has no changes" (work discarded) runs the checks.
+  // Not a pass: outcome SKIPPED_NO_CHANGES. A sessionStart-less first stop takes base = HEAD, which is fine here.
+  // Only a base captured at sessionStart proves "unchanged since the session began". A base synthesised on
+  // this first stop (sessionStart missed) equals HEAD *after* any earlier agent commits, so skipping would
+  // hide that work — fail closed and run the checks.
+  if (!st.blocks && cfg.check && st.base_source === "session-start" && unchangedSinceBase(root, st.base_sha)) {
+    ledger(root, "gate_skipped_no_changes", { outcome: "SKIPPED_NO_CHANGES", session: sid, task: st.task || null,
+      attempt: st.attempts, base_sha: st.base_sha, base_source: st.base_source,
+      note: "HEAD equals the session base and the working tree is clean; no check or acceptance command run" });
+    st.last = "SKIPPED_NO_CHANGES";
+    state(root, sid, st);
+    return {};
+  }
   const res = runChecks(root, cfg, st.base_sha || "HEAD", t0, { baseSource: st.base_source });
   const rec = { session: sid, task: st.task || process.env.GOLDEN_PATH_TASK || null, attempt: st.attempts, ok: res.ok,
     failed: res.failed, unverified: res.unverified, failed_tests: res.failed_tests, elapsed_sec: Math.round(1000 * (t0 / 1000 - st.started)) / 1000,
@@ -396,7 +434,8 @@ export function onStop(payload) {
     // Terminal for this session: the block count is NOT reset, so no new retry cycle starts (see the top of onStop).
     ledger(root, "gave_up", { outcome: "FAILED", requires_owner_review: owner, ...rec });
     st.outcome = "FAILED"; st.terminal = true;
-    out = { decision: "allow", reason: GAVE_UP_MESSAGE(owner) };
+    const tn = timeoutNote(res, cfg);
+    out = { decision: "allow", reason: GAVE_UP_MESSAGE(owner) + (tn ? `\n${tn}` : "") };
   } else {
     st.blocks += 1;
     ledger(root, "gate_red", { outcome: res.unverified.length ? "UNVERIFIED" : "RED", ...rec });
@@ -417,8 +456,9 @@ export function onStop(payload) {
     const last = st.blocks < limit ? "" : `\nThis is the last block. If you stop while red, the run is recorded as FAILED ` +
       `and requires review by ${owner}.`;
     const detail = res.results.filter((r) => !r.ok).map((r) => `[${r.name}]\n${r.output}`).join("\n\n");
+    const tn = timeoutNote(res, cfg);
     out = { decision: "block", reason: `Golden Path stop gate: checks are RED (attempt ${st.attempts}, block ${st.blocks}/${limit}). ` +
-      `Fix the cause; do not weaken, skip or delete tests. ${SCOPE_NOTE}${extra}${last}\n\n${detail.slice(0, 6000)}` };
+      (tn ? `${tn} ` : "") + `Fix the cause; do not weaken, skip or delete tests. ${SCOPE_NOTE}${extra}${last}\n\n${detail.slice(0, 6000)}` };
   }
   state(root, sid, st);
   return out;
