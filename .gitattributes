@@ -1,0 +1,9 @@
+# Kit source and its installed copies keep LF on every OS, so the installer's hashes match on Windows clones
+# (otherwise `node plugin/install.mjs --target .` sees CRLF copies as modified and refuses).
+plugin/** text eol=lf
+.github/skills/golden-path/** text eol=lf
+.github/hooks/** text eol=lf
+.github/prompts/golden-path-task.prompt.md text eol=lf
+.github/copilot-instructions.md text eol=lf
+.golden-path/*.json text eol=lf
+*.png binary
