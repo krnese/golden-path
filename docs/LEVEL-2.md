@@ -3,6 +3,9 @@
 ← [Golden Path README](../README.md) · [Documentation index](../README.md#documentation)
 
 The detail behind the [README](../README.md) quickstart. Level 2 needs Node.js 22+ and nothing from npm.
+For the complete setup sequence and a definition of adoption readiness, use the
+[adoption checklist](ADOPTION.md). Installing a check alone does not configure business acceptance
+or GitHub review settings.
 
 Agent harnesses already support custom controls: Copilot has
 [hooks](https://docs.github.com/en/copilot/reference/hooks-reference), and so does Claude Code
@@ -19,6 +22,12 @@ way to use them for expert-owned acceptance.
 | `.golden-path/config.json` | your `check` command, acceptance paths, owner and command; created once, never overwritten |
 | `.github/prompts/golden-path-task.prompt.md` | a task prompt |
 | `.github/workflows/golden-path-check.yml` | only with `--with-ci` |
+
+**Existing configuration is preserved.** The installer creates `.golden-path/config.json` once.
+Rerunning it with different acceptance or check flags does not update that file. If the repository
+already has a config, an authorized maintainer must review and change it explicitly, commit the
+approved configuration and acceptance, then start a new agent session. The installer also does not
+create CODEOWNERS or change required checks, branch protection or review settings.
 
 ## Other ways to install
 
@@ -43,7 +52,7 @@ way to use them for expert-owned acceptance.
   - the optional `acceptance.command`;
   - two heuristic integrity checks.
 - **No-change fast path:** if HEAD still equals the session base and the working tree is clean (tracked and untracked; gitignored paths such as `.golden-path/state/` and the ledger do not count), the gate allows the stop at once and records `gate_skipped_no_changes` with outcome `SKIPPED_NO_CHANGES`. No check or acceptance command runs. This is not a pass. If git cannot prove the tree is unchanged, the gate falls back to running the checks (fail closed). A session that has already been blocked still re-runs the checks even if the tree is later cleaned.
-- **Choose a fast `check`.** The configured command must finish comfortably inside `hook_budget_sec` (default 100) on a developer machine; the whole hook also shares that budget with integrity and git. Put the full suite in CI (required checks), not in the stop gate. A command that overruns is stopped, recorded as **UNVERIFIED** (not a test failure), and still counts toward the retry limit.
+- **Choose fast local commands.** The configured `check` and optional `acceptance.command` together must finish comfortably inside `hook_budget_sec` (default 100) on a developer machine; the whole hook also shares that budget with integrity and git. Put heavier suites in separate required CI checks, not in the stop gate. The optional kit CI workflow repeats the configured commands with that budget; it does not automatically run a larger suite. A command that overruns is stopped, recorded as **UNVERIFIED** (not a test failure), and still counts toward the retry limit.
 - **Retry limit:** after `max_blocks` (default 5, below Copilot's 8-consecutive-block override) the gate lets the agent stop. The run is then recorded as **`gave_up`, outcome FAILED, `requires_owner_review`**. It is never an implicit pass. **No review request is sent.** Surfacing it to the owner is up to your normal process, such as the required CI check failing on the PR. **FAILED is terminal for that session:** later `agentStop` events in the same session allow the stop at once, run no check commands and no git-heavy work, keep the outcome FAILED, and record a `gate_terminal` ledger line. Allowing the stop is not success. Only a **new session** (new session id) starts a new retry budget.
 - **One time budget:** `hook_budget_sec` (default 100) covers *all* work in one hook run, not each command: configured commands, integrity checks and git calls. This includes the repo lookup and the provenance reads (HEAD, diff hash). Each git call's timeout is taken from what remains, and no git process starts once the budget is used up. Provenance is then recorded as `provenance_unavailable`. There's no separate bookkeeping allowance: only local file writes (state, ledger) follow, well inside the host `timeoutSec` (120 vs the default budget of 100). A command that would overrun is stopped (UNVERIFIED; the reason says it is not a test failure and tells you to shorten `check` or raise `hook_budget_sec` below the host timeout), and later commands are reported "not run". Both count as red and toward the retry limit.
 - **Timeouts fail open** (documented Copilot hook behaviour). If the hook itself exceeds its `timeoutSec` (120), the stop goes ahead and no gate record is written. Count such sessions as **UNVERIFIED** in any experiment. A timeout kills the command's whole process tree (`taskkill /T` on Windows, the process group on POSIX).

@@ -1,52 +1,31 @@
 # Golden Path (preview)
 
-**Keep "done" in the hands of the people who define it.** Golden Path is a small kit for teams that build with
-coding agents, starting with GitHub Copilot in VS Code. A business owner's intent becomes acceptance tests that
-the owner controls. The agent works until those tests pass, and it is not allowed to change them.
+**Keep "done" in the hands of the people who define it.** Golden Path is a lightweight kit for
+**owner-controlled acceptance in AI-assisted development**, starting with GitHub Copilot in VS Code.
+It connects owner-approved acceptance tests to local agent feedback and your existing repository controls.
 
-**The problem it addresses.** Coding agents are good at making tests pass, and that includes quietly editing the
-tests that define "done". Meanwhile the business intent behind a change ("invoices a person can approve at a
-glance") rarely reaches the pull request intact.
+**The problem it addresses.** A green test run is ambiguous if the implementing agent also changed the tests
+that define success. Golden Path checks acceptance against a fixed baseline, blocks common acceptance-edit
+paths, and makes a needed revision a decision for the owner. It separates **implementing a change** from
+**authorizing a change to what counts as correct**.
 
-**Who it's for.** Two people working together: a **business-context expert** (product, finance, marketing,
-operations…) who owns the intent and the examples, and a **developer** who ships the change with the coding
-agent they already use.
+**Who it's for.** An **engineering lead or developer** using Copilot in an existing repository, working with a
+**product or domain owner** who supplies business examples and approves their meaning. Start with one
+deterministic rule: a discount, approval threshold, eligibility decision or API contract. You do not need a
+complete acceptance suite before starting.
 
 > **Core principle:** the expert and engineer decide what needs to be true; automation checks the parts
 > they have made executable.
 
+**Boundary:** local hooks are feedback, not merge authority. Required CI, branch protection and owner review
+remain yours to configure. The mechanism is tested; incremental team benefit is still unproved.
+
 ![Golden Path overview: business functions, shared acceptance record, coding agent, pull request, durable boundary, outcomes, golden loop](docs/assets/golden-path-overview.png)
 
-Left to right: **business owners** (product, the domain expert) write intent and concrete examples; those
-become the **shared acceptance record**, which in this kit is plain files (in the demo,
-`examples/invoice-demo/tasks/T01.md` and `examples/invoice-demo/acceptance/EXAMPLES.md` plus the acceptance
-tests). **The coding agent** implements and tests; at Level 2 a stop gate keeps it working while checks are
-red (up to `max_blocks`, default 5) and denies edits to protected acceptance tests. The **pull request** carries
-the change and evidence, and the **durable boundary** (CI, branch protection, Code Owner review: GitHub
-settings you configure) decides the merge.
-
-The **golden loop** is a process that starts outside the repository: a business owner (for example marketing)
-works with an agent outside the repo, which turns their intent into a PR; Copilot in the repo picks up that
-PR, and owners approve any outward change. Evidence goes back to the owner, whose next intent starts the next
-round.
-
-## Documentation
-
-| Document | What it covers |
-| --- | --- |
-| [README](README.md) | This page: what Golden Path is, quickstart, adoption levels, limits |
-| [Background of Golden Path](docs/background.md) | Why it exists and how the idea evolved under evidence: from outcome-first workloads to a bridge between any AI interface and the repository controls that hold authority |
-| [The golden loop, end to end](docs/examples/golden-loop/README.md) | Walkthrough of a real two-round trial: intent → acceptance → build → evidence, including the gate failing closed |
-| [How your acceptance suite grows itself](docs/how-acceptance-evolves.md) | Why a repo's acceptance tests accrue per task, owner-approved, and what that means for teams and brownfield adoption |
-| [Example: connecting your own reasoning boundaries](docs/examples/hybrid-workflow.md) | One adopter's hybrid workflow, mapped so you can map yours |
-| [Level 2 reference: checked completion](docs/LEVEL-2.md) | The stop gate, protected paths, CI check and authorised acceptance revision via CODEOWNERS |
-| [Level 3: learning and measurement](docs/LEVEL-3-EXPERIMENTS.md) | How to run a matched experiment on your own work (docs only) |
-| [Evidence](docs/evidence.md) | Honest summary of what is and isn't proven, with links to the archived studies |
-| [What the overview diagram claims](docs/overview-claims.md) | Each element of the overview image checked against the kit, with gaps labelled |
-| [Verify in VS Code](VERIFY-IN-VSCODE.md) | 10-minute go/no-go checklist for a signed-in VS Code with Copilot |
-| [Invoice demo](examples/invoice-demo/README.md) | The demo adopter repo used throughout: app, tasks, owner acceptance, demo builders |
-| [Golden Path skill](plugin/skills/golden-path/SKILL.md) and [method](plugin/skills/golden-path/references/METHOD.md) | The agent-facing skill the installer adds under `.github/skills/` |
-| [Changelog](CHANGELOG.md) | History of the kit, by version |
+The diagram includes the target model, not only shipped automation. The **shared acceptance record** is plain
+files: intent, business examples and executable tests. The local guard and stop gate provide bounded feedback;
+your GitHub controls decide the merge. Each claim and gap is listed in
+[overview claims](docs/overview-claims.md).
 
 ## See it work
 
@@ -65,11 +44,13 @@ at each step, the screenshots, the gate verdicts, and what the trial does and do
 - **Acceptance the owner controls.** Business examples become protected tests with a named owner. With CODEOWNERS
   and branch protection set up, changing them takes that owner's Code Owner approval on the PR's current head commit
   ([authorised revision](docs/LEVEL-2.md#changing-acceptance-tests-on-purpose-authorised-revision)).
-- **An agent that can't quietly redefine "done".** At Level 2 the guard denies edits to acceptance tests and names
-  the owner. The stop gate keeps the agent working while checks are red, and compares against the commit the
-  session started from, so committing an edit doesn't hide it ([what Level 2 does](docs/LEVEL-2.md#what-level-2-does-exactly)).
-- **Results you can trust, including the bad ones.** Unreadable evidence is UNVERIFIED and a run that gives up is
-  FAILED, never an implicit pass. An acceptance failure says which base it compared with and what to do next.
+- **Acceptance changes made visible.** At Level 2 the guard denies common edit paths and names the owner.
+  Integrity checks compare against the commit the session started from, so committing an acceptance edit
+  doesn't hide it. Protection is heuristic, not tamper-proof
+  ([what Level 2 does](docs/LEVEL-2.md#what-level-2-does-exactly)).
+- **Explicit failure and uncertainty.** Unreadable evidence is UNVERIFIED and exhausted retries are FAILED,
+  never an implicit pass. The stop gate blocks red checks within a bounded retry budget; a host timeout can
+  allow stopping. An acceptance failure names the comparison base and what to do next.
 - **Fits the controls you already have.** Branch protection, CODEOWNERS and required CI stay the authority. An
   optional workflow re-runs the checks against the PR base (`--with-ci`).
 - **Works with Copilot's default agent.** No special agent to pick and no new runtime
@@ -79,21 +60,45 @@ at each step, the screenshots, the gate verdicts, and what the trial does and do
 - **Evidence back to the owner.** The method's Report step says what changed, which checks passed on which commit
   and what is still unproved. The [walkthrough](docs/examples/golden-loop/README.md) shows this in practice.
 
-## Quickstart (30 seconds)
+## Quickstart
 
 Needs Node.js 22+ and git, on any OS. From a clone of this repository:
 
 ```bash
-node plugin/install.mjs --target <your-repo> --level 2 --check "<your test command>"
+node plugin/install.mjs --target "<your-repo>" --level 2 --check "<fast-check-command>"
 ```
 
-Open `<your-repo>` in VS Code and give Copilot a task as usual. Add `--dry-run` to preview, or use `--level 1`
-for the method only. To try it on a ready-made example first:
+**This installs checked completion, not owner-controlled acceptance.** Replace the placeholders with your
+repository and an existing fast test command. No business acceptance paths or owner are configured by this
+command. Add `--dry-run` to preview, or use `--level 1` for the method only.
+
+For **owner-controlled acceptance**, first agree examples and approve their executable tests. On a fresh
+installation, supply the paths, named owner and existing acceptance command:
 
 ```bash
-node examples/make-demo.mjs ~/golden-path-demo   # PowerShell: $HOME\golden-path-demo
-cd ~/golden-path-demo && node simulator/refusal_scenario.mjs && code .
+node plugin/install.mjs --target "<your-repo>" --level 2 --check "<fast-check-command>" --acceptance-path "acceptance/**" --acceptance-owner "<named-owner>" --acceptance-command "<acceptance-test-command>" --with-ci
 ```
+
+The placeholders are commands and ownership you supply, not scripts included by the kit. Both commands plus
+integrity checks share the hook budget (default 100 seconds). Keep heavier suites in separate required CI
+checks. Rerunning the installer **does not overwrite existing configuration**, even with new flags.
+
+**Finish setup:** configure CODEOWNERS, required CI and Code Owner review; verify refusal and legitimate
+owner revisions using the **[adoption checklist](docs/ADOPTION.md)**. The installer does not apply GitHub
+settings. Start a new agent session after an owner-approved acceptance revision.
+
+To see the mechanism before configuring your own repository, build the ready-made demo:
+
+```bash
+node examples/make-demo.mjs ~/golden-path-demo
+cd ~/golden-path-demo
+node simulator/refusal_scenario.mjs
+code .
+```
+
+PowerShell equivalents for the first two lines: `node examples\make-demo.mjs "$HOME\golden-path-demo"` and
+`Set-Location "$HOME\golden-path-demo"`. The demo acceptance starts intentionally red; the refusal scenario
+checks the guard and backstop, not a completed business feature.
 
 ## What's verified today
 
@@ -121,12 +126,14 @@ Every element of the overview is checked in [docs/overview-claims.md](docs/overv
 
 ## Two ways to use Golden Path
 
-1. **Fork or clone this repository.** It works with Copilot in VS Code right away: the kit is already
+1. **Fork or clone this repository.** The kit is already
    installed here at Level 2 (`.github/skills/golden-path/`, the marked block in
    `.github/copilot-instructions.md`, the hook in `.github/hooks/`, config in `.golden-path/config.json`,
    whose check is a **fast** packaging + installer + self-install subset that fits the hook budget; the full kit suite stays in CI). Those are installed *copies*; **`plugin/` is the source of
    truth**. After changing anything under `plugin/`, rerun `node plugin/install.mjs --target .` and commit;
    a test (`tests/self-install.test.mjs`) fails in CI if the copies drift.
+   This repository's own configuration protects developer tests but has no business acceptance paths or
+   acceptance command; cloning it does not define acceptance for your business.
 2. **Add it to your own repository** with `node plugin/install.mjs --target <your-repo>` (levels below). It
    copies the same files into *your* repository's `.github/` (and `.golden-path/` at L2). Paths such as
    `.github/skills/golden-path/` below mean those files in your repository after install.
@@ -168,9 +175,10 @@ the repository:
   [custom instructions](https://code.visualstudio.com/docs/copilot/customization/custom-instructions)).
   Discovery makes the skill available; it does not guarantee the model uses it on every prompt.
 - **L2 hook:** it is a workspace hook file, `.github/hooks/golden-path-loop.json`. VS Code loads
-  `.github/hooks/*.json` for the workspace, not per agent, so it runs whichever agent is selected in a local
-  agent session ([hooks](https://code.visualstudio.com/docs/copilot/customization/hooks)). Hooks are a
-  **preview** feature in VS Code.
+  hooks for the selected harness. Golden Path was trialled with Copilot's default agent; file discovery alone
+  does not establish compatibility with another harness. Validate events, payloads and blocking decisions
+  when changing clients or harnesses ([hooks](https://code.visualstudio.com/docs/agent-customization/hooks)).
+  The VS Code hooks experience is **preview**.
 - **Custom agent:** `golden-path.agent.md` (`--with-agent-preset`) is an optional preset for teams that
   want a named agent that always applies the skill. Nothing depends on it.
 
@@ -179,9 +187,11 @@ Today this depends on files committed to your repository (in this repository the
 Golden Path adds one skill, and optionally one hook script, to the agent you already use. It does not replace
 your agent, your CI or your review process.
 
-It is complementary to spec-driven tools such as [Spec Kit](https://github.com/github/spec-kit) and
-[Kiro specs](https://kiro.dev/docs/specs.md): they structure spec → plan → tasks; Golden Path is only about
-who owns acceptance and keeping the implementing agent away from it.
+It is complementary to [Spec Kit](https://github.com/github/spec-kit) and
+[Kiro specs](https://kiro.dev/docs/specs/), which structure requirements, implementation and verification.
+Golden Path focuses on who may revise owner-approved executable acceptance. Native hooks and ordinary
+acceptance tests, CODEOWNERS and CI already provide the underlying controls; the kit packages one way to
+connect them. This is not a claim that other tools lack equivalent protection.
 
 ## How it works
 
@@ -189,9 +199,15 @@ who owns acceptance and keeping the implementing agent away from it.
    (see [`examples/invoice-demo/acceptance/EXAMPLES.md`](examples/invoice-demo/acceptance/EXAMPLES.md)).
 2. **Approved acceptance tests.** The developer turns the examples into tests; the expert approves them.
    The agent may read and run them, not change them. A needed change goes back to the expert.
-3. **Any agent or model works until the checks pass.** Golden Path does not pick the model or the agent.
+3. **Implementation with bounded feedback.** In the verified Copilot setup, L2 blocks red checks within its
+   retry budget and records failure or uncertainty explicitly. Golden Path does not pick the model.
 4. **A reviewable PR with acceptance evidence**: what changed, which checks passed, what is still open.
 5. **Human review and merge**, through your normal branch protection and Code Owner review.
+
+The **golden loop** is a workflow: an owner works with an agent outside the repository to propose acceptance,
+owners approve it, the implementing agent builds, and evidence returns to the owner. Outside-repository steps
+are not automated by this kit. The [two-round trial](docs/examples/golden-loop/README.md) demonstrates the
+workflow on one demo, not general productivity or harness support.
 
 ## Three adoption levels
 
@@ -216,6 +232,9 @@ Or copy `plugin/skills/golden-path/` to `.github/skills/golden-path/` in your re
 
 ### L2: checked completion
 
+**Recommended adoption path.** Use the [adoption checklist](docs/ADOPTION.md) to turn installation into a
+verified owner-controlled acceptance workflow.
+
 ```bash
 node plugin/install.mjs --target <repo> --level 2 --check "<your test command>"
 ```
@@ -230,7 +249,11 @@ node plugin/install.mjs --target <repo> --level 2 --check "npm test" \
   --with-ci
 ```
 
-**Choose a fast `--check`.** The stop gate shares one `hook_budget_sec` (default 100) with integrity and git; a command that overruns is stopped and recorded as UNVERIFIED, not as a failing test. Put the full suite in CI as a required check. This repository's own gate check runs only the packaging, installer and self-install tests (`--test-name-pattern="^(Packaging|Installer|self-install)"`); the required "Kit guarantees" CI jobs still run the full suite on Ubuntu and Windows.
+**Choose fast local commands.** The stop gate shares one `hook_budget_sec` (default 100) across `--check`,
+the acceptance command, integrity and git; a command that overruns is stopped and recorded as UNVERIFIED,
+not as a failing test. Put heavier suites in separate required CI checks. This repository's own gate check
+runs only the packaging, installer and self-install tests (`--test-name-pattern="^(Packaging|Installer|self-install)"`);
+the required "Kit guarantees" CI jobs still run the full suite on Ubuntu and Windows.
 
 - `--with-ci` adds `.github/workflows/golden-path-check.yml` to your repository, which re-runs the checks against the PR base
   commit. Make it a required status check.
@@ -296,6 +319,24 @@ selects or switches the model; that is the host's job. L2 checks run the same re
 - **[Connecting your own reasoning boundaries](docs/examples/hybrid-workflow.md)**: one adopter's workflow
   (own agents → PR → Copilot → reviewable PR → human merge) mapped onto Golden Path levels and files.
 
+## Documentation
+
+| Document | What it covers |
+| --- | --- |
+| [Adoption checklist](docs/ADOPTION.md) | From installation to verified owner-controlled acceptance in your repository |
+| [Level 2 reference: checked completion](docs/LEVEL-2.md) | Gate behavior, protected paths, CI and authorized acceptance revisions |
+| [The golden loop, end to end](docs/examples/golden-loop/README.md) | Real two-round demo trial, decisions, evidence and limits |
+| [How your acceptance suite grows itself](docs/how-acceptance-evolves.md) | Owner-approved acceptance accruing one task at a time |
+| [Evidence](docs/evidence.md) | What is and is not proved, including negative findings |
+| [Level 3: learning and measurement](docs/LEVEL-3-EXPERIMENTS.md) | Pilot and matched comparisons; docs only |
+| [Verify in VS Code](VERIFY-IN-VSCODE.md) | Signed-in client verification checklist |
+| [Invoice demo](examples/invoice-demo/README.md) | Example app, tasks, owner acceptance and demo builders |
+| [Connecting your own reasoning boundaries](docs/examples/hybrid-workflow.md) | One adopter's workflow mapped onto the kit |
+| [Background](docs/background.md) | History and how the idea evolved under evidence |
+| [Overview claims](docs/overview-claims.md) | Diagram claims checked against the kit, with gaps labeled |
+| [Golden Path skill](plugin/skills/golden-path/SKILL.md) and [method](plugin/skills/golden-path/references/METHOD.md) | Agent-facing guidance |
+| [Changelog](CHANGELOG.md) | Version history |
+
 ## Repository layout
 
 - `plugin/`: the kit (skill, `plugin/scripts/gate.mjs` hook, hooks JSON, optional agents and skills, `install.mjs`).
@@ -317,5 +358,5 @@ the same review and CI as everything else; run `node --test tests/kit.test.mjs` 
 
 ## License
 
-No license file has been added yet, so default copyright applies. Open an issue if you need clarity before
-adopting.
+Golden Path is licensed under the [MIT License](LICENSE), copyright 2026 Kristian Nese.
+Third-party references retain their own terms; this license does not grant rights to external material.

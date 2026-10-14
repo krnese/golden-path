@@ -17,6 +17,21 @@ They found no measurable benefit from method guidance:
 
 So the kit keeps guidance minimal and puts the effort into protecting what the expert owns.
 
+## Three different evidence questions
+
+| Question | Evidence available | Limit |
+| --- | --- | --- |
+| Do specific mechanisms behave as intended? | Kit tests for installation, guards, fixed-baseline integrity and owner approval | Tests cover specified cases; protection is heuristic, not tamper-proof |
+| Can the owner/developer workflow run end to end? | [Two-round trial](examples/golden-loop/README.md) with Copilot in VS Code | One model, one demo task and one person playing the owner; no productivity measurement |
+| Is the kit better than competent existing practice? | Not established by the available studies or demo | Requires matched comparisons and owner/developer usability evidence |
+
+The trial's unchanged acceptance files show what happened in that run; the agent did not try
+to edit them. Refusal evidence comes from kit tests and the scripted scenario. These sources
+must not be combined into a claim that naturally occurring tampering was prevented in the trial.
+
+The [adoption checklist](ADOPTION.md) packages a proposed setup path. Its existence is not evidence
+of adoption demand or that independent owners can use the workflow without assistance.
+
 ## External sources
 
 - Added context rarely helps capable models and costs more:
@@ -31,6 +46,9 @@ So the kit keeps guidance minimal and puts the effort into protecting what the e
 
 ## Measuring it on your own work
 
-Use the matched-experiment guide in [LEVEL-3-EXPERIMENTS.md](LEVEL-3-EXPERIMENTS.md). The primary comparison
-is Golden Path vs a plain agent (same agent command, model, tasks and acceptance tests; kit removed from the
-worktree). Lessons on/off measures only the benefit of retained lessons, not of Golden Path as a whole.
+Use the matched-experiment guide in [LEVEL-3-EXPERIMENTS.md](LEVEL-3-EXPERIMENTS.md). Retain the comparison
+with the team's current plain agent, but use competent existing practice as the primary baseline for
+incremental kit value: the same approved acceptance, required tests, ownership and review, without
+Golden Path-specific guidance/hooks. Keep the model, client/harness, tasks and independent scoring equivalent.
+Measure setup and owner-review effort as well as execution. Lessons on/off measures only retained lessons,
+not the whole kit. This is an evaluation proposal, not a completed pilot.
