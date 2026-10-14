@@ -5,7 +5,7 @@
  ],
  "files": {
   ".github/hooks/golden-path-loop.json": "30d50c9e1c7c2b741630e3b9edcedac52e893c80aa55b353bbe517ee543b6cd7",
-  ".github/hooks/golden-path/gate.mjs": "94325bc81b2af1365470915da6fdc6d886b264637b1059dc33f5d351ebe3b01c",
+  ".github/hooks/golden-path/gate.mjs": "25bfacc02cbe90803b04b6efb96e32ebbf489c04e341823882a1ba4325148ecb",
   ".github/prompts/golden-path-task.prompt.md": "2af49ee2e3bfb7c8bd1abef564ee5a2dd7d307f94299e23fff872271a2cd5d33",
   ".github/skills/golden-path/SKILL.md": "cd0c9c7de26e94d5d31a345dacb14d0f63273aca992378d04467ad1c7ee70196",
   ".github/skills/golden-path/references/METHOD.md": "7064fce0ac328289261f2d00fa31d643de34526f69594c95f9f2ea3e4c9aca03"

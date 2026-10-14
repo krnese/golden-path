@@ -15,7 +15,8 @@
 // - ONE time budget (hook_budget_sec, default 100) covers every command AND git call this hook runs. Keep it below the
 //   hook timeoutSec: if the hook itself times out, Copilot fails OPEN (the stop proceeds, nothing recorded).
 // - After max_blocks (default 5, below the CLI's 8-consecutive-block override) the agent may stop, but the
-//   run is recorded as outcome FAILED, requires_owner_review. No review request is sent by this script.
+//   run is recorded as outcome FAILED, requires_owner_review. No review request is sent by this script. FAILED is
+//   terminal for that session: later stops are allowed at once, run no checks and stay FAILED; a new session retries.
 // - Protected-test checks are heuristics, not guarantees.
 // - method_files_present means the skill files existed; it does not show the agent read or followed them.
 import { spawnSync } from "node:child_process";
@@ -341,6 +342,13 @@ export function onStart(payload) {
   return { additionalContext: ctx.join("\n") };
 }
 
+export const SCOPE_NOTE = "These results do not expand the user's assignment: repair only within the authorized scope. " +
+  "If a failure is outside it, report the blocker and stop; do not revert or discard work, and do not implement unrelated features.";
+// "allow" is a documented agentStop decision; the host ignores reason when not blocking, so the message is for
+// hook logs and the ledger, not a prompt. https://docs.github.com/en/copilot/reference/hooks-reference
+export const TERMINAL_MESSAGE = (owner) => `Golden Path stop gate: this run remains FAILED (retries exhausted in this ` +
+  `session) and needs review by ${owner}. No checks were run. Stopping is allowed; it is not a pass. Start a new session to retry.`;
+
 export function onStop(payload) {
   // The budget covers the WHOLE hook: repo lookup, checks, and provenance git reads. There is no extra
   // bookkeeping allowance; once the budget is used up no git process is started and provenance is recorded
@@ -351,12 +359,23 @@ export function onStop(payload) {
   const cfg = loadConfig(root), sid = sessionId(payload);
   setDeadline(t0 + 1000 * Number(cfg.hook_budget_sec ?? cfg.check_timeout_sec ?? DEFAULT_CONFIG.hook_budget_sec));
   const st = state(root, sid);
+  const owner = cfg.acceptance.owner, limit = Number(cfg.max_blocks ?? 5);
+  // Terminal failure: once this session has used up its retries (outcome FAILED), later stops in the SAME session
+  // are allowed at once. No check command and no git call runs, the outcome stays FAILED, and the ledger records it.
+  // Allowing the stop is not success. Only a new session (new session id) starts a new retry budget.
+  if (st.terminal || st.outcome === "FAILED") {
+    st.terminal = true; st.outcome = "FAILED";
+    st.stops_after_terminal = (st.stops_after_terminal || 0) + 1;
+    ledger(root, "gate_terminal", { outcome: "FAILED", requires_owner_review: owner, session: sid, task: st.task || null,
+      stops_after_terminal: st.stops_after_terminal, note: "retries exhausted earlier in this session; no checks run" });
+    state(root, sid, st);
+    return { decision: "allow", reason: TERMINAL_MESSAGE(owner) };
+  }
   st.started = st.started || t0 / 1000;
   if (!st.base_sha) { st.base_sha = headSha(root); st.base_source = "first-stop (sessionStart did not run; base may include agent commits)"; }
   st.blocks = st.blocks || 0;
   st.attempts = (st.attempts || 0) + 1;
   const res = runChecks(root, cfg, st.base_sha || "HEAD", t0, { baseSource: st.base_source });
-  const owner = cfg.acceptance.owner, limit = Number(cfg.max_blocks ?? 5);
   const rec = { session: sid, task: st.task || process.env.GOLDEN_PATH_TASK || null, attempt: st.attempts, ok: res.ok,
     failed: res.failed, unverified: res.unverified, failed_tests: res.failed_tests, elapsed_sec: Math.round(1000 * (t0 / 1000 - st.started)) / 1000,
     base_sha: st.base_sha, base_source: st.base_source, head_sha: headSha(root), diff_hash: diffHash(root),
@@ -371,8 +390,10 @@ export function onStop(payload) {
     st.blocks = 0; st.outcome = "PASSED";
   } else if (st.blocks >= limit) {
     // Runaway guard: the agent may stop, but the run is FAILED. Never an implicit pass. No review request is sent.
+    // Terminal for this session: the block count is NOT reset, so no new retry cycle starts (see the top of onStop).
     ledger(root, "gave_up", { outcome: "FAILED", requires_owner_review: owner, ...rec });
-    st.blocks = 0; st.outcome = "FAILED";
+    st.outcome = "FAILED"; st.terminal = true;
+    out = { decision: "allow", reason: TERMINAL_MESSAGE(owner) };
   } else {
     st.blocks += 1;
     ledger(root, "gate_red", { outcome: res.unverified.length ? "UNVERIFIED" : "RED", ...rec });
@@ -394,7 +415,7 @@ export function onStop(payload) {
       `and requires review by ${owner}.`;
     const detail = res.results.filter((r) => !r.ok).map((r) => `[${r.name}]\n${r.output}`).join("\n\n");
     out = { decision: "block", reason: `Golden Path stop gate: checks are RED (attempt ${st.attempts}, block ${st.blocks}/${limit}). ` +
-      `Fix the cause; do not weaken, skip or delete tests.${extra}${last}\n\n${detail.slice(0, 6000)}` };
+      `Fix the cause; do not weaken, skip or delete tests. ${SCOPE_NOTE}${extra}${last}\n\n${detail.slice(0, 6000)}` };
   }
   state(root, sid, st);
   return out;

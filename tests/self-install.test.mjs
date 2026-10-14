@@ -35,5 +35,5 @@ test("self-install: installer dry-run over the committed state has nothing to do
     assert.equal(code, 0, `${FIX}\n  ${out.join("\n  ")}`);
     assert.equal(out.join("\n"), "nothing to do", `${FIX}\n  ${out.join("\n  ")}`);
   } finally { fs.rmSync(tmp, { recursive: true, force: true }); }
-  assert.equal(JSON.parse(rd(".golden-path/config.json")).check, "node --test");
+  assert.equal(JSON.parse(rd(".golden-path/config.json")).check, "node --test tests/*.test.mjs");
 });

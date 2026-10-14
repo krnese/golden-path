@@ -124,7 +124,7 @@ Every element of the overview is checked in [docs/overview-claims.md](docs/overv
 1. **Fork or clone this repository.** It works with Copilot in VS Code right away: the kit is already
    installed here at Level 2 (`.github/skills/golden-path/`, the marked block in
    `.github/copilot-instructions.md`, the hook in `.github/hooks/`, config in `.golden-path/config.json`,
-   whose check is this repo's own `node --test`). Those are installed *copies*; **`plugin/` is the source of
+   whose check is this repo's own `node --test tests/*.test.mjs`, kit and self-install only). Those are installed *copies*; **`plugin/` is the source of
    truth**. After changing anything under `plugin/`, rerun `node plugin/install.mjs --target .` and commit;
    a test (`tests/self-install.test.mjs`) fails in CI if the copies drift.
 2. **Add it to your own repository** with `node plugin/install.mjs --target <your-repo>` (levels below). It

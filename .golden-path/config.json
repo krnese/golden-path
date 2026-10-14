@@ -1,5 +1,5 @@
 {
-  "check": "node --test",
+  "check": "node --test tests/*.test.mjs",
   "acceptance": {
     "paths": [],
     "owner": "the acceptance owner",
