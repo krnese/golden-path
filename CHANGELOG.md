@@ -1,10 +1,26 @@
 # Changelog
 
+← [Golden Path README](README.md) · [Documentation index](README.md#documentation)
+
 History of the kit. The current way to adopt it is in the [README](README.md); the evidence summary is in
 [docs/evidence.md](docs/evidence.md). Version numbers follow `plugin/plugin.json`.
 
 ## Unreleased
 
+- **Gate: clearer acceptance-integrity failures; start a new session after an owner change.** In round 2 of the
+  golden-loop trial the owner committed new acceptance (T06) inside a running Copilot session, and the gate
+  correctly recorded FAILED against the session-start base, without saying which base it used or what to do. A
+  failing acceptance-integrity result now names the base and how it was chosen (`Compared with base 65ef920
+  (session start)`; also `first stop` or `--base`), and records `base_sha`, `base_source` and
+  `committed_since_base`. When the changed files are already committed between base and HEAD, the stop gate
+  tells the user to start a NEW chat/session so the owner commit becomes the base, and tells the agent not to
+  revert or rewrite those commits; `check --base` points to the authorised-revision PR. The check itself is
+  unchanged (fail closed, no automatic re-base). New kit tests; LEVEL-2, VERIFY-IN-VSCODE (check 8c) and one
+  skill line updated.
+- **Golden loop walkthrough** ([docs/examples/golden-loop/README.md](docs/examples/golden-loop/README.md)): the
+  real two-round trial (T05, T06) with screenshots, gate verdicts, who decided at each step, what it proves and
+  doesn't, and Windows steps to run it yourself. README: new opening, "See it work", capabilities, a 30-second
+  quickstart and an updated "What's verified today"; overview claims updated for the trial.
 - **T06 (Marketing) acceptance: plain-language reasons, name every duplicated product.** New `tasks/T06.md`,
   EXAMPLES section and `acceptance/marketing/t06.test.mjs`; added to the demo acceptance command (red until
   implemented). Supersedes T05's "summary reason names every flag code" clause (T05 test amended). FREEZE re-pinned.

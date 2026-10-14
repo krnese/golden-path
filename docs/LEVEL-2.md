@@ -1,5 +1,7 @@
 # Level 2 reference: checked completion
 
+← [Golden Path README](../README.md) · [Documentation index](../README.md#documentation)
+
 The detail behind the [README](../README.md) quickstart. Level 2 needs Node.js 22+ and nothing from npm.
 
 Agent harnesses already support custom controls: Copilot has
@@ -45,6 +47,8 @@ way to use them for expert-owned acceptance.
 - **Timeouts fail open** (documented Copilot hook behaviour). If the hook itself exceeds its `timeoutSec` (120), the stop goes ahead and no gate record is written. Count such sessions as **UNVERIFIED** in any experiment. A timeout kills the command's whole process tree (`taskkill /T` on Windows, the process group on POSIX).
 - **Evidence must be valid.** The base must resolve to a commit present in the clone (`git rev-parse --verify <rev>^{commit}`). An unknown revision, a shallow clone missing the base, or any git failure while reading evidence makes the run **UNVERIFIED** (red, exit 1), never PASS. In CI, use `fetch-depth: 0`.
 - **Fixed comparison commit:** integrity checks compare against the commit recorded at **session start** (`base_sha`), not the agent's eventual HEAD, so committing an edited acceptance test doesn't hide it. In CI, `gate.mjs check --base <PR base sha>` does the same. Without `--base`, the check warns that it compared with HEAD.
+  - A failing acceptance-integrity result names the base and how it was chosen (`Compared with base 65ef920 (session start)`; also `first stop` or `--base`), and records `base_sha`, `base_source` and `committed_since_base`.
+  - **After the owner changes acceptance, start a new session.** Commit authorship is not owner authority, so an acceptance commit that lands *during* a session fails, even when the owner made it. When the changed files are already committed between base and HEAD, the message says so and tells the user to start a NEW chat/session, so that the owner commit becomes the base. The gate never re-bases on its own. Make the owner's commit in a terminal or in a separate PR, then open a new chat for the implementation. That a new VS Code chat gets a new session id is check 8c in [VERIFY-IN-VSCODE.md](../VERIFY-IN-VSCODE.md).
 - **Line endings:** CRLF and LF checkouts of the same content are treated as equal (Windows `core.autocrlf`).
 - **Protected-test checks are heuristics, not guarantees.**
   - The `preToolUse` guard denies edit tools and common shell mutations (`sed -i`, `rm`, redirects, `git checkout <ref>`…) on acceptance paths. It asks before edits to existing developer tests.
@@ -72,3 +76,7 @@ The PR-base comparison blocks agent edits to protected acceptance tests. Legitim
 5. After merge, later PRs compare against the new base.
 
 Locally, the stop gate never skips: the agent can't revise acceptance tests.
+
+---
+
+Next: [Level 3: learning and measurement](LEVEL-3-EXPERIMENTS.md) →

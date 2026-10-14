@@ -1,5 +1,7 @@
 # Evidence
 
+← [Golden Path README](../README.md) · [Documentation index](../README.md#documentation)
+
 Golden Path's incremental value is **unproved**. This is the honest summary; the full studies are in
 [archive/research](../archive/research/README.md).
 

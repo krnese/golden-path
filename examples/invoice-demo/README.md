@@ -1,5 +1,7 @@
 # Demo adopter repo: invoice calculator
 
+← [Golden Path README](https://github.com/krnese/golden-path/blob/main/README.md) · [Documentation index](https://github.com/krnese/golden-path/blob/main/README.md#documentation)
+
 A tiny dependency-free Node.js app (ES modules, `node:test`) that uses the Golden Path kit **the way an adopter
 would**. The kit is installed by `plugin/install.mjs`, never copied by hand. This is a demonstration fixture, not
 evidence. Everything (app, tests, kit hook, demo builder) is Node.js 22+; there is no Python requirement, and it

@@ -1,5 +1,7 @@
 # What the overview diagram claims, and what backs each claim
 
+← [Golden Path README](../README.md) · [Documentation index](../README.md#documentation)
+
 Every element of [`docs/assets/golden-path-overview.png`](assets/golden-path-overview.png) (source:
 [`golden-path-overview.html`](assets/golden-path-overview.html)), checked against the kit. The image shows the target
 model; where it goes beyond what is shipped, the gap is labelled here and in the README. Test names are in `tests/kit.test.mjs` unless noted.
@@ -18,7 +20,7 @@ model; where it goes beyond what is shipped, the gap is labelled here and in the
 | PR: evidence | Method (skill's Report step); optional CI template | `--with-ci` → `.github/workflows/golden-path-check.yml` in your repo; test "CI template compares against the fixed PR base commit" |
 | Durable boundary: CI, branch protection, code-owner review | GitHub controls you configure | [Protected branches](https://docs.github.com/en/repositories/configuring-branches-and-merges-in-your-repository/managing-protected-branches/about-protected-branches); the kit adds no gate of its own |
 | Outcomes: reviewable PR, shipped behaviour | Result of the above | Not produced by the kit on its own |
-| Golden loop (evidence back to owners; agents draft plan updates; owners approve) | Labelled: target model, not yet validated | A process starting outside the repo: a business owner (e.g. marketing) works with an agent outside the repo that turns intent into a PR; Copilot in the repo picks it up; owners approve outward changes. No tooling in the kit; being validated with a real end-to-end trial |
+| Golden loop (evidence back to owners; agents draft plan updates; owners approve) | Run end to end twice in one real trial; beyond that, target model | A process starting outside the repo: a business owner (e.g. marketing) works with an agent outside the repo that turns intent into a PR; Copilot in the repo picks it up; owners approve outward changes. No tooling in the kit for the outside steps. Trial (one model, one task, demo repo): [docs/examples/golden-loop/README.md](examples/golden-loop/README.md) |
 | Discipline: measured outcomes | Labelled: target model; Level 3 is guidance only | `docs/LEVEL-3-EXPERIMENTS.md`; installer refuses `--level 3` (test "level 3 is docs only…") |
 
 ## End-to-end check (2026-10-14)
