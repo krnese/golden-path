@@ -19,6 +19,7 @@
 //   node install.mjs --target REPO --level 1 --with-local-models  # optional local-model skill (any level)
 //   node install.mjs --target REPO --uninstall [--force] [--purge]
 import { createHash } from "node:crypto";
+import { spawnSync } from "node:child_process";
 import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
@@ -109,7 +110,24 @@ const LEVEL_NOTE = {
 export const DEFAULT_PROTECTED = ["tests/**"];
 const COMMON_TEST_DIRS = ["test", "tests", "__tests__", "spec"];
 const protectedFor = (o) => (o.protectedPaths && o.protectedPaths.length ? o.protectedPaths : DEFAULT_PROTECTED);
-/** Warn when the developer-test paths the gate will guard do not exist, so weakened tests would go unnoticed. */
+// Same semantics as matches() in scripts/gate.mjs (the installer imports only Node built-ins); a test keeps them equal.
+const globRe = (p) => new RegExp("^" + p.replace(/[.+^${}()|\\]/g, "\\$&").replace(/\*/g, ".*").replace(/\?/g, ".") + "$");
+export const matchesProtected = (rel, p) => (p.endsWith("/**") && (rel === p.slice(0, -3) || rel.startsWith(p.slice(0, -2)))) || globRe(p).test(rel);
+/** Repo-relative files the gate could compare: git's tracked + untracked-not-ignored files, else a bounded walk. */
+function repoFiles(target) {
+  const r = spawnSync("git", ["ls-files", "-z", "--cached", "--others", "--exclude-standard"], { cwd: target, encoding: "utf8" });
+  if (r.status === 0) return r.stdout.split("\0").filter(Boolean);
+  const out = [], walk = (dir, rel) => {
+    for (const e of fs.readdirSync(dir, { withFileTypes: true })) {
+      if (out.length >= 50000 || [".git", "node_modules"].includes(e.name)) continue;
+      const r2 = rel ? `${rel}/${e.name}` : e.name;
+      if (e.isDirectory()) { out.push(r2); walk(path.join(dir, e.name), r2); } else out.push(r2);
+    }
+  };
+  walk(target, "");
+  return out;
+}
+/** Warn when the developer-test paths the gate will guard match no files, so weakened tests would go unnoticed. */
 export function protectedWarnings(target, o, configExists) {
   const out = [];
   if (configExists) {
@@ -117,11 +135,12 @@ export function protectedWarnings(target, o, configExists) {
       "Edit \"protected\" in that file in a reviewed change.");
     return out;
   }
-  const patterns = protectedFor(o);
-  const missing = patterns.filter((p) => { const stem = p.split("*")[0].replace(/\/+$/, ""); return stem && !exists(path.join(target, stem)); });
+  const patterns = protectedFor(o), files = repoFiles(target);
+  const missing = patterns.filter((p) => !files.some((f) => matchesProtected(f, p)));
   if (!missing.length) return out;
-  const found = COMMON_TEST_DIRS.filter((d) => !patterns.some((p) => p.startsWith(d + "/")) && exists(path.join(target, d)));
-  out.push(`protected test path(s) ${missing.join(", ")} not found in the target: edits that weaken your developer tests ` +
+  const inDir = (f, d) => f === d || f.startsWith(d + "/");
+  const found = COMMON_TEST_DIRS.filter((d) => files.some((f) => inDir(f, d)) && !files.some((f) => inDir(f, d) && patterns.some((p) => matchesProtected(f, p))));
+  out.push(`protected test path(s) ${missing.join(", ")} not found in the target (no matching files): edits that weaken your developer tests ` +
     "would not be detected." + (found.length ? ` Found ${found.join(", ")}/; rerun with ${found.map((d) => `--protected "${d}/**"`).join(" ")}` +
     " (on a first install) or edit \"protected\" in .golden-path/config.json." : " Pass --protected \"<your test folder>/**\"."));
   return out;
