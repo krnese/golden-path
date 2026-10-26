@@ -380,7 +380,7 @@ and run the configured fast check plus integrity checks against the fetched defa
 
 ```powershell
 git fetch origin main
-git diff --check
+git diff --check origin/main HEAD
 node .github\hooks\golden-path\gate.mjs check --base origin/main
 ```
 
