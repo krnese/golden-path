@@ -56,6 +56,8 @@ node plugin/install.mjs --target "<your-repo>" --level 2 --check "<fast-check-co
 
 Replace every placeholder with your actual repository, owner and existing commands.
 Use the acceptance glob for your approved tests; repeat `--acceptance-path` for additional paths.
+If your developer tests are not under `tests/`, add `--protected "<your test folder>/**"` (repeatable);
+heed any `WARNING` about protected paths that don't exist.
 Remove `--dry-run` to install after reviewing the proposed files.
 
 The kit does not ship your business tests or invent the owner's examples. The acceptance owner
@@ -72,6 +74,7 @@ Confirm:
 - `acceptance.paths` covers every owner-approved executable acceptance file.
 - `acceptance.owner` identifies the owner for agent-facing messages.
 - `acceptance.command` actually executes those tests.
+- `protected` matches the folders that hold your developer tests (default `tests/**`).
 - Local commands, integrity checks and git work together fit `hook_budget_sec` (default 100).
 - Heavier suites have separate CI jobs; `--with-ci` repeats the configured commands, not a
   magically expanded suite.

@@ -7,6 +7,14 @@ History of the kit. The current way to adopt it is in the [README](README.md); t
 
 ## Unreleased
 
+- **Installer: `--protected` for developer tests outside `tests/`, and a warning when they'd go unguarded.**
+  A pilot on an existing repository whose tests live in `test/` showed that with the default `tests/**` an agent
+  could edit or weaken developer tests unnoticed (no `ask`, no weakening block). `--protected "<glob>"`
+  (repeatable, first install) sets the guarded paths; the installer warns on stderr when the protected paths
+  don't exist and names a likely folder and the exact flag. Existing configs are still never overwritten; a
+  rerun with `--protected` says it was not applied. The gate script is unchanged. New tests:
+  `tests/installer-protected.test.mjs`.
+
 - **Owner loop: evidence the owner can judge, and the verdict on the PR.** The skill's Acceptance step now
   checks that the session starts from the owner's latest acceptance, and asks that drafted acceptance be its own
   owner-approved change with each test named after its example's ID and a plain example/test/what-it-checks table.

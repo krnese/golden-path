@@ -96,7 +96,9 @@ node plugin/install.mjs --target "<your-repo>" --level 2 --check "<fast-check-co
 
 **This installs checked completion, not owner-controlled acceptance.** Replace the placeholders with your
 repository and an existing fast test command. No business acceptance paths or owner are configured by this
-command. Add `--dry-run` to preview, or use `--level 1` for the method only.
+command. Add `--dry-run` to preview, or use `--level 1` for the method only. If your developer tests are not
+under `tests/`, add `--protected "<your test folder>/**"` (for example `test/**`); the installer warns when the
+protected paths don't exist, because weakened tests there would go unnoticed.
 
 For **owner-controlled acceptance**, first agree examples and approve their executable tests. On a fresh
 installation, supply the paths, named owner and existing acceptance command:
