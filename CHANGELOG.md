@@ -14,6 +14,13 @@ History of the kit. The current way to adopt it is in the [README](README.md); t
   don't exist and names a likely folder and the exact flag. Existing configs are still never overwritten; a
   rerun with `--protected` says it was not applied. The gate script is unchanged. New tests:
   `tests/installer-protected.test.mjs`.
+- **CI template: set up the project before running its tests.** In the same pilot, the `--with-ci` check
+  failed on GitHub with `ERR_MODULE_NOT_FOUND` because it ran the adopter's tests without installing anything.
+  The workflow now sets up Node.js 24 (pinned) and runs `.golden-path/ci-setup.sh` if present, otherwise
+  `npm ci --ignore-scripts` for a `package-lock.json`. Adopters put their setup in that script instead of editing
+  the kit file. ADOPTION notes that rulesets and Code Owner enforcement aren't available on private repos under
+  GitHub Free (seen in the pilot) and gives a read-only `gh api` check of the effective rules. New tests:
+  `tests/ci-template.test.mjs`.
 
 - **Owner loop: evidence the owner can judge, and the verdict on the PR.** The skill's Acceptance step now
   checks that the session starts from the owner's latest acceptance, and asks that drafted acceptance be its own

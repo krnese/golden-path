@@ -92,6 +92,11 @@ compared against, each check, whether protected acceptance changed (and who owns
 revision authorisation or refusal. If the check produced no result, the summary says **UNVERIFIED**, never a pass.
 The summary is feedback for reviewers, not approval; the local ledger is never uploaded.
 
+**Project setup in CI.** The workflow runs your configured commands, so it sets up Node.js 24 and then runs
+`.golden-path/ci-setup.sh` if you add one (for example `pip install -r requirements.txt`, `dotnet restore`, a content
+import), or `npm ci --ignore-scripts` when there's a `package-lock.json`. Keep your setup in that script rather than
+editing the installed workflow, so reinstall and uninstall still recognise the kit file.
+
 Locally, the stop gate never skips: the agent can't revise acceptance tests.
 
 ### Code Owner review for single-maintainer repos
