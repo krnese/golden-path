@@ -299,7 +299,10 @@ the required "Kit guarantees" CI jobs still run the full suite on Ubuntu and Win
 ### L3: experiment guide, docs only
 
 Nothing to install (the installer rejects `--level 3`). Install L2, then follow
-[docs/LEVEL-3-EXPERIMENTS.md](docs/LEVEL-3-EXPERIMENTS.md).
+[docs/LEVEL-3-EXPERIMENTS.md](docs/LEVEL-3-EXPERIMENTS.md). The guide includes a
+business-and-engineering experiment roadmap and a first pilot: understand an
+existing system, resume in a fresh session, and show evidence for the agreed
+outcome. These are proposed experiments, not demonstrated benefits.
 
 ## Optional: local-model skill
 
@@ -358,7 +361,7 @@ selects or switches the model; that is the host's job. L2 checks run the same re
 | [The golden loop, end to end](docs/examples/golden-loop/README.md) | Real two-round demo trial, decisions, evidence and limits |
 | [How your acceptance suite grows itself](docs/how-acceptance-evolves.md) | Owner-approved acceptance accruing one task at a time |
 | [Evidence](docs/evidence.md) | What is and is not proved, including negative findings |
-| [Level 3: learning and measurement](docs/LEVEL-3-EXPERIMENTS.md) | Pilot and matched comparisons; docs only |
+| [Level 3: learning and measurement](docs/LEVEL-3-EXPERIMENTS.md) | Plain-language experiment roadmap, first brownfield pilot and matched comparisons; docs only |
 | [Verify in VS Code](VERIFY-IN-VSCODE.md) | Signed-in client verification checklist |
 | [Invoice demo](examples/invoice-demo/README.md) | Example app, tasks, owner acceptance and demo builders |
 | [Connecting your own reasoning boundaries](docs/examples/hybrid-workflow.md) | One adopter's workflow mapped onto the kit |
