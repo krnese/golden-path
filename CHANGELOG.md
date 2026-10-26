@@ -7,6 +7,15 @@ History of the kit. The current way to adopt it is in the [README](README.md); t
 
 ## Unreleased
 
+- **Owner loop: evidence the owner can judge, and the verdict on the PR.** The skill's Acceptance step now
+  checks that the session starts from the owner's latest acceptance, and asks that drafted acceptance be its own
+  owner-approved change with each test named after its example's ID and a plain example/test/what-it-checks table.
+  The Report step asks for the real output for each example next to the expected result, the cases the examples
+  do not cover, and a pointer to the PR's check results. The `--with-ci` workflow writes the gate's verdict
+  (outcome, PR base, each check, whether protected acceptance changed, failing tests, any revision authorisation)
+  to the job summary; missing output is shown as UNVERIFIED. The local ledger is still never uploaded.
+  The gate script is unchanged. New tests: `tests/feedback-loop.test.mjs`.
+
 - **Landing page: Fluent-inspired visual treatment.** Segoe UI and upright headings,
   cool neutral surfaces, blue actions, subtle borders and lighter shadows replace
   the warm serif/cream/forest-green palette. The gold path and owner-feedback loop,

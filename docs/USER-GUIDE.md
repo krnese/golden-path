@@ -83,15 +83,24 @@ You can reply:
 For a protected setup, your developer or Copilot can propose automated tests;
 the person responsible for the rule approves their meaning through the team's
 normal review process **before the implementation session begins**. You do not
-have to author the test code yourself. Method-only instructions cannot enforce
+have to author the test code yourself. Ask for a table you can approve without
+reading code:
+
+> Turn these examples into acceptance tests as a separate change for me to
+> approve. Start each test name with its example's ID, and give me a table:
+> example, test, what it checks.
+
+Method-only instructions cannot enforce
 that boundary; protected acceptance and required CI provide the stronger control.
 
 ## 4. Let Copilot work, then ask to see it
 
 Stay with your usual Copilot agent. When it finishes, ask:
 
-> Show me the actual result for each example we agreed on. Tell me what changed,
-> what checks passed, and anything that is still uncertain.
+> Show me the actual result for each example we agreed on, next to what I
+> expected. List cases the examples don't cover and what you chose for them.
+> Tell me what changed, which checks passed on the pull request, and anything
+> that is still uncertain.
 
 Look at the output, not just the word "done". A screenshot, preview or example
 response often tells you more than a test count.

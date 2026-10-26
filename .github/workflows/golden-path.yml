@@ -64,7 +64,7 @@ jobs:
           node --test
           --test-reporter=spec --test-reporter-destination=stdout
           --test-reporter=tap --test-reporter-destination="$RUNNER_TEMP/kit.tap"
-          tests/kit.test.mjs
+          tests/kit.test.mjs tests/feedback-loop.test.mjs
       - name: Installed kit in this repo matches plugin/ (self-install)
         shell: bash
         run: node --test --test-reporter=spec tests/self-install.test.mjs

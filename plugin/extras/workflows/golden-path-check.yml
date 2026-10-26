@@ -38,6 +38,7 @@ jobs:
           REVISION: ${{ contains(github.event.pull_request.labels.*.name, 'golden-path:acceptance-revision') }}
         run: |
           gate=.github/hooks/golden-path/gate.mjs
+          exec >"$RUNNER_TEMP/golden-path.out"
           if [ "$REVISION" = "true" ]; then
             gh api --paginate "repos/$REPO/pulls/$PR/reviews?per_page=100" --jq '.[]' > "$RUNNER_TEMP/reviews.jsonl"
             node "$gate" authorize-acceptance-revision --base "$BASE_SHA" --head "$HEAD_SHA" --reviews "$RUNNER_TEMP/reviews.jsonl"
@@ -45,3 +46,50 @@ jobs:
           else
             node "$gate" check --base "$BASE_SHA"
           fi
+      # The verdict on the PR page, so reviewers and the owner see which base, which checks and whether acceptance was
+      # touched without asking anyone. The local session record (ledger) is not used and is never uploaded.
+      - name: Golden Path verdict (job summary)
+        if: always()
+        env:
+          OUT: ${{ runner.temp }}/golden-path.out
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        run: |
+          cat "$OUT" 2>/dev/null || true
+          node - >>"$GITHUB_STEP_SUMMARY" <<'JS'
+          const fs = require("node:fs");
+          const text = fs.existsSync(process.env.OUT) ? fs.readFileSync(process.env.OUT, "utf8") : "";
+          const blocks = [...text.replace(/\r\n/g, "\n").matchAll(/^\{\n[\s\S]*?\n\}$/gm)].flatMap((m) => {
+            try { return [JSON.parse(m[0])]; } catch { return []; }
+          });
+          const check = blocks.find((b) => Array.isArray(b.results));
+          const auth = blocks.find((b) => "authorized" in b);
+          const short = (s) => String(s || "unknown").slice(0, 7);
+          const L = ["## Golden Path check", ""];
+          if (!check) {
+            L.push("**UNVERIFIED**: no check result was produced (the step failed before or while running it). Not a pass.");
+          } else {
+            L.push(`Outcome: **${check.outcome}** · base \`${short(check.base_sha || process.env.BASE_SHA)}\` (PR base) · PR head \`${short(process.env.HEAD_SHA)}\``, "",
+              "| Check | Result |", "|---|---|");
+            const mark = (r) => r.skipped ? "skipped (not a pass)" : r.unverified ? "UNVERIFIED" : r.ok ? "passed" : "FAILED";
+            for (const r of check.results) L.push(`| ${r.name} | ${mark(r)} |`);
+            const acc = check.results.find((r) => r.name === "acceptance-integrity");
+            if (acc) {
+              const owner = acc.owner ? ` (owner: ${acc.owner})` : "";
+              L.push("", acc.skipped ? `Protected acceptance changed in an authorised owner revision${owner}.`
+                : acc.unverified ? `Protected acceptance could not be compared with the PR base (UNVERIFIED, not a pass)${owner}:`
+                : acc.ok ? `Protected acceptance unchanged since the PR base${owner}.`
+                : `Protected acceptance differs from the PR base${owner}:`);
+              if (!acc.ok && !acc.skipped) L.push("", "```", String(acc.output || "").split("\n").slice(0, 20).join("\n"), "```");
+            }
+            if (check.failed_tests?.length) L.push("", `Failing tests (${check.failed_tests.length}):`, ...check.failed_tests.slice(0, 50).map((t) => `- ${t}`));
+          }
+          if (auth) {
+            L.push("", auth.authorized ? "Acceptance revision authorised by: " +
+              auth.files.map((f) => `${f.file} (${f.approved_by.join(", ")})`).join("; ")
+              : "Acceptance revision NOT authorised:", ...(auth.problems || []).map((p) => `- ${p}`));
+          }
+          L.push("", "_Feedback for reviewers, not approval: passing shows the owner's written examples are met, " +
+            "not that the result is what the owner wanted. Compare the real output with the examples._");
+          process.stdout.write(L.join("\n") + "\n");
+          JS
