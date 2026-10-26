@@ -1,12 +1,14 @@
 name: Golden Loop
 
 # Keeps the owner's decision in the Golden Loop (see docs/LEVEL-3-EXPERIMENTS.md).
-# Both jobs run the trusted script: issue events use the default branch; PR events check out the
-# PR's base commit, so a PR cannot change the check that judges it.
+# A PR must not be able to change the check that judges it. Issue events run this file and the script from
+# the default branch. PR checks use pull_request_target, which also takes this file from the base branch, and
+# check out the base commit: no code from the PR is checked out or run. The PR's description is read through
+# the API with a read-only token and is never interpolated into a shell command.
 on:
   issues:
     types: [closed]
-  pull_request:
+  pull_request_target:
     types: [opened, edited, synchronize, reopened, ready_for_review]
 
 permissions: {}
@@ -36,13 +38,16 @@ jobs:
 
   evidence:
     name: "Golden Loop: evidence on the PR"
-    if: github.event_name == 'pull_request'
+    if: github.event_name == 'pull_request_target'
     runs-on: ubuntu-latest
     timeout-minutes: 5
     permissions:
       contents: read
       issues: read
       pull-requests: read
+    concurrency:
+      group: golden-loop-pr-${{ github.event.pull_request.number }}
+      cancel-in-progress: true
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
         with:
@@ -55,9 +60,4 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           PR: ${{ github.event.pull_request.number }}
-        run: |
-          if [ ! -f .github/scripts/golden-loop.mjs ]; then
-            echo "::notice::The Golden Loop script is not on the base branch yet; nothing to check."
-            exit 0
-          fi
-          node .github/scripts/golden-loop.mjs pr-evidence --repo "$GITHUB_REPOSITORY" --pr "$PR"
+        run: node .github/scripts/golden-loop.mjs pr-evidence --repo "$GITHUB_REPOSITORY" --pr "$PR"

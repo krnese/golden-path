@@ -56,30 +56,71 @@ export function latestJudgment(comments, owners, asOf) {
   return found.length ? found[found.length - 1] : null;
 }
 
-// Code is not instruction: GitHub ignores closing keywords in code, and so do we.
+// Code is not instruction: GitHub ignores closing keywords in code, and so do we. Inline spans may use
+// any run of backticks (``Fixes #38``), closed by the same run.
 export function stripCode(text) {
-  return lines(text).replace(/^(`{3,}|~{3,})[^\n]*\n[\s\S]*?^\1[^\n]*$/gm, "").replace(/`[^`\n]*`/g, "");
+  return lines(text)
+    .replace(/^(`{3,}|~{3,})[^\n]*\n[\s\S]*?^\1[^\n]*$/gm, "")
+    .replace(/(`+)(?!`)[^\n]*?(?<!`)\1(?!`)/g, "");
 }
 
-const CLOSING = /\b(?:close[sd]?|fix(?:e[sd])?|resolve[sd]?)\s*:?\s+(?:[\w.-]+\/[\w.-]+)?#(\d+)\b/gi;
-export function closingReferences(text) {
-  return [...new Set([...stripCode(text).matchAll(CLOSING)].map((m) => Number(m[1])))];
+// A reference to another repository (other/repo#38) is not this repository's #38.
+const CLOSING = /\b(?:close[sd]?|fix(?:e[sd])?|resolve[sd]?)\s*:?\s+([\w.-]+\/[\w.-]+)?#(\d+)\b/gi;
+function closingIn(stripped, repo) {
+  const here = repo?.toLowerCase();
+  return [...stripped.matchAll(CLOSING)]
+    .filter((m) => !m[1] || (here && m[1].toLowerCase() === here))
+    .map((m) => Number(m[2]));
+}
+export function closingReferences(text, repo) {
+  return [...new Set(closingIn(stripCode(text), repo))];
 }
 
 // Issues this PR works on: closing keywords plus explicit work references such as "Refs #38" or
 // "Part of #38". A passing mention ("see #38") does not put the PR in scope.
 const WORK = /\b(?:refs?|references|part of|implements|addresses)\s*:?\s+#(\d+)\b/gi;
-export function workReferences(text) {
+export function workReferences(text, repo) {
   const t = stripCode(text);
-  return [...new Set([...t.matchAll(CLOSING), ...t.matchAll(WORK)].map((m) => Number(m[1])))];
+  return [...new Set([...closingIn(t, repo), ...[...t.matchAll(WORK)].map((m) => Number(m[1]))])];
 }
 
-// Evidence is a table with Expected and Actual columns that names every example ID.
+function cells(row) {
+  let r = row.trim();
+  if (r.startsWith("|")) r = r.slice(1);
+  if (r.endsWith("|") && !r.endsWith("\\|")) r = r.slice(0, -1);
+  return r.split(/(?<!\\)\|/).map((c) => c.trim());
+}
+const PLACEHOLDER = /^(?:[-–—…?.\s]*|tbd|todo)$/i;
+
+// Evidence is a table with Expected and Actual columns. An example counts as covered only when its ID is in
+// the table's example column and both its Expected and Actual cells are filled in. IDs in prose, in HTML
+// comments or in an empty template row do not count.
 export function evidenceCheck(prBody, ids) {
-  const text = lines(prBody);
-  const hasTable = text.split("\n").some((l) => /^\s*\|/.test(l) && /expected/i.test(l) && /actual/i.test(l));
-  const missing = ids.filter((id) => !new RegExp(`\\b${id}\\b`).test(text));
-  return { ok: hasTable && missing.length === 0, hasTable, missing };
+  const rows = lines(prBody).replace(/<!--[\s\S]*?-->/g, "").split("\n");
+  const filled = new Set();
+  const empty = new Set();
+  let hasTable = false;
+  let anyFilled = false;
+  for (let i = 0; i + 1 < rows.length; i++) {
+    if (!/^\s*\|/.test(rows[i]) || !/^\s*\|?\s*:?-{3,}/.test(rows[i + 1])) continue;
+    const head = cells(rows[i]);
+    const ei = head.findIndex((h) => /expected/i.test(h));
+    const ai = head.findIndex((h) => /actual/i.test(h));
+    if (ei < 0 || ai < 0) continue;
+    hasTable = true;
+    const xi = Math.max(0, head.findIndex((h) => /example/i.test(h)));
+    for (let j = i + 2; j < rows.length && /^\s*\|/.test(rows[j]); j++) {
+      const c = cells(rows[j]);
+      const complete = [c[ei], c[ai]].every((v) => v && !PLACEHOLDER.test(v));
+      anyFilled ||= complete;
+      for (const id of ids) {
+        if (new RegExp(`\\b${id}\\b`).test(c[xi] ?? "")) (complete ? filled : empty).add(id);
+      }
+    }
+  }
+  const missing = ids.filter((id) => !filled.has(id));
+  const ok = hasTable && missing.length === 0 && (ids.length > 0 || anyFilled);
+  return { ok, hasTable, missing, empty: missing.filter((id) => empty.has(id)) };
 }
 
 // closer: { type: "PullRequest" | "Commit", number? } or null when a person closed the issue directly.
@@ -96,13 +137,22 @@ export function decideOnClose({ closer, judgment }) {
 
 export function reopenComment({ closer, reason, owners }) {
   const by = closer.type === "PullRequest" ? `merged pull request #${closer.number}` : `commit ${closer.oid?.slice(0, 7)}`;
-  const who = owners.length ? owners.map((o) => `@${o}`).join(", ") : "The owner";
+  const ask = owners.length
+    ? `${owners.map((o) => `@${o}`).join(", ")}: please record`
+    : "No owner with an @username is named in this issue, so no judgment can be recognised. Name the owner by " +
+      "@username in the issue; they should then record";
   return [
     `Reopened by the Golden Loop workflow: this issue was closed by ${by}, but ${reason}.`,
     "",
-    `The owner decides when it is done. ${who}: please record \`Owner judgment: meets the need\`, ` +
-      "`needs revision` or `cannot yet judge`, with reasons, then close the issue yourself.",
+    `The owner decides when it is done. ${ask} \`Owner judgment: meets the need\`, ` +
+      "`needs revision` or `cannot yet judge`, with reasons, then close the issue themselves.",
   ].join("\n");
+}
+
+// Only a judgment by an owner named with an @username counts. Without one, nobody's judgment is recognised:
+// failing closed keeps a collaborator's comment from standing in for the owner's decision.
+export function ownerJudgment(comments, owners, asOf) {
+  return owners.length ? latestJudgment(comments, owners, asOf) : null;
 }
 
 // ---- GitHub API (only used by the CLI) ----
@@ -163,8 +213,9 @@ export async function issueClosed({ repo, issue, dryRun = false, asOf, force = f
   const c = last.closer;
   const closer = c ? { type: c.__typename, number: c.number, oid: c.oid } : null;
   const owners = parseOwners(data.body);
-  const judgment = latestJudgment(await comments(repo, issue), owners, asOf ?? last.createdAt);
+  const judgment = ownerJudgment(await comments(repo, issue), owners, asOf ?? last.createdAt);
   const decision = decideOnClose({ closer, judgment });
+  if (decision.action === "reopen" && !owners.length) decision.reason = "no owner is named by @username";
   log(`#${issue}: closed ${last.createdAt} by ${closer ? `${closer.type} ${closer.number ?? closer.oid}` : "a person"}; ` +
     `owners: ${owners.join(", ") || "(none named)"}; decision: ${decision.action} (${decision.reason})`);
   if (decision.action === "reopen" && !dryRun) {
@@ -177,44 +228,59 @@ export async function issueClosed({ repo, issue, dryRun = false, asOf, force = f
 
 const PR_LINKS_QUERY = `query($owner: String!, $name: String!, $number: Int!) {
   repository(owner: $owner, name: $name) { pullRequest(number: $number) {
-    closingIssuesReferences(first: 20) { nodes { number } } } } }`;
+    closingIssuesReferences(first: 20) { nodes { number repository { nameWithOwner } } } } } }`;
 
+// Anything this check could not verify is reported as UNVERIFIED and fails, never as "not applicable".
 export async function prEvidence({ repo, pr, log = console.log }) {
   const [owner, name] = repo.split("/");
   const pull = await api(`/repos/${repo}/pulls/${pr}`);
   const body = pull.body ?? "";
   const linked = (await graphql(PR_LINKS_QUERY, { owner, name, number: pr })).repository.pullRequest
-    .closingIssuesReferences.nodes.map((n) => n.number);
+    .closingIssuesReferences.nodes
+    .filter((n) => n.repository.nameWithOwner.toLowerCase() === repo.toLowerCase())
+    .map((n) => n.number);
   const golden = [];
-  for (const n of new Set([...workReferences(body), ...linked])) {
-    const issue = await api(`/repos/${repo}/issues/${n}`).catch(() => null);
-    if (issue && !issue.pull_request && issue.labels.some((l) => l.name === LABEL)) golden.push(issue);
+  const unverified = [];
+  for (const n of new Set([...workReferences(body, repo), ...linked])) {
+    let issue;
+    try {
+      issue = await api(`/repos/${repo}/issues/${n}`);
+    } catch (e) {
+      if (!/: HTTP 404 /.test(e.message)) unverified.push(`#${n} (${e.message.split(" ").slice(0, 4).join(" ")})`);
+      continue;
+    }
+    if (!issue.pull_request && issue.labels.some((l) => l.name === LABEL)) golden.push(issue);
   }
   const out = [`### Golden Loop evidence on PR #${pr}`, ""];
-  let ok = true;
-  if (!golden.length) out.push(`Not working on a \`${LABEL}\` issue; nothing to check.`);
-  const closing = new Set([...closingReferences(body), ...linked]);
+  let ok = unverified.length === 0;
+  if (unverified.length) out.push(`- Could not look up: **${unverified.join(", ")}**`);
+  if (!golden.length && !unverified.length) out.push(`Not working on a \`${LABEL}\` issue; nothing to check.`);
+  const closing = new Set([...closingReferences(body, repo), ...linked]);
   for (const issue of golden) {
     const ids = exampleIds(issue.body);
     const r = evidenceCheck(body, ids);
     ok &&= r.ok;
     out.push(`**#${issue.number}** examples: ${ids.join(", ") || "(none listed)"}`);
     out.push(r.hasTable ? "- Expected/actual table: found" : "- Expected/actual table: **missing** (a table with Expected and Actual columns)");
-    if (r.missing.length) out.push(`- Examples not covered in the description: **${r.missing.join(", ")}**`);
+    if (r.empty.length) out.push(`- Rows with an empty Expected or Actual cell: **${r.empty.join(", ")}**`);
+    if (r.missing.length) out.push(`- Examples without filled-in evidence: **${r.missing.join(", ")}**`);
+    if (!ids.length && r.hasTable && !r.ok) out.push("- No row has both Expected and Actual filled in");
     if (closing.has(issue.number)) {
       out.push(`- Closing keyword for #${issue.number}: merging will close it before the owner's judgment ` +
         "unless they record one first. Prefer `Refs`.");
       log(`::warning::PR closes golden-loop issue #${issue.number} on merge; the owner should record a judgment first.`);
     }
   }
-  out.push("", !golden.length ? "Result: **not applicable**."
-    : ok ? "Result: **evidence present**."
-      : "Result: **evidence missing**. Put expected versus actual for each example in the PR description.");
+  out.push("", unverified.length ? "Result: **UNVERIFIED**. A referenced issue could not be looked up; rerun the check."
+    : !golden.length ? "Result: **not applicable**."
+      : ok ? "Result: **evidence present**."
+        : "Result: **evidence missing**. Fill in expected versus actual for each example in the PR description.");
   const summary = out.join("\n") + "\n";
   if (process.env.GITHUB_STEP_SUMMARY) fs.appendFileSync(process.env.GITHUB_STEP_SUMMARY, summary);
   log(summary);
-  if (!ok) log("::error::Golden Loop evidence missing from the PR description.");
-  return { ok, issues: golden.map((i) => i.number) };
+  if (!ok) log(unverified.length ? "::error::Golden Loop evidence UNVERIFIED: an issue lookup failed."
+    : "::error::Golden Loop evidence missing from the PR description.");
+  return { ok, unverified, issues: golden.map((i) => i.number) };
 }
 
 function args(argv) {
