@@ -112,6 +112,18 @@ installed Golden Path.
 
 Your normal review and merge rules still apply.
 
+### Record your judgment
+
+On a Golden Loop issue, comment with one of these exact phrases, then explain
+your reasons:
+
+- `Owner judgment: meets the need`
+- `Owner judgment: needs revision`
+- `Owner judgment: cannot yet judge`
+
+If a merge closes the issue before you have judged it, the issue is reopened
+until you do. After recording your judgment, close the issue yourself.
+
 ## 5. Give the next useful piece of feedback
 
 You do not have to get every detail right on the first attempt:
