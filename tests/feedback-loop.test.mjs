@@ -120,6 +120,17 @@ describe("PR verdict: the CI template writes the gate result to the job summary"
     assert.match(s, /\*\*UNVERIFIED\*\*: no check result was produced/);
     assert.match(s, /Acceptance revision NOT authorised:\n- acceptance\/t01\.test\.mjs: no approval by a Code Owner/);
   });
+  test("an acceptance comparison that could not run is UNVERIFIED, never reported as a change", () => {
+    const res = { ok: false, outcome: "UNVERIFIED", skipped: [], base: "b", base_sha: "a".repeat(40), base_source: "--base",
+      results: [{ name: "check", ok: true, output: "" },
+        { name: "acceptance-integrity", ok: false, unverified: true, owner: "Finance: Ingrid",
+          output: "acceptance-integrity not run: the hook time budget was used up (counted as RED)" }],
+      failed: ["acceptance-integrity"], unverified: ["acceptance-integrity"], failed_tests: [] };
+    const s = summarise(out("unverified.out", JSON.stringify(res, null, 1) + "\n"));
+    assert.match(s, /\| acceptance-integrity \| UNVERIFIED \|/);
+    assert.match(s, /could not be compared with the PR base \(UNVERIFIED, not a pass\) \(owner: Finance: Ingrid\)[\s\S]*time budget was used up/);
+    assert.doesNotMatch(s, /differs from the PR base/);
+  });
   test("no output at all is UNVERIFIED, never a pass", () => {
     const s = summarise(path.join(d, "missing.out"));
     assert.match(s, /\*\*UNVERIFIED\*\*/);

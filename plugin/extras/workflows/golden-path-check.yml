@@ -77,6 +77,7 @@ jobs:
             if (acc) {
               const owner = acc.owner ? ` (owner: ${acc.owner})` : "";
               L.push("", acc.skipped ? `Protected acceptance changed in an authorised owner revision${owner}.`
+                : acc.unverified ? `Protected acceptance could not be compared with the PR base (UNVERIFIED, not a pass)${owner}:`
                 : acc.ok ? `Protected acceptance unchanged since the PR base${owner}.`
                 : `Protected acceptance differs from the PR base${owner}:`);
               if (!acc.ok && !acc.skipped) L.push("", "```", String(acc.output || "").split("\n").slice(0, 20).join("\n"), "```");
