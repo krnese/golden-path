@@ -1,0 +1,46 @@
+name: Golden Loop task
+description: Agree on a task that a person or an agent can pick up.
+body:
+  - type: textarea
+    id: outcome
+    attributes:
+      label: Desired outcome
+      description: What should be different when this task is done, and why?
+    validations:
+      required: true
+  - type: input
+    id: owner
+    attributes:
+      label: Named owner
+      description: Who will answer questions and decide whether the result is good enough? Name a person or their @username.
+    validations:
+      required: true
+  - type: textarea
+    id: examples
+    attributes:
+      label: Concrete examples of a good result
+      description: Give specific examples of what you expect to see so the owner can judge the result.
+    validations:
+      required: true
+  - type: textarea
+    id: constraints
+    attributes:
+      label: What must stay true
+      description: What must not change? Include any limits on information that may be used or shared.
+    validations:
+      required: true
+  - type: textarea
+    id: effects
+    attributes:
+      label: Permitted effects
+      description: What actions may the person or agent take, and what actions are not allowed?
+      placeholder: For example, edit files and run tests, but do not merge or deploy.
+    validations:
+      required: true
+  - type: textarea
+    id: decision
+    attributes:
+      label: Decision required from the owner
+      description: What decision will the owner need to make, and what evidence will help them make it?
+    validations:
+      required: true
