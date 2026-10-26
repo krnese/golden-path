@@ -135,7 +135,7 @@ When several developers (and their agents) work in the same repo at once, it hel
 - Start a new agent session after an owner's acceptance change lands. Since PR #21 the gate says so itself: a failing acceptance-integrity result now names the base it compared against and how that base was chosen (`base_sha`, `base_source`). When the changed acceptance files were committed after the session started, it tells you to start a new chat or session so the owner commit becomes the base. The check itself is unchanged and still fails closed. See [the golden loop walkthrough](examples/golden-loop/README.md#the-gate-refused-a-mid-session-acceptance-change-correctly) and [LEVEL-2](LEVEL-2.md).
 - Turn on the branch-protection setting **"Require branches to be up to date before merging"**, so CI judges each PR against the latest protected `main`, including any acceptance that was merged in the meantime.
 
-**Proposed:** commit a short per-session summary (what the gate checked, against which base, and the result) into the PR body or as a PR comment, so reviewers get the useful part of the local diagnostic without a ledger ever being stored in the repo.
+**Shipped since:** the optional `golden-path-check` workflow writes the PR's verdict (outcome, base, each check, whether protected acceptance changed, failing tests) to the job summary, so reviewers get the useful part of the local diagnostic without a ledger ever being stored in the repo. The skill also asks the agent to check, before writing code, that its starting commit has the owner's latest acceptance.
 
 ---
 
@@ -160,7 +160,7 @@ When several developers (and their agents) work in the same repo at once, it hel
 - **Proposed:** turn today's prose-and-comment supersede notes (`tasks/T06.md`, `// superseded by T06` in `t05.test.mjs`) into a structured field the gate or reviewer tooling can list.
 - **Proposed:** owner configuration per acceptance path inside Golden Path, beyond CODEOWNERS.
 - **Proposed:** a stop-gate warning *before* the fail, when acceptance commits by someone other than the agent sit between the session base and HEAD (suggested in the round 2 notes; naming the base and the new-session guidance shipped in PR #21).
-- **Proposed:** a standard evidence pack (promised vs shipped, real output, open questions for the owner) produced at the end of each loop.
+- **Proposed:** a standard evidence pack produced at the end of each loop. *Partly shipped as method:* the skill's Report step now asks for real output per example next to the expected result, uncovered cases and the PR's check results; nothing produces it automatically.
 
 The short version: install the kit, pick one task, ask its owner what "done" looks like, and let the suite grow from there.
 

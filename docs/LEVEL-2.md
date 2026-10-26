@@ -86,6 +86,11 @@ The PR-base comparison blocks agent edits to protected acceptance tests. Legitim
 4. When authorised, acceptance-integrity is reported as **SKIPPED** (outcome `PASSED_WITH_SKIPPED`), never as an integrity pass. All other checks still run.
 5. After merge, later PRs compare against the new base.
 
+**What reviewers see.** The workflow writes its verdict to the PR's job summary: the outcome, the PR base it
+compared against, each check, whether protected acceptance changed (and who owns it), failing test names, and any
+revision authorisation or refusal. If the check produced no result, the summary says **UNVERIFIED**, never a pass.
+The summary is feedback for reviewers, not approval; the local ledger is never uploaded.
+
 Locally, the stop gate never skips: the agent can't revise acceptance tests.
 
 ### Code Owner review for single-maintainer repos
