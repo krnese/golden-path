@@ -23,6 +23,8 @@ A way of working with the agent you already have. It grants no authority. See [m
    - For each owner example, show the real output next to the expected result: passing tests are not the owner's judgement.
    - List cases the examples do not cover and what you chose for them.
    - Point to the pull request's check results; your local runs are not the record.
+   - Put this report in the pull request description, where the owner reviews it; your session log is not seen.
+   - Reference the owner's issue without a closing keyword (`Refs #N`): the owner closes it after judging the result.
    For a delegation change, report: what changed, why, consequence, evidence, unknowns, decision required.
    It goes back to the acceptance owner.
 

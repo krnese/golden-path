@@ -1,5 +1,6 @@
 name: Golden Loop task
 description: Agree on a task that a person or an agent can pick up.
+labels: ["golden-loop"]
 body:
   - type: textarea
     id: outcome
