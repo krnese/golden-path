@@ -92,6 +92,31 @@ accepted. A PR auto-closing an issue or a green check is not that judgment;
 use a non-closing reference while the decision is pending, or record the pending
 decision explicitly in the team's existing workflow.
 
+**Watch for automatic closing when an agent opens the PR.** In the cloud-agent
+trial, the Copilot cloud agent intended a non-closing link, but the platform
+appended `Fixes #38` to its PR description and GitHub linked the PR as closing
+the issue. Merging closed the issue before the owner had recorded a judgment
+(see the [cloud-agent trial](evidence.md#cloud-agent-golden-loop-trial-2026-10-26)).
+Until a better control is shown to work, use one of these:
+
+- **Judge before merging.** The owner records "meets the need", "needs revision"
+  or "cannot yet judge", with reasons, on the issue or the PR before it is merged.
+  Closing on merge is then harmless.
+- **Remove both closing links before merging.** Delete the `Fixes`/`Closes`
+  keyword from the PR description, and check that the issue is not linked in the
+  PR's **Development** sidebar, which can also close the issue on merge.
+- **If the issue closed anyway, reopen it** and record the pending decision, as
+  was done for #38.
+
+This is guidance, not enforcement. Whether a repository should automate it is an
+open question for a later decision.
+
+**Agent evidence must reach the PR.** In the same trial, the agent's per-example
+evidence and its warning about the closing link appeared only in its session log,
+not in the PR description or comments a reviewer reads. When an agent says "the
+evidence is in the PR", check that it is. If it is missing, ask for it on the PR
+or retrieve it from the session (for example with `gh agent-task view <session-id> --log`).
+
 The current validation is recorded in [issue #35](https://github.com/krnese/golden-path/issues/35).
 It was opened after documentation work began, so it is not evidence that an
 issue initiated that work. A separate-context reading probe and scripted checks

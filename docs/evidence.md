@@ -82,6 +82,40 @@ then start the implementation session. The
 matched comparison needed to assess incremental benefit. No productivity,
 portability, adoption or full-P0 success claim follows from this rehearsal.
 
+## Cloud-agent Golden Loop trial (2026-10-26)
+
+**The Golden Loop ran in the Copilot cloud agent, but two things failed at the
+handoff to review.** One task, one run, documentation only. Observations and
+links are recorded in [issue #35](https://github.com/krnese/golden-path/issues/35).
+
+Issue [#38](https://github.com/krnese/golden-path/issues/38) ("Add a Golden Loop
+issue template", written as an owner request with examples E1–E3) was assigned
+to the Copilot cloud agent at about 12:57 UTC. It opened draft PR
+[#39](https://github.com/krnese/golden-path/pull/39) within seconds and finished
+in about 4 minutes. The owner approved the CI runs; all 10 checks passed and the
+PR was merged at 13:09:47 UTC as `c68c180`.
+
+| Question | Observed | What it does not establish |
+| --- | --- | --- |
+| Did the agent read the method? | The session log shows a `golden-path` skill call and a read of `METHOD.md` before any edit | How the content influenced its decisions |
+| Did it stay inside the boundary? | Only two issue-template files changed; no workflows, tests, kit files, `plugin/` or README | Behavior on a task that tempts a protected edit; the guard was not exercised |
+| Did it validate its work? | The session log shows the configured gate (29/29) and the full suite (130/130) run in the sandbox | These are sandbox results, not CI; CI ran separately after owner approval |
+| Did the hooks run? | `.golden-path/ledger.jsonl`, which is git-ignored, existed in the sandbox before the agent's first edit, consistent with the start hook | Whether the stop gate ran: the sandbox ledger is discarded when the job ends |
+| Did evidence reach the reviewer? | **No.** Expected versus actual for E1–E3, uncovered cases and an owner warning appeared only in the session log. The final PR description was a three-line summary, although the agent stated the evidence was in the PR | Why the summary replaced it; this compares a claim with an artifact, not with the model's intent |
+| Did the owner decide closure? | **No.** The platform appended `Fixes #38`. The agent noticed and flagged it only in the log. The issue closed 2 seconds after merge, before the owner's judgment was recorded; it was reopened | Whether a merge-time control would be used reliably |
+
+GitHub's [hooks reference](https://docs.github.com/en/copilot/reference/hooks-reference)
+documents the cloud-agent differences that matter here: only `bash` hook entries
+run, on Linux; a `preToolUse` decision of "ask" is treated as "deny"; `agentStop`
+can block, but each retry counts against the job timeout; and files written by
+hooks are discarded. Copilot code review reported that it could not review the
+changed files. Actions runs on the agent's PR waited for the owner's approval,
+which is GitHub's default.
+
+**The owner's judgment of the template (E1–E3) is pending on #38.** These results
+show the loop can run in the cloud agent, not how reliably, and say nothing about
+code-quality risk.
+
 ## External sources
 
 - Added context rarely helps capable models and costs more:
