@@ -32,6 +32,56 @@ must not be combined into a claim that naturally occurring tampering was prevent
 The [adoption checklist](ADOPTION.md) packages a proposed setup path. Its existence is not evidence
 of adoption demand or that independent owners can use the workflow without assistance.
 
+## Issue-linked validation rehearsal (2026-10-26)
+
+**The mechanisms worked in this local run. The full business-and-engineering
+pilot has not run.** The request, investigation, results and pending owner
+decision are captured in [issue #35](https://github.com/krnese/golden-path/issues/35).
+It was opened after documentation work began, not before it.
+
+The starting commit was `6418168b4594262743e16ea206b2344e1261a0af`, matching the
+remote default branch at the start. Execution used Windows and Node.js
+`v24.19.0`, with uncommitted documentation changes. The issue records the checked
+document hashes; no implementation or protected-test changes were made.
+
+| Question or check | Expected | Observed | What this does not establish |
+| --- | --- | --- | --- |
+| Full CI-equivalent local test selection | Existing tests pass without skips | 130 passed, 0 failed, 0 skipped | Other OS/Node combinations or CI for the uncommitted changes |
+| Configured completion gate and integrity | PASSED against the recorded baseline | PASSED; 29 configured tests passed; test and acceptance integrity checks succeeded | Business acceptance: this repository has no configured acceptance paths or command |
+| Scripted refusal in a generated demo | Deny edit and shell mutation; block an out-of-band acceptance change | Both denied; stop blocked with DELEGATION CHANGE; restored acceptance no longer failed integrity | Naturally occurring agent misconduct or a tamper-proof boundary |
+| Demo baseline | Developer tests green; unimplemented acceptance red | 7 developer tests passed; acceptance had 1 pass and 25 failures, as expected; frozen files unchanged | An implemented business change; the intentionally red demo is not a completed feature |
+| Separate-context reconstruction | Recover the request from the issue and repository without a supplied chat recap | One read-only agent recovered intent, boundaries, missing acceptance, relevant implementation/tests and evidence requirements; no parent transcript access was reported | Fresh host-session or persistent-memory isolation, independent human understanding, or successful implementation |
+| Evidence back to the issue | Preserve the request, actual results, limits and pending decision | Results returned to the same issue; owner judgment remains pending | A completed issue-initiated implementation PR or owner acceptance |
+
+The reconstruction probe was supplied the issue reference and read-only
+instructions, not the earlier conversation or a solution. Its source-backed
+account identified the installer, start/guard/stop hooks, fixed-baseline checks,
+CI and existing tests. It also identified two material setup limits:
+
+- The configured acceptance owner is a placeholder, with no business acceptance
+  paths or command. Passing the gate is not evidence that business examples
+  have been met.
+- Repository ownership comments describe Code Owner enforcement as off for this
+  single-maintainer setup. Live GitHub rules were not independently verified.
+  Repository ownership is not a substitute for named pilot participants.
+
+These are descriptive observations from one probe, not a scored comparison.
+There was no independent business-owner or engineer usability assessment.
+Retry exhaustion and host timeout remain documented limitations of local hooks;
+the run does not support a claim that stopping while red is impossible.
+
+The [baseline CI run](https://github.com/krnese/golden-path/actions/runs/40290965779)
+passed for the starting commit. It is **not** CI evidence for the uncommitted
+documentation changes. Raw local TAP and demo output were retained with the
+validation session; the generated demo was removed after its integrity checks.
+
+**Next real-workload step:** select a bounded non-AI change, name the owner and
+engineer, approve its examples and executable acceptance in a separate change,
+then start the implementation session. The
+[experiment guide](LEVEL-3-EXPERIMENTS.md) describes that pilot and the separate
+matched comparison needed to assess incremental benefit. No productivity,
+portability, adoption or full-P0 success claim follows from this rehearsal.
+
 ## External sources
 
 - Added context rarely helps capable models and costs more:
