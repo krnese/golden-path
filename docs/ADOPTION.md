@@ -56,6 +56,8 @@ node plugin/install.mjs --target "<your-repo>" --level 2 --check "<fast-check-co
 
 Replace every placeholder with your actual repository, owner and existing commands.
 Use the acceptance glob for your approved tests; repeat `--acceptance-path` for additional paths.
+If your developer tests are not under `tests/`, add `--protected "<your test folder>/**"` (repeatable);
+heed any `WARNING` about protected paths that don't exist.
 Remove `--dry-run` to install after reviewing the proposed files.
 
 The kit does not ship your business tests or invent the owner's examples. The acceptance owner
@@ -72,9 +74,12 @@ Confirm:
 - `acceptance.paths` covers every owner-approved executable acceptance file.
 - `acceptance.owner` identifies the owner for agent-facing messages.
 - `acceptance.command` actually executes those tests.
+- `protected` matches the folders that hold your developer tests (default `tests/**`).
 - Local commands, integrity checks and git work together fit `hook_budget_sec` (default 100).
 - Heavier suites have separate CI jobs; `--with-ci` repeats the configured commands, not a
   magically expanded suite.
+- With `--with-ci`, CI can install what your commands need: add `.golden-path/ci-setup.sh` unless
+  `npm ci` on a `package-lock.json` is enough ([project setup in CI](LEVEL-2.md#changing-acceptance-tests-on-purpose-authorised-revision)).
 
 Commit approved acceptance and configuration through your normal review process before the
 implementation session starts. The session-start commit is the local comparison baseline.
@@ -94,6 +99,16 @@ An authorized repository maintainer configures all of the following:
 These are GitHub settings, not installer effects. Verify the settings and a representative PR
 rather than relying on files alone. Protect the workflow, config and ownership files through
 your normal controls too.
+
+**Check your plan first.** Rulesets, branch protection and required Code Owner review are not available
+on private repositories under GitHub Free; the API answers "Upgrade to GitHub Pro or make this repository
+public" (seen in a pilot). Without them, CODEOWNERS only requests reviews and `golden-path-check` is
+advisory: describe such a setup as feedback only, not owner-controlled acceptance. Read the effective rules
+without changing anything:
+
+```bash
+gh api repos/<owner>/<repo>/rules/branches/<default-branch> --jq '.[] | {type, parameters}'
+```
 
 The kit's authorized-revision check resolves **individual `@user` owners**, not team/email owners.
 Follow [authorized revisions](LEVEL-2.md#changing-acceptance-tests-on-purpose-authorised-revision)

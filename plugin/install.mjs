@@ -14,9 +14,12 @@
 //
 //   node install.mjs --target REPO --level 1
 //   node install.mjs --target REPO --check "npm test"        # level 2 (first install)
+//   node install.mjs --target REPO --check "npm test" --protected "test/**"  # developer tests outside tests/
+//                    (default "tests/**"; repeatable; first install only; warns if the paths do not exist)
 //   node install.mjs --target REPO --level 1 --with-local-models  # optional local-model skill (any level)
 //   node install.mjs --target REPO --uninstall [--force] [--purge]
 import { createHash } from "node:crypto";
+import { spawnSync } from "node:child_process";
 import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
@@ -104,6 +107,45 @@ const LEVEL_NOTE = {
   2: "Level 2 (checked completion): a stop gate runs your configured checks when the agent finishes. It is fast feedback; keep branch protection and review as the boundary.",
 };
 
+export const DEFAULT_PROTECTED = ["tests/**"];
+const COMMON_TEST_DIRS = ["test", "tests", "__tests__", "spec"];
+const protectedFor = (o) => (o.protectedPaths && o.protectedPaths.length ? o.protectedPaths : DEFAULT_PROTECTED);
+// Same semantics as matches() in scripts/gate.mjs (the installer imports only Node built-ins); a test keeps them equal.
+const globRe = (p) => new RegExp("^" + p.replace(/[.+^${}()|\\]/g, "\\$&").replace(/\*/g, ".*").replace(/\?/g, ".") + "$");
+export const matchesProtected = (rel, p) => (p.endsWith("/**") && (rel === p.slice(0, -3) || rel.startsWith(p.slice(0, -2)))) || globRe(p).test(rel);
+/** Repo-relative files the gate could compare: git's tracked + untracked-not-ignored files, else a bounded walk. */
+function repoFiles(target) {
+  const r = spawnSync("git", ["ls-files", "-z", "--cached", "--others", "--exclude-standard"], { cwd: target, encoding: "utf8" });
+  if (r.status === 0) return r.stdout.split("\0").filter(Boolean);
+  const out = [], walk = (dir, rel) => {
+    for (const e of fs.readdirSync(dir, { withFileTypes: true })) {
+      if (out.length >= 50000 || [".git", "node_modules"].includes(e.name)) continue;
+      const r2 = rel ? `${rel}/${e.name}` : e.name;
+      if (e.isDirectory()) { out.push(r2); walk(path.join(dir, e.name), r2); } else out.push(r2);
+    }
+  };
+  walk(target, "");
+  return out;
+}
+/** Warn when the developer-test paths the gate will guard match no files, so weakened tests would go unnoticed. */
+export function protectedWarnings(target, o, configExists) {
+  const out = [];
+  if (configExists) {
+    if (o.protectedPaths && o.protectedPaths.length) out.push(`${CONFIG} exists and is never overwritten; --protected was not applied. ` +
+      "Edit \"protected\" in that file in a reviewed change.");
+    return out;
+  }
+  const patterns = protectedFor(o), files = repoFiles(target);
+  const missing = patterns.filter((p) => !files.some((f) => matchesProtected(f, p)));
+  if (!missing.length) return out;
+  const inDir = (f, d) => f === d || f.startsWith(d + "/");
+  const found = COMMON_TEST_DIRS.filter((d) => files.some((f) => inDir(f, d)) && !files.some((f) => inDir(f, d) && patterns.some((p) => matchesProtected(f, p))));
+  out.push(`protected test path(s) ${missing.join(", ")} not found in the target (no matching files): edits that weaken your developer tests ` +
+    "would not be detected." + (found.length ? ` Found ${found.join(", ")}/; rerun with ${found.map((d) => `--protected "${d}/**"`).join(" ")}` +
+    " (on a first install) or edit \"protected\" in .golden-path/config.json." : " Pass --protected \"<your test folder>/**\"."));
+  return out;
+}
+
 export function install(target, o = {}) {
   const manPath = path.join(target, MANIFEST);
   const manifest = exists(manPath) ? JSON.parse(read(manPath)) : { files: {} };
@@ -142,6 +184,7 @@ export function install(target, o = {}) {
     else actions.push(["config", CONFIG]);
   }
   if (conflicts.length) { console.log("REFUSING: conflicts found, nothing written:\n  " + conflicts.join("\n  ")); return 2; }
+  if (level >= 2) for (const w of protectedWarnings(target, o, exists(cfgPath))) console.warn(`WARNING: ${w}`);
   if (o.dryRun) { console.log(actions.map(([a, r]) => `${a}: ${r}`).join("\n") || "nothing to do"); return 0; }
   for (const [rel, content] of Object.entries(files)) {
     const p = path.join(target, rel);
@@ -152,7 +195,7 @@ export function install(target, o = {}) {
   if (level >= 2 && !exists(cfgPath)) {
     write(cfgPath, JSON.stringify({ check: o.check,
       acceptance: { paths: o.acceptancePaths || [], owner: o.acceptanceOwner || "the acceptance owner", command: o.acceptanceCommand || null },
-      protected: ["tests/**"], max_blocks: 5, hook_budget_sec: 100 }, null, 2) + "\n");
+      protected: protectedFor(o), max_blocks: 5, hook_budget_sec: 100 }, null, 2) + "\n");
   }
   manifest.version = VERSION;
   manifest.level = level;
@@ -198,11 +241,12 @@ const BOOLS = { "--with-agent-preset": "agent", "--with-reviewer": "reviewer", "
   "--uninstall": "uninstall", "--force": "force", "--purge": "purge" };
 
 export function main(argv) {
-  const o = { acceptancePaths: [] };
+  const o = { acceptancePaths: [], protectedPaths: [] };
   for (let i = 0; i < argv.length; i++) {
     const a = argv[i];
     if (a in FLAGS) o[FLAGS[a]] = argv[++i];
     else if (a === "--acceptance-path") o.acceptancePaths.push(argv[++i]);
+    else if (a === "--protected") o.protectedPaths.push(argv[++i]);
     else if (a in BOOLS) o[BOOLS[a]] = true;
     else if (a === "-h" || a === "--help") { console.log("see the header of install.mjs"); return 0; }
     else { console.error(`unknown argument: ${a}`); return 64; }

@@ -64,6 +64,7 @@ create CODEOWNERS or change required checks, branch protection or review setting
 - **Protected-test checks are heuristics, not guarantees.**
   - The `preToolUse` guard denies edit tools and common shell mutations (`sed -i`, `rm`, redirects, `git checkout <ref>`…) on acceptance paths. It asks before edits to existing developer tests.
   - The stop gate fails if any acceptance file differs from the session's base commit, or if a protected test lost tests or assertions or gained skip markers.
+  - Developer tests are protected only where `protected` points (default `tests/**`; set it at first install with `--protected "test/**"`, repeatable). The installer warns when those paths don't exist: a pilot on a repo with `test/` showed that an agent could delete an assertion unnoticed under the default.
   - Determined workarounds exist: other tools, generated code, or special-casing the implementation. ImpossibleBench reports that read-only tests stop edits but not other exploits.
 - `method_files_present` (session start) records that the skill files existed and context was offered. **It does not show the agent read or followed the skill.**
 
@@ -90,6 +91,11 @@ The PR-base comparison blocks agent edits to protected acceptance tests. Legitim
 compared against, each check, whether protected acceptance changed (and who owns it), failing test names, and any
 revision authorisation or refusal. If the check produced no result, the summary says **UNVERIFIED**, never a pass.
 The summary is feedback for reviewers, not approval; the local ledger is never uploaded.
+
+**Project setup in CI.** The workflow runs your configured commands, so it sets up Node.js 24 and then runs
+`.golden-path/ci-setup.sh` if you add one (for example `pip install -r requirements.txt`, `dotnet restore`, a content
+import), or `npm ci --ignore-scripts` when there's a `package-lock.json`. Keep your setup in that script rather than
+editing the installed workflow, so reinstall and uninstall still recognise the kit file.
 
 Locally, the stop gate never skips: the agent can't revise acceptance tests.
 
