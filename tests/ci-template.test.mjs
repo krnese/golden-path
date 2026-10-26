@@ -38,6 +38,7 @@ describe("CI template: the project is set up before its own tests run", () => {
       check = y.indexOf("- name: Golden Path check");
     assert.ok(node > 0 && setup > node && check > setup, "order: setup-node, project setup, check");
     assert.match(y, /node-version: "24"/);
+    assert.match(y, /package-manager-cache: false/, "no automatic cache that fails without a root lockfile");
   });
   test("an adopter-owned .golden-path/ci-setup.sh wins, so the kit workflow stays unmodified", { skip: !BASH && "no bash" }, () => {
     const r = runSetup({ ".golden-path/ci-setup.sh": "echo custom-setup-ran\n", "package-lock.json": "{}" });

@@ -31,6 +31,8 @@ jobs:
       - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
           node-version: "24"
+          # No automatic npm cache: it fails without a root lockfile before .golden-path/ci-setup.sh can run.
+          package-manager-cache: false
       # The check runs YOUR commands, so install what they need first; without this, tests that import dependencies
       # fail and the verdict is FAILED. Put your own setup in .golden-path/ci-setup.sh (pip install, dotnet restore,
       # content import, ...) so this kit file stays unmodified; otherwise a package-lock.json gets `npm ci`.
