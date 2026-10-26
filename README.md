@@ -367,6 +367,7 @@ It is not this repository's [hygiene workflow](.github/workflows/golden-path.yml
 | Demo verification: [demo builder](examples/make-demo.mjs) and generated refusal scenario | Inside each Kit guarantees job; the bash wrapper is also checked on Linux | Part of the required matrix, not a separate required status | Frozen hashes verified, scripted edits refused, developer tests green. Enabled demo acceptance must be red because the baseline feature is unfinished; this is not a business implementation result. |
 | CI result summary: [test-summary.mjs](.github/scripts/test-summary.mjs) | After the kit test step, including when it fails | Reporting within the matrix, not an independent approval | TAP counts and test areas in the job summary. Inspect failed steps and logs too; the summary does not approve the outcome. |
 | Static landing page: [site workflow](.github/workflows/site.yml) | PRs and pushes affecting `site/**`, `README.md`, `docs/examples/golden-loop/**` or the workflow; pushes exclude `gh-pages`; also manual dispatch | Not currently a required status in `main` rules | Site tests, build and verifier on Ubuntu/Node 22. A green result is not a deployment. |
+| Golden Loop: [golden-loop workflow](.github/workflows/golden-loop.yml), [script](.github/scripts/golden-loop.mjs) | `golden-loop` issue closed; every PR event | Not a required status | Reopens an issue closed by a merged change before the owner's `Owner judgment: meets the need`. Fails a PR working on a `golden-loop` issue whose description lacks expected versus actual for every example. Runs the trusted script (default branch or PR base). Checks presence, not truth; see the [issue loop](docs/LEVEL-3-EXPERIMENTS.md#keep-the-golden-loop-in-the-issue). |
 
 Both push and PR events can produce check runs for the same commit. Read the PR's checks at the
 reviewed head revision; a prior local run or a different commit's green result is not its CI record.
@@ -410,8 +411,9 @@ the inventory in the same reviewed change. Useful read-only checks are `gh workf
 `gh api repos/krnese/golden-path/rules/branches/main`. Review and merge remain separate from
 business-owner judgment.
 
-The two checked-in workflows use `actions/checkout` and `actions/setup-node`, pinned to full commit
-SHAs, with `contents: read` and `persist-credentials: false`. These restrict the default token's
+The three checked-in workflows use `actions/checkout` and `actions/setup-node`, pinned to full commit
+SHAs, with `persist-credentials: false` and the narrowest token permissions each job needs
+(`contents: read`; the Golden Loop issue job alone has `issues: write`). These restrict the default token's
 scope and avoid leaving checkout credentials in git configuration; they do not make executed code
 safe. Review pin updates through normal PRs, checking the relevant upstream release and all workflow
 references, including the optional adopter template. The workflow files remain authoritative for pins.

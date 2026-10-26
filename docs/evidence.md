@@ -112,9 +112,12 @@ hooks are discarded. Copilot code review reported that it could not review the
 changed files. Actions runs on the agent's PR waited for the owner's approval,
 which is GitHub's default.
 
-**The owner's judgment of the template (E1–E3) is pending on #38.** These results
+**The owner's judgment of the template (E1–E3) was later recorded on #38 as "meets
+the need", and the owner then closed the issue.** These results
 show the loop can run in the cloud agent, not how reliably, and say nothing about
-code-quality risk.
+code-quality risk. The two handoff failures led to the repository's
+[Golden Loop workflow](LEVEL-3-EXPERIMENTS.md#keep-the-golden-loop-in-the-issue),
+which has not yet been tried in a live loop.
 
 ## External sources
 

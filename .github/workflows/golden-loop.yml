@@ -1,0 +1,63 @@
+name: Golden Loop
+
+# Keeps the owner's decision in the Golden Loop (see docs/LEVEL-3-EXPERIMENTS.md).
+# Both jobs run the trusted script: issue events use the default branch; PR events check out the
+# PR's base commit, so a PR cannot change the check that judges it.
+on:
+  issues:
+    types: [closed]
+  pull_request:
+    types: [opened, edited, synchronize, reopened, ready_for_review]
+
+permissions: {}
+
+jobs:
+  owner-decision:
+    name: "Golden Loop: reopen if closed before the owner's judgment"
+    if: github.event_name == 'issues' && contains(github.event.issue.labels.*.name, 'golden-loop')
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      issues: write
+    concurrency:
+      group: golden-loop-issue-${{ github.event.issue.number }}
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1
+        with:
+          node-version: "22"
+      - name: Reopen if a merged change closed it before the owner's judgment
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          ISSUE: ${{ github.event.issue.number }}
+        run: node .github/scripts/golden-loop.mjs issue-closed --repo "$GITHUB_REPOSITORY" --issue "$ISSUE"
+
+  evidence:
+    name: "Golden Loop: evidence on the PR"
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: read
+      issues: read
+      pull-requests: read
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          ref: ${{ github.event.pull_request.base.sha }}
+          persist-credentials: false
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1
+        with:
+          node-version: "22"
+      - name: Check expected versus actual for each example in the PR description
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          PR: ${{ github.event.pull_request.number }}
+        run: |
+          if [ ! -f .github/scripts/golden-loop.mjs ]; then
+            echo "::notice::The Golden Loop script is not on the base branch yet; nothing to check."
+            exit 0
+          fi
+          node .github/scripts/golden-loop.mjs pr-evidence --repo "$GITHUB_REPOSITORY" --pr "$PR"

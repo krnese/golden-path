@@ -7,6 +7,18 @@ History of the kit. The current way to adopt it is in the [README](README.md); t
 
 ## Unreleased
 
+- **Golden Loop: the owner's decision stays in the loop, and agent evidence must reach the PR.** A cloud-agent
+  trial (#38 → #39) showed two failures at the handoff to review: the agent's per-example evidence stayed in its
+  session log, and a platform-added `Fixes #38` closed the issue on merge before the owner had judged it. The
+  skill's Report step now asks for the report in the PR description and for `Refs #N` instead of a closing
+  keyword. This repository adds a PR template, the `golden-loop` label on its issue template, and a
+  [Golden Loop workflow](.github/workflows/golden-loop.yml) that reopens a `golden-loop` issue closed by a merged
+  change before the owner's `Owner judgment: meets the need`, and fails a PR working on such an issue whose
+  description lacks expected versus actual for every example. It runs the trusted script (default branch or PR
+  base), is not a required status, and checks the presence of evidence, not its truth. Replayed against #38's
+  real history it would have reopened the issue; it is not yet tried in a live loop. New tests:
+  `tests/golden-loop.test.mjs`.
+
 - **Installer: `--protected` for developer tests outside `tests/`, and a warning when they'd go unguarded.**
   A pilot on an existing repository whose tests live in `test/` showed that with the default `tests/**` an agent
   could edit or weaken developer tests unnoticed (no `ask`, no weakening block). `--protected "<glob>"`
