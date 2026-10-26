@@ -350,11 +350,83 @@ selects or switches the model; that is the host's job. L2 checks run the same re
 - **[Connecting your own reasoning boundaries](docs/examples/hybrid-workflow.md)**: one adopter's workflow
   (own agents → PR → Copilot → reviewable PR → human merge) mapped onto Golden Path levels and files.
 
+## How we maintain this repository
+
+**These checks maintain the Golden Path kit; they do not establish that an adopter's business
+requirements are met.** The optional [adopter workflow](plugin/extras/workflows/golden-path-check.yml)
+installed by `--with-ci` runs that project's configured commands and acceptance against its PR base.
+It is not this repository's [hygiene workflow](.github/workflows/golden-path.yml).
+
+### Checks, evidence and limits
+
+| Action and source | When it runs | Required or advisory | Evidence and limit |
+| --- | --- | --- | --- |
+| Local guard and stop gate: [hook registration](.github/hooks/golden-path-loop.json), [configuration](.golden-path/config.json) | Tool calls and session completion in a supporting client; `check --base` can also run manually | Local feedback, not merge authority | Guard messages and local gate outcomes. The fast check runs packaging, installer and self-install tests, not the full CI suite. Protection is heuristic and retries/timeouts are bounded. |
+| Patch hygiene: [hygiene workflow](.github/workflows/golden-path.yml), `git diff --check` | Push, PR and manual workflow dispatch | Required status check on `main` | Whitespace verdict against the event baseline; latest-commit fallback when there is no event base. It does not check engineering quality or business acceptance. |
+| Kit guarantees: [hygiene workflow](.github/workflows/golden-path.yml) | Push, PR and manual dispatch; Ubuntu/Windows with Node 22/24 | All four matrix checks required on `main` | Full kit tests, installed-copy consistency and demo checks. Test results cover specified mechanisms, not universal reliability. |
+| Demo verification: [demo builder](examples/make-demo.mjs) and generated refusal scenario | Inside each Kit guarantees job; the bash wrapper is also checked on Linux | Part of the required matrix, not a separate required status | Frozen hashes verified, scripted edits refused, developer tests green. Enabled demo acceptance must be red because the baseline feature is unfinished; this is not a business implementation result. |
+| CI result summary: [test-summary.mjs](.github/scripts/test-summary.mjs) | After the kit test step, including when it fails | Reporting within the matrix, not an independent approval | TAP counts and test areas in the job summary. Inspect failed steps and logs too; the summary does not approve the outcome. |
+| Static landing page: [site workflow](.github/workflows/site.yml) | PRs and pushes affecting `site/**`, `README.md`, `docs/examples/golden-loop/**` or the workflow; pushes exclude `gh-pages`; also manual dispatch | Not currently a required status in `main` rules | Site tests, build and verifier on Ubuntu/Node 22. A green result is not a deployment. |
+
+Both push and PR events can produce check runs for the same commit. Read the PR's checks at the
+reviewed head revision; a prior local run or a different commit's green result is not its CI record.
+This repository's local configuration protects `tests/**` but has **no business acceptance paths
+or acceptance command**. A green gate therefore does not mean business acceptance was exercised.
+
+### Reproduce checks and update generated files
+
+Run from the repository root with Node.js 22+ and git. These PowerShell commands check whitespace
+and run the configured fast check plus integrity checks against the fetched default-branch baseline:
+
+```powershell
+git fetch origin main
+git diff --check
+node .github\hooks\golden-path\gate.mjs check --base origin/main
+```
+
+Run each command only after the preceding command succeeds. The gate's manual comparison base is
+not a replacement for the session-start baseline used by the stop hook. For the full kit test list,
+self-install tests and demo commands, use the [hygiene workflow](.github/workflows/golden-path.yml);
+for site commands use the [website maintainer guide](site/README.md#build-and-verify).
+
+`plugin/` is the source of truth for installed kit files. After changing it, regenerate with
+`node plugin/install.mjs --target .`, include the generated changes in the same reviewed change,
+and run `node --test tests/self-install.test.mjs`. Do not hand-edit the installed copies.
+If the installer refuses a locally modified managed file, resolve the source/copy difference
+explicitly rather than overwriting it or weakening the consistency test.
+
+### Review rules and workflow maintenance
+
+**Live settings checked on 26 October 2026:** `main` requires a PR, the
+`Patch hygiene: no whitespace errors` check and the four `Kit guarantees` checks
+(Ubuntu/Windows, Node 22/24). Automatic Copilot review is configured. Required approving reviews
+are **zero**, and Code Owner approval is **not required**, deliberately for this single-maintainer
+repository. CODEOWNERS routes ownership; its existence alone does not enforce owner approval.
+See the [single-maintainer explanation](docs/LEVEL-2.md#code-owner-review-for-single-maintainer-repos).
+This snapshot is not a claim that all administrator or ruleset bypass paths were audited.
+
+When changing governance, verify live settings rather than relying on this snapshot, and update
+the inventory in the same reviewed change. Useful read-only checks are `gh workflow list` and
+`gh api repos/krnese/golden-path/rules/branches/main`. Review and merge remain separate from
+business-owner judgment.
+
+The two checked-in workflows use `actions/checkout` and `actions/setup-node`, pinned to full commit
+SHAs, with `contents: read` and `persist-credentials: false`. These restrict the default token's
+scope and avoid leaving checkout credentials in git configuration; they do not make executed code
+safe. Review pin updates through normal PRs, checking the relevant upstream release and all workflow
+references, including the optional adopter template. The workflow files remain authoritative for pins.
+
+GitHub-managed Copilot review, Copilot cloud-agent and Pages workflows also appear in Actions;
+they are platform integrations, not additional checked-in hygiene YAML. Website publication is
+a separately authorized operation documented in [Publish on GitHub Pages](site/README.md#publish-on-github-pages).
+Site checks neither publish the site nor authorize merge or deployment.
+
 ## Documentation
 
 | Document | What it covers |
 | --- | --- |
 | [Your first task](docs/USER-GUIDE.md) | What to tell Copilot, how to agree examples and how to look at the result |
+| [How we maintain this repository](#how-we-maintain-this-repository) | Local checks, required CI, evidence, review settings, generated copies and workflow maintenance |
 | [Website](site/README.md) | Build and publish the one-page static site; connect a custom domain |
 | [Adoption checklist](docs/ADOPTION.md) | From installation to verified owner-controlled acceptance in your repository |
 | [Level 2 reference: checked completion](docs/LEVEL-2.md) | Gate behavior, protected paths, CI and authorized acceptance revisions |

@@ -433,6 +433,9 @@ The private demo repository used in the trial was generated without the optional
 verdicts were reproduced afterwards with `gate.mjs check --base`, not by a required check. An adopter who wants the
 anchor described above has to configure it.
 
+That is a historical snapshot. The [maintainer inventory](../README.md#how-we-maintain-this-repository)
+records the currently checked workflows and dated live settings, including their limits.
+
 ## 8. Local, cloud and hybrid models
 
 *Current implementation (recommend-only) and design position.*

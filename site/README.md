@@ -123,7 +123,9 @@ source branch so the new user-guide link resolves. Once merged, rebuild using
 the default `main` reference. This does not change the GitHub Pages URL.
 
 [The site workflow](../.github/workflows/site.yml) checks PRs and source pushes;
-it does not grant deployment or merge authority.
+it does not grant deployment or merge authority. See the
+[repository maintainer inventory](../README.md#how-we-maintain-this-repository)
+for its triggers, required-check status and relationship to the kit's CI.
 
 ## Move to golden-path.io
 
