@@ -37,6 +37,7 @@ nav a { text-decoration: none; color: var(--muted); }
 .hero { padding-block: 16px 40px; }
 .hero-copy { max-width: 880px; margin-inline: auto; text-align: center; }
 .eyebrow { font-size: .7rem; font-weight: 650; letter-spacing: .12em; line-height: 1.7; }
+.hero-copy > .eyebrow { color: var(--brand); margin-bottom: 8px; }
 h1 { font-size: clamp(1.8rem, 3vw, 2.4rem); font-weight: 600; line-height: 1.18; letter-spacing: -.025em; margin: 0 0 10px; }
 h1 em { font-style: normal; color: var(--brand); }
 .hero-intro { font-size: 1rem; color: var(--muted); max-width: 710px; margin-inline: auto; }
@@ -234,7 +235,7 @@ td span { display: block; font-size: .83rem; color: var(--muted); margin-top: 4p
   .preview { display: none; }
   .brand { font-size: 1.05rem; gap: 7px; }
   .brand img { width: 28px; }
-  .hero { padding-block: 16px 32px; }
+  .hero { padding-block: 0 32px; }
   .hero-intro { font-size: .92rem; }
   .desktop-break { display: none; }
   h1 em { display: block; }
