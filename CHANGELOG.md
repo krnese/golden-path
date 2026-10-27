@@ -17,6 +17,9 @@ History of the kit. The current way to adopt it is in the [README](README.md); t
   "not applicable". Double-backtick code spans and other repositories' `owner/repo#N` references are ignored.
   The second cloud-agent trial (#42 → #43), which used the first version, is recorded in
   [docs/evidence.md](docs/evidence.md). New tests: `tests/golden-loop-review.test.mjs`; existing tests unchanged.
+  A further review on #44 tightened the table parser: Expected, Actual and the example must be distinct
+  columns, rows without outer pipes count, formatted placeholders (`**TBD**`, `` `…` ``) don't, and an unmatched
+  backtick no longer hides a real reference. New tests: `tests/golden-loop-parser.test.mjs`.
 
 - **Golden Loop: the owner's decision stays in the loop, and agent evidence must reach the PR.** A cloud-agent
   trial (#38 → #39) showed two failures at the handoff to review: the agent's per-example evidence stayed in its

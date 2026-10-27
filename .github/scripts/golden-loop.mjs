@@ -57,11 +57,12 @@ export function latestJudgment(comments, owners, asOf) {
 }
 
 // Code is not instruction: GitHub ignores closing keywords in code, and so do we. Inline spans may use
-// any run of backticks (``Fixes #38``), closed by the same run.
+// any run of backticks (``Fixes #38``), closed by the same run. A run must start at a run boundary, so an
+// unmatched delimiter stays literal text and cannot swallow a real reference that follows it.
 export function stripCode(text) {
   return lines(text)
     .replace(/^(`{3,}|~{3,})[^\n]*\n[\s\S]*?^\1[^\n]*$/gm, "")
-    .replace(/(`+)(?!`)[^\n]*?(?<!`)\1(?!`)/g, "");
+    .replace(/(?<!`)(`+)(?!`)[^\n]*?(?<!`)\1(?!`)/g, "");
 }
 
 // A reference to another repository (other/repo#38) is not this repository's #38.
@@ -91,10 +92,33 @@ function cells(row) {
   return r.split(/(?<!\\)\|/).map((c) => c.trim());
 }
 const PLACEHOLDER = /^(?:[-–—…?.\s]*|tbd|todo)$/i;
+// Formatting is not content: **TBD**, `…` and _TBD_ are still placeholders. Only used for this test, so code
+// content in a filled-in cell is kept.
+const normalized = (v) => String(v ?? "").replace(/(`+)([\s\S]*?)\1/g, "$2").replace(/[*_~]/g, "").trim();
+const placeholder = (v) => PLACEHOLDER.test(normalized(v));
 
-// Evidence is a table with Expected and Actual columns. An example counts as covered only when its ID is in
-// the table's example column and both its Expected and Actual cells are filled in. IDs in prose, in HTML
-// comments or in an empty template row do not count.
+// GFM tables: a header row with pipes, a delimiter row with the same number of cells, then rows (outer pipes
+// optional) until a blank line or another block starts.
+const DELIMITER = /^\s*\|?\s*:?-{3,}:?\s*(?:\|\s*:?-{3,}:?\s*)*\|?\s*$/;
+const BLOCK_START = /^\s*(?:#{1,6}\s|>|`{3,}|~{3,}|[-*+]\s|\d+[.)]\s)/;
+
+// Pick distinct columns: Expected, Actual (preferring headers that name only one of them), and the example ID.
+function columns(head) {
+  const pick = (want, avoid, taken) => {
+    const open = head.map((h, i) => i).filter((i) => !taken.includes(i) && want.test(head[i]));
+    return open.find((i) => !avoid.test(head[i])) ?? open[0] ?? -1;
+  };
+  const ei = pick(/expected/i, /actual/i, []);
+  const ai = pick(/actual/i, /expected/i, [ei]);
+  if (ei < 0 || ai < 0) return null;
+  const rest = head.map((h, i) => i).filter((i) => i !== ei && i !== ai);
+  const xi = rest.find((i) => /example/i.test(head[i])) ?? rest[0];
+  return xi === undefined ? null : { ei, ai, xi };
+}
+
+// Evidence is a table with distinct Expected and Actual columns. An example counts as covered only when its ID is
+// in the table's example column and both its Expected and Actual cells are filled in. IDs in prose, in HTML
+// comments, in an empty template row or next to formatted placeholders do not count.
 export function evidenceCheck(prBody, ids) {
   const rows = lines(prBody).replace(/<!--[\s\S]*?-->/g, "").split("\n");
   const filled = new Set();
@@ -102,21 +126,22 @@ export function evidenceCheck(prBody, ids) {
   let hasTable = false;
   let anyFilled = false;
   for (let i = 0; i + 1 < rows.length; i++) {
-    if (!/^\s*\|/.test(rows[i]) || !/^\s*\|?\s*:?-{3,}/.test(rows[i + 1])) continue;
+    if (!/(?<!\\)\|/.test(rows[i]) || !DELIMITER.test(rows[i + 1])) continue;
     const head = cells(rows[i]);
-    const ei = head.findIndex((h) => /expected/i.test(h));
-    const ai = head.findIndex((h) => /actual/i.test(h));
-    if (ei < 0 || ai < 0) continue;
+    if (cells(rows[i + 1]).length !== head.length) continue;
+    const col = columns(head);
+    if (!col) continue;
     hasTable = true;
-    const xi = Math.max(0, head.findIndex((h) => /example/i.test(h)));
-    for (let j = i + 2; j < rows.length && /^\s*\|/.test(rows[j]); j++) {
+    let j = i + 2;
+    for (; j < rows.length && rows[j].trim() && !BLOCK_START.test(rows[j]); j++) {
       const c = cells(rows[j]);
-      const complete = [c[ei], c[ai]].every((v) => v && !PLACEHOLDER.test(v));
+      const complete = [c[col.ei], c[col.ai]].every((v) => v && !placeholder(v));
       anyFilled ||= complete;
       for (const id of ids) {
-        if (new RegExp(`\\b${id}\\b`).test(c[xi] ?? "")) (complete ? filled : empty).add(id);
+        if (new RegExp(`\\b${id}\\b`).test(c[col.xi] ?? "")) (complete ? filled : empty).add(id);
       }
     }
+    i = j - 1;
   }
   const missing = ids.filter((id) => !filled.has(id));
   const ok = hasTable && missing.length === 0 && (ids.length > 0 || anyFilled);
