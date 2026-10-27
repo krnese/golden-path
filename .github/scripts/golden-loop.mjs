@@ -120,19 +120,27 @@ function columns(head) {
 // - fenced code blocks (``` or ~~~, three or more, any info string, up to the closing fence or the end) are code;
 // - HTML comments are hidden, across lines, and an unterminated <!-- hides everything to the end;
 // - a <!-- inside an inline code span is code, not a comment, so the span is kept as written.
+// In a table row GitHub splits the row into cells first and finds code spans within each cell, so a backtick in one
+// cell cannot pair with one in another; outside tables a code span may contain a pipe.
 const FENCE_OPEN = /^ {0,3}(`{3,}(?=[^`]*$)|~{3,})/;
+const PIPE = /(?<!\\)\|/;
 export function visibleLines(body) {
   const out = [];
+  const raw = lines(body).split("\n");
   let fence = null;
   let comment = false;
-  for (const line of lines(body).split("\n")) {
+  let table = false;
+  for (let n = 0; n < raw.length; n++) {
+    const line = raw[n];
     if (fence) {
       if (new RegExp(`^ {0,3}${fence[0]}{${fence.length},}[ \\t]*$`).test(line)) fence = null;
       out.push("");
       continue;
     }
     const f = !comment && line.match(FENCE_OPEN);
-    if (f) { fence = f[1]; out.push(""); continue; }
+    if (f) { fence = f[1]; table = false; out.push(""); continue; }
+    if (!line.trim() || BLOCK_START.test(line)) table = false;
+    else if (!table && PIPE.test(line) && DELIMITER.test(raw[n + 1] ?? "")) table = true;
     let text = "";
     let k = 0;
     while (k < line.length) {
@@ -145,10 +153,13 @@ export function visibleLines(body) {
       }
       const run = line.slice(k).match(/^`+/)?.[0];
       if (run) {
+        const from = k + run.length;
+        const cellEnd = table ? line.slice(from).search(PIPE) : -1;
+        const limit = cellEnd < 0 ? line.length : from + cellEnd;
         const close = new RegExp(`(?<!\`)${run}(?!\`)`, "g");
-        close.lastIndex = k + run.length;
+        close.lastIndex = from;
         const m = close.exec(line);
-        const stop = m ? m.index + run.length : k + run.length;
+        const stop = m && m.index < limit ? m.index + run.length : from;
         text += line.slice(k, stop);
         k = stop;
         continue;

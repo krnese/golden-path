@@ -13,7 +13,10 @@ History of the kit. The current way to adopt it is in the [README](README.md); t
   a cell is visible output, and an unterminated `<!--` hides everything after it, as on GitHub. Tables inside
   fenced code blocks (backticks or tildes, any length, with or without an info string) are code, not
   evidence; inline-code cells outside fences are kept. New tests: `tests/golden-loop-parser-gfm.test.mjs`;
-  existing tests unchanged.
+  existing tests unchanged. Copilot's review of #45 then showed that a backtick in one table cell could pair
+  with a backtick in another and hide a comment that leaves Actual empty. In table rows, code spans now stay
+  within their cell, as on GitHub; prose outside tables is unchanged. New tests:
+  `tests/golden-loop-parser-cells.test.mjs`.
 
 - **Golden Loop: fix the six review findings on #41; a PR can no longer change the check that judges it.**
   The evidence check now runs on `pull_request_target`, so the workflow file and the script both come from the
