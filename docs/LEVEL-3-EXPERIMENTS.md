@@ -102,22 +102,35 @@ the issue. Merging closed the issue before the owner had recorded a judgment
 the Golden Loop template get the `golden-loop` label, and the
 [Golden Loop workflow](../.github/workflows/golden-loop.yml) does two things:
 
-- **Reopens a `golden-loop` issue closed by a merged change** unless the named
-  owner has already commented `Owner judgment: meets the need`. It then asks the
-  owner to record "meets the need", "needs revision" or "cannot yet judge", and to
-  close the issue themselves. Closing an issue directly is always respected.
+- **Reopens a `golden-loop` issue closed by a merged change** unless the owner,
+  named in the issue by @username, has already commented `Owner judgment: meets the need`.
+  It then asks the owner to record "meets the need", "needs revision" or "cannot yet
+  judge", and to close the issue themselves. Closing an issue directly is always
+  respected. If no owner is named by @username, no judgment is recognised: a
+  collaborator's comment cannot stand in for the owner.
 - **Checks the evidence on a PR that works on a `golden-loop` issue** (a `Refs`,
-  `Part of` or closing reference, or a link in the Development sidebar). The PR
-  description needs a table with Expected and Actual columns naming every example
-  ID, such as E1. A missing table or example fails the check and names what is
-  missing. A closing keyword produces a warning. The check is not a required
-  status: it makes missing evidence visible, it does not judge it.
+  `Part of` or closing reference, or a link in the Development sidebar). Every
+  example ID, such as E1, needs a row in a table with Expected and Actual columns,
+  with both cells filled in. An empty template row, a placeholder such as "TBD", or
+  an ID mentioned only in prose does not count. A failure names what is missing; an
+  issue that can't be looked up is reported as UNVERIFIED and fails. A closing
+  keyword produces a warning. The check is not a required status: it makes missing
+  evidence visible, it does not judge it.
+
+**A PR cannot change the check that judges it.** The check uses the
+`pull_request_target` event, so the workflow file and the script both come from the
+base branch, and it checks out only the base commit with a read-only token. No code
+from the PR runs. The first version used `pull_request`, which takes the workflow
+file from the PR itself, so a PR could have turned the check into a no-op. Copilot's
+review of #41 found this, together with five smaller gaps, and all six are fixed and
+covered by `tests/golden-loop-review.test.mjs`.
 
 So the owner can either judge before merging, in which case closing on merge is
 harmless, or judge after, and the issue will be waiting for them. The check
 inspects the presence of evidence, not its truth: the owner still compares it with
 the actual result. Both behaviors are covered by `tests/golden-loop.test.mjs`,
-which uses the shapes of #38 and #39 from the trial.
+which uses the shapes of #38 and #39 from the trial, and were observed live in the
+[second trial](evidence.md#cloud-agent-golden-loop-trial-2-2026-10-26).
 
 **Agent evidence must reach the PR.** In the same trial, the agent's per-example
 evidence and its warning about the closing link appeared only in its session log,

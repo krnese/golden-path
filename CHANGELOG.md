@@ -7,6 +7,20 @@ History of the kit. The current way to adopt it is in the [README](README.md); t
 
 ## Unreleased
 
+- **Golden Loop: fix the six review findings on #41; a PR can no longer change the check that judges it.**
+  The evidence check now runs on `pull_request_target`, so the workflow file and the script both come from the
+  base branch; it checks out only the base commit with a read-only token and runs no PR code. The first version
+  used `pull_request`, which takes the workflow file from the PR, so a PR could have made the check a no-op.
+  Evidence now requires a table row per example with Expected and Actual filled in: the unchanged template row,
+  placeholders and IDs mentioned only in prose no longer count. Without an owner named by @username, no judgment
+  is recognised (the issue template now asks for one). Issue lookup failures are UNVERIFIED and fail instead of
+  "not applicable". Double-backtick code spans and other repositories' `owner/repo#N` references are ignored.
+  The second cloud-agent trial (#42 → #43), which used the first version, is recorded in
+  [docs/evidence.md](docs/evidence.md). New tests: `tests/golden-loop-review.test.mjs`; existing tests unchanged.
+  A further review on #44 tightened the table parser: Expected, Actual and the example must be distinct
+  columns, rows without outer pipes count, formatted placeholders (`**TBD**`, `` `…` ``) don't, and an unmatched
+  backtick no longer hides a real reference. New tests: `tests/golden-loop-parser.test.mjs`.
+
 - **Golden Loop: the owner's decision stays in the loop, and agent evidence must reach the PR.** A cloud-agent
   trial (#38 → #39) showed two failures at the handoff to review: the agent's per-example evidence stayed in its
   session log, and a platform-added `Fixes #38` closed the issue on merge before the owner had judged it. The
@@ -16,7 +30,8 @@ History of the kit. The current way to adopt it is in the [README](README.md); t
   change before the owner's `Owner judgment: meets the need`, and fails a PR working on such an issue whose
   description lacks expected versus actual for every example. It runs the trusted script (default branch or PR
   base), is not a required status, and checks the presence of evidence, not its truth. Replayed against #38's
-  real history it would have reopened the issue; it is not yet tried in a live loop. New tests:
+  real history it would have reopened the issue. (Superseded in part by the entry above: the PR trigger let a
+  PR change the workflow file.) New tests:
   `tests/golden-loop.test.mjs`.
 
 - **Installer: `--protected` for developer tests outside `tests/`, and a warning when they'd go unguarded.**

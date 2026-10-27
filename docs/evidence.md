@@ -116,8 +116,41 @@ which is GitHub's default.
 the need", and the owner then closed the issue.** These results
 show the loop can run in the cloud agent, not how reliably, and say nothing about
 code-quality risk. The two handoff failures led to the repository's
-[Golden Loop workflow](LEVEL-3-EXPERIMENTS.md#keep-the-golden-loop-in-the-issue),
-which has not yet been tried in a live loop.
+[Golden Loop workflow](LEVEL-3-EXPERIMENTS.md#keep-the-golden-loop-in-the-issue).
+
+## Cloud-agent Golden Loop trial 2 (2026-10-26)
+
+**With the Golden Loop workflow in place, the full loop ran end to end and the
+owner's decision was enforced, not just described.** One task, one run,
+documentation only. Times are UTC; Oslo time is one hour later.
+
+Issue [#42](https://github.com/krnese/golden-path/issues/42) (labelled
+`golden-loop`: explain in the first-task guide how owners record a judgment) was
+assigned to the Copilot cloud agent at 14:11.
+
+| Time | What happened, from GitHub's records |
+| --- | --- |
+| 14:11 and 14:12 | The evidence check failed twice on the agent's early versions of draft PR [#43](https://github.com/krnese/golden-path/pull/43) |
+| 14:12–14:13 | After the agent's further updates, the check passed. The final description has expected versus actual for E1–E3, and the diff contains exactly the quoted text. Whether the agent reacted to the failures or simply finished its description is not established |
+| 14:23:12 | The owner merged #43. The platform-added `Fixes #42` closed the issue |
+| 14:23:22 | The workflow reopened #42, 10 seconds later, and asked the owner for a judgment |
+| 14:25:52 | The owner commented `Owner judgment: meets the need` |
+| 14:26:37 | The owner closed #42 |
+
+The agent wrote `Refs #42`; the platform still appended `Fixes #42`, so the reopen
+was the safeguard that kept the owner's decision in the loop.
+
+**A gap found after the trial:** that run used the first version of the workflow,
+triggered by `pull_request`. Copilot's review of #41 showed that a PR could change
+that workflow file and turn the evidence check into a no-op, and that an empty
+template row counted as evidence. Neither happened in trial 2, which the records
+above show, but the check could not yet have resisted them. Both are fixed, with
+four smaller gaps, and covered by `tests/golden-loop-review.test.mjs`.
+
+These results show the loop *can* run end to end with the owner's decision
+enforced, on one documentation task. They do not show reliability across many
+runs, behavior on code changes, or that the evidence is true; the owner still
+compared it with the change.
 
 ## External sources
 

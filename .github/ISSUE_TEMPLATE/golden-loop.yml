@@ -13,7 +13,7 @@ body:
     id: owner
     attributes:
       label: Named owner
-      description: Who will answer questions and decide whether the result is good enough? Name a person or their @username.
+      description: Who will decide whether the result is good enough? Give their GitHub @username, for example @your-name. Only that person's judgment closes the loop.
     validations:
       required: true
   - type: textarea
