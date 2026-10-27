@@ -42,3 +42,46 @@ describe("Review of #45: prose outside tables is unchanged", () => {
     assert.equal(evidenceCheck(body, ["E1", "E2"]).ok, true);
   });
 });
+
+describe("Review of #45: recognised delimiter rows keep table-cell boundaries", () => {
+  for (const header of ["| Example | Expected | Actual | Notes |", "Example | Expected | Actual | Notes"]) {
+    for (const delimiter of ["- | - | - | -", "- | :-: | -: | -"]) {
+      test(`${header} followed by ${delimiter} keeps hidden Actual empty`, () => {
+        const head = `${header}\n${delimiter}\n`;
+        const r = evidenceCheck(head + "| E1 | `six | <!-- hidden result --> | six` |", ["E1"]);
+        assert.equal(r.hasTable, true);
+        assert.equal(r.ok, false);
+        assert.deepEqual(r.missing, ["E1"]);
+        assert.deepEqual(r.empty, ["E1"]);
+        assert.equal(evidenceCheck(head + "| E1 | Six | `<!-- retained -->` | Notes |", ["E1"]).ok, true);
+      });
+    }
+  }
+});
+
+describe("Review of #45: only visible, matching headers start table mode", () => {
+  const prose = "Use `a | <!-- b` here.";
+  test("a hidden separator ends the table before following prose", () => {
+    const body = `${HEAD}${ROW}\n<!-- hidden separator -->\n${prose}\n\n${HEAD}| E2 | Six | Six |`;
+    assert.equal(evidenceCheck(body, ["E1", "E2"]).ok, true);
+    assert.ok(visibleLines(body).includes(prose));
+  });
+  for (const header of ["| Hidden | Header |", "| Hidden | Header | Extra | Cell |"]) {
+    test(`a mismatched header ${header} does not change following prose`, () => {
+      const body = `${header}\n| --- | --- | --- |\n${prose}\n\n${HEAD}${ROW}`;
+      assert.equal(evidenceCheck(body, ["E1"]).ok, true);
+      assert.equal(visibleLines(body)[2], prose);
+    });
+  }
+  for (const hidden of [
+    "<!--\nHidden | Header | Cells\n--- | --- | ---\n-->",
+    "<!-- Hidden | Header | Cells\n--- | --- | ---\n-->",
+    "<!-- Hidden | Header | Cells -->\n--- | --- | ---",
+  ]) {
+    test(`a hidden header ${JSON.stringify(hidden)} does not change following prose`, () => {
+      const body = `${hidden}\n${prose}\n\n${HEAD}${ROW}`;
+      assert.equal(evidenceCheck(body, ["E1"]).ok, true);
+      assert.ok(visibleLines(body).includes(prose));
+    });
+  }
+});

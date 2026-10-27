@@ -124,12 +124,16 @@ function columns(head) {
 // cell cannot pair with one in another; outside tables a code span may contain a pipe.
 const FENCE_OPEN = /^ {0,3}(`{3,}(?=[^`]*$)|~{3,})/;
 const PIPE = /(?<!\\)\|/;
+function tableHeader(row, delimiter) {
+  return PIPE.test(row) && DELIMITER.test(delimiter) && cells(row).length === cells(delimiter).length;
+}
 export function visibleLines(body) {
   const out = [];
   const raw = lines(body).split("\n");
   let fence = null;
   let comment = false;
   let table = false;
+  let delimiterRow = -1;
   for (let n = 0; n < raw.length; n++) {
     const line = raw[n];
     if (fence) {
@@ -139,8 +143,9 @@ export function visibleLines(body) {
     }
     const f = !comment && line.match(FENCE_OPEN);
     if (f) { fence = f[1]; table = false; out.push(""); continue; }
-    if (!line.trim() || BLOCK_START.test(line)) table = false;
-    else if (!table && PIPE.test(line) && DELIMITER.test(raw[n + 1] ?? "")) table = true;
+    if (!line.trim() || (n !== delimiterRow && BLOCK_START.test(line))) table = false;
+    const next = raw[n + 1] ?? "";
+    const header = !table && !comment && tableHeader(line, next);
     let text = "";
     let k = 0;
     while (k < line.length) {
@@ -154,7 +159,7 @@ export function visibleLines(body) {
       const run = line.slice(k).match(/^`+/)?.[0];
       if (run) {
         const from = k + run.length;
-        const cellEnd = table ? line.slice(from).search(PIPE) : -1;
+        const cellEnd = table || header ? line.slice(from).search(PIPE) : -1;
         const limit = cellEnd < 0 ? line.length : from + cellEnd;
         const close = new RegExp(`(?<!\`)${run}(?!\`)`, "g");
         close.lastIndex = from;
@@ -167,6 +172,11 @@ export function visibleLines(body) {
       if (line.startsWith("<!--", k)) { comment = true; k += 4; continue; }
       text += line[k++];
     }
+    if (header && !comment && tableHeader(text, next)) {
+      table = true;
+      delimiterRow = n + 1;
+    }
+    if (!text.trim()) table = false;
     out.push(text);
   }
   return out;
@@ -182,9 +192,8 @@ export function evidenceCheck(prBody, ids) {
   let hasTable = false;
   let anyFilled = false;
   for (let i = 0; i + 1 < rows.length; i++) {
-    if (!/(?<!\\)\|/.test(rows[i]) || !DELIMITER.test(rows[i + 1])) continue;
+    if (!tableHeader(rows[i], rows[i + 1])) continue;
     const head = cells(rows[i]);
-    if (cells(rows[i + 1]).length !== head.length) continue;
     const col = columns(head);
     if (!col) continue;
     hasTable = true;

@@ -16,7 +16,10 @@ History of the kit. The current way to adopt it is in the [README](README.md); t
   existing tests unchanged. Copilot's review of #45 then showed that a backtick in one table cell could pair
   with a backtick in another and hide a comment that leaves Actual empty. In table rows, code spans now stay
   within their cell, as on GitHub; prose outside tables is unchanged. New tests:
-  `tests/golden-loop-parser-cells.test.mjs`.
+  `tests/golden-loop-parser-cells.test.mjs`. Further review tightened table-mode boundaries: recognised
+  delimiter rows retain table mode even with single hyphens and omitted outer pipes, and only visible
+  headers with matching delimiter cell counts can start it. Hidden separators end table mode so later
+  prose keeps its inline-code handling. Added regressions preserve all existing tests.
 
 - **Golden Loop: fix the six review findings on #41; a PR can no longer change the check that judges it.**
   The evidence check now runs on `pull_request_target`, so the workflow file and the script both come from the
