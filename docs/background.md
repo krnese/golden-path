@@ -347,11 +347,11 @@ the owner, and no productivity measurement.** The agent never tried to change ac
 the scripted scenario and kit tests, not by the trial. Details:
 [the golden loop, end to end](examples/golden-loop/README.md).
 
-![Golden Path overview: business functions, shared acceptance record, coding agent, pull request, durable boundary, outcomes, golden loop](assets/golden-path-overview.png)
+![Golden Path: different experiences express intent; an engineering contract guides bounded implementation and evidence; accountable owners judge the result and shape the next intent](assets/golden-path-overview.png)
 
-*The overview shows the target model. Each element is checked against the kit in
-[overview-claims.md](overview-claims.md); "any harness, any model" and the golden loop beyond the one trial are
-labelled there as not yet validated.*
+*The overview maps responsibilities, not required software layers. Each element is checked against the kit in
+[overview-claims.md](overview-claims.md). Copilot observations include the demo and later cloud-agent
+documentation trials; broader experience and runtime portability remain to be tested.*
 
 ## 7. Separate the interface from the authority
 
