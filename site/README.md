@@ -41,6 +41,12 @@ No external fonts, Fluent runtime, new vendor assets or dependencies are loaded.
 
 ## Page acceptance and manual review
 
+- Keep the positioning aligned with the repository: "Connect intent to accountable
+  engineering." appears above the short promise and in page/social titles.
+  Explain the engineering agreement through agreeing what matters, working within
+  it and returning evidence for judgement. Existing records hold the agreement;
+  the requester and decision owner can differ. The invoice is one concrete
+  walkthrough, not a claim that every experience or runtime has been verified.
 - The hero has one AI-led promise, two short sentences and one visible
   "Try your first task" action. Installation and partnership details belong in
   setup, after the enlarged real before/after evidence.
