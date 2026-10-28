@@ -26,7 +26,7 @@ const git = (root, ...args) => {
   return r.stdout.trim();
 };
 function repository(files = {}) {
-  const root = fs.mkdtempSync(path.join(os.tmpdir(), "gp-adoption-"));
+  const root = fs.realpathSync.native(fs.mkdtempSync(path.join(os.tmpdir(), "gp-adoption-")));
   scratch.push(root);
   git(root, "init", "-q");
   git(root, "config", "core.autocrlf", "false");
