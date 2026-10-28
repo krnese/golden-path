@@ -1,11 +1,12 @@
 ---
 name: golden-path
-description: 'Use for delegated engineering work where a business-context expert owns the intent and the acceptance tests: implement within the boundary, pass the protected acceptance tests without changing them, and report evidence and any delegation change.'
+description: 'Use for Golden Path setup and adoption in new or existing repositories, and delegated engineering work: preserve owner-approved acceptance, implement within the boundary, and return evidence for owner judgment.'
 ---
 
 # Golden Path
 
 A way of working with the agent you already have. It grants no authority. See [method](references/METHOD.md).
+For first use, setup or adoption, follow [guided adoption](references/ADOPTION.md); reuse existing controls.
 
 1. **Intent**: restate the outcome the expert wants, in their terms. Ask only questions that change the next step.
 2. **Context**: use the authoritative sources the expert or repo names (issues, docs, policies, existing code). Do not invent requirements.

@@ -7,6 +7,27 @@ History of the kit. The current way to adopt it is in the [README](README.md); t
 
 ## Unreleased
 
+- **Minimal greenfield GitHub starter template.** Generate a clean, method-only
+  application starting point with `node examples/make-starter.mjs "<empty-dir>"`.
+  It reuses the Level 1 installer, includes the copied kit's license notice and
+  first-task guidance, and refuses nonempty destinations. It contains no kit
+  development tree, sample acceptance, fictional owners, runtime dependencies
+  or fake passing checks. The README now distinguishes the dedicated GitHub
+  template for greenfield adoption from installation into existing repositories.
+  New `tests/starter.test.mjs` cases cover contents, reproducibility, refusal,
+  licensing and reviewed upgrades. Installer block updates also consume CRLF
+  separators correctly, avoiding spurious trailing blank lines on Windows.
+
+- **Guided adoption for new and existing applications.** The existing skill now
+  guides one task-first setup journey, reusing current tests, CI and ownership.
+  `gate.mjs adoption --target "<repo>" [--github] [--json]` provides read-only
+  configuration evidence with verified/missing/unverified findings and next steps.
+  Optional GitHub inspection reads default-branch rules and legacy protection;
+  no project commands, settings changes, state writes or business approval are
+  implied. Method-only installs remain code-free and checked installs keep one
+  script. Document application-template guidance and normal-install Golden Loop
+  limits. New `tests/adoption.test.mjs` cases run in the existing CI matrix.
+
 - **Golden Loop: the evidence check reads tables as GitHub renders them.** Copilot's last review of #44 found
   three parser gaps. A GFM delimiter cell may have a single hyphen (`| - | - | - |`), so a valid filled table
   is no longer reported missing. HTML comments are found outside inline code only: `` `<!-- retained -->` `` in

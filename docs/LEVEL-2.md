@@ -29,6 +29,13 @@ already has a config, an authorized maintainer must review and change it explici
 approved configuration and acceptance, then start a new agent session. The installer also does not
 create CODEOWNERS or change required checks, branch protection or review settings.
 
+For guided setup without changing anything, use
+`node .github/hooks/golden-path/gate.mjs adoption` (PowerShell:
+`node .github\hooks\golden-path\gate.mjs adoption`). Add `--json` for structured
+evidence or `--github` for authenticated read-only default-branch inspection.
+This diagnostic never runs project commands or establishes overall protection.
+See the [adoption report](ADOPTION.md#read-only-adoption-report) for scope and exit codes.
+
 ## Other ways to install
 
 - **Copy by hand:**

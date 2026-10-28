@@ -64,7 +64,7 @@ jobs:
           node --test
           --test-reporter=spec --test-reporter-destination=stdout
           --test-reporter=tap --test-reporter-destination="$RUNNER_TEMP/kit.tap"
-          tests/kit.test.mjs tests/feedback-loop.test.mjs tests/installer-protected.test.mjs tests/installer-protected-match.test.mjs tests/ci-template.test.mjs tests/golden-loop.test.mjs tests/golden-loop-review.test.mjs tests/golden-loop-parser.test.mjs tests/golden-loop-parser-gfm.test.mjs tests/golden-loop-parser-cells.test.mjs tests/golden-loop-parser-boundaries.test.mjs
+          tests/kit.test.mjs tests/feedback-loop.test.mjs tests/installer-protected.test.mjs tests/installer-protected-match.test.mjs tests/ci-template.test.mjs tests/golden-loop.test.mjs tests/golden-loop-review.test.mjs tests/golden-loop-parser.test.mjs tests/golden-loop-parser-gfm.test.mjs tests/golden-loop-parser-cells.test.mjs tests/golden-loop-parser-boundaries.test.mjs tests/adoption.test.mjs tests/starter.test.mjs
       - name: Installed kit in this repo matches plugin/ (self-install)
         shell: bash
         run: node --test --test-reporter=spec tests/self-install.test.mjs
