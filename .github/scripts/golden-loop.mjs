@@ -127,8 +127,9 @@ const PIPE = /(?<!\\)\|/;
 function tableHeader(row, delimiter) {
   return PIPE.test(row) && DELIMITER.test(delimiter) && cells(row).length === cells(delimiter).length;
 }
-export function visibleLines(body) {
+function visibleDocument(body) {
   const out = [];
+  const headers = new Set();
   const raw = lines(body).split("\n");
   let fence = null;
   let comment = false;
@@ -175,24 +176,28 @@ export function visibleLines(body) {
     if (header && !comment && tableHeader(text, next)) {
       table = true;
       delimiterRow = n + 1;
+      headers.add(n);
     }
     if (!text.trim()) table = false;
     out.push(text);
   }
-  return out;
+  return { rows: out, headers };
+}
+export function visibleLines(body) {
+  return visibleDocument(body).rows;
 }
 
 // Evidence is a table with distinct Expected and Actual columns. An example counts as covered only when its ID is
 // in the table's example column and both its Expected and Actual cells are filled in. IDs in prose, in HTML
 // comments, in an empty template row or next to formatted placeholders do not count.
 export function evidenceCheck(prBody, ids) {
-  const rows = visibleLines(prBody);
+  const { rows, headers } = visibleDocument(prBody);
   const filled = new Set();
   const empty = new Set();
   let hasTable = false;
   let anyFilled = false;
   for (let i = 0; i + 1 < rows.length; i++) {
-    if (!tableHeader(rows[i], rows[i + 1])) continue;
+    if (!headers.has(i)) continue;
     const head = cells(rows[i]);
     const col = columns(head);
     if (!col) continue;

@@ -19,7 +19,9 @@ History of the kit. The current way to adopt it is in the [README](README.md); t
   `tests/golden-loop-parser-cells.test.mjs`. Further review tightened table-mode boundaries: recognised
   delimiter rows retain table mode even with single hyphens and omitted outer pipes, and only visible
   headers with matching delimiter cell counts can start it. Hidden separators end table mode so later
-  prose keeps its inline-code handling. Added regressions preserve all existing tests.
+  prose keeps its inline-code handling. Visibility and evidence now reuse the same recognised headers, so
+  removing a hidden pipe cannot repair an invalid header and count prose as evidence. New regressions in
+  `tests/golden-loop-parser-boundaries.test.mjs` run in the CI matrix; existing tests are unchanged.
 
 - **Golden Loop: fix the six review findings on #41; a PR can no longer change the check that judges it.**
   The evidence check now runs on `pull_request_target`, so the workflow file and the script both come from the
