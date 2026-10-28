@@ -1,0 +1,33 @@
+:root {
+  color-scheme: dark;
+  font-family: var(--font-sans, "Segoe UI", system-ui, sans-serif);
+  --ink: light-dark(#16233b, #f3f6ff);
+  --muted: light-dark(#4c5d78, #b7c3d9);
+  --paper: light-dark(#f3f6fc, #0c1323);
+  --surface: light-dark(#ffffff, #161f33);
+  --raised: light-dark(#edf2fb, #1d2941);
+  --line: light-dark(#ced7e7, #35435f);
+  --control-line: light-dark(#71809b, #7183a6);
+  --accent: light-dark(#00677b, #67e5f4);
+  --accent-hover: light-dark(#005466, #96eff9);
+  --on-accent: light-dark(#ffffff, #071a26);
+  --soft: light-dark(#e6f6fa, #123142);
+  --violet: light-dark(#6240a2, #c2a8ff);
+  --violet-soft: light-dark(#f0eafa, #2b2544);
+  --gold: light-dark(#805609, #f6cf65);
+  --gold-soft: light-dark(#fff5dc, #332c1c);
+  --focus: light-dark(#6741b6, #c2a8ff);
+  --danger: light-dark(#982f3f, #ffb4b1);
+  --danger-soft: light-dark(#fff0f2, #3a222e);
+  --danger-line: light-dark(#ae4151, #ee9697);
+  --cyan-glow: light-dark(#dceef580, #12466255);
+  --violet-glow: light-dark(#e6def540, #45366c33);
+  color: var(--ink);
+  background: var(--paper);
+}
+body {
+  background:
+    radial-gradient(ellipse at 10% 0%, var(--cyan-glow), transparent 55%),
+    radial-gradient(ellipse at 100% 10%, var(--violet-glow), transparent 45%),
+    var(--paper);
+}

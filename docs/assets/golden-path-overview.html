@@ -4,41 +4,56 @@
 <meta charset="utf-8">
 <title>Golden Path: intent to accountable engineering</title>
 <style>
+:root {
+  color-scheme: dark;
+  --paper: #0c1323;
+  --surface: #161f33;
+  --ink: #f3f6ff;
+  --muted: #b7c3d9;
+  --line: #35435f;
+  --cyan: #67e5f4;
+  --cyan-soft: #123142;
+  --violet: #c2a8ff;
+  --violet-soft: #2b2544;
+  --gold: #f6cf65;
+  --gold-soft: #332c1c;
+}
 * { box-sizing: border-box; }
-body { margin: 0; background: #fff; color: #1f2328; font-family: "Segoe UI", Arial, sans-serif; }
+body { margin: 0; background: radial-gradient(ellipse at 10% 0%, #12466255, transparent 55%), radial-gradient(ellipse at 100% 10%, #45366c33, transparent 45%), var(--paper); color: var(--ink); font-family: "Segoe UI", Arial, sans-serif; }
 main { position: relative; width: 1800px; height: 1160px; }
 h1 { position: absolute; left: 60px; top: 28px; margin: 0; font-size: 42px; }
-.subtitle { position: absolute; left: 60px; top: 88px; margin: 0; font-size: 25px; color: #57606a; }
-.card { position: absolute; border: 2px solid #d0d7de; border-radius: 16px; background: #fff; overflow: hidden; }
-.card h2 { margin: 0; padding: 17px 22px; background: #24292f; color: #fff; font-size: 25px; }
+.subtitle { position: absolute; left: 60px; top: 88px; margin: 0; font-size: 25px; color: var(--muted); }
+.card { position: absolute; border: 2px solid var(--line); border-radius: 16px; background: var(--surface); overflow: hidden; }
+.card h2 { margin: 0; padding: 17px 22px; background: var(--violet-soft); color: var(--violet); font-size: 25px; }
 .body { padding: 16px 22px; font-size: 22px; line-height: 1.4; }
 .body p { margin: 0 0 12px; }
 .body ul { margin: 0; padding-left: 23px; }
 .body li { margin-bottom: 10px; }
-.small { font-size: 19px; color: #57606a; }
+.small { font-size: 19px; color: var(--muted); }
 .origin { top: 155px; height: 190px; }
-.origin h2 { background: #eef6fc; color: #005a9e; }
+.origin h2 { background: var(--violet-soft); color: var(--violet); }
 .origin .body { padding-top: 12px; }
 .experiences { left: 65px; width: 750px; }
 .intent { left: 885px; width: 860px; }
-.lane { position: absolute; left: 40px; top: 385px; width: 1370px; height: 565px; border: 2px dashed #0078d4; border-radius: 20px; background: #f6f8fa; }
-.lane h2 { margin: 20px 24px; font-size: 24px; color: #005a9e; }
+.lane { position: absolute; left: 40px; top: 385px; width: 1370px; height: 565px; border: 2px dashed var(--cyan); border-radius: 20px; background: var(--cyan-soft); }
+.lane h2 { margin: 20px 24px; font-size: 24px; color: var(--cyan); }
 .lane h2 span { margin-left: 60px; font-size: 20px; font-weight: 400; }
 .stage { top: 460px; height: 350px; }
-.contract { left: 65px; width: 500px; border-color: #0078d4; }
-.contract h2 { background: #005a9e; }
+.contract { left: 65px; width: 500px; border-color: var(--cyan); }
+.contract h2 { background: var(--cyan-soft); color: var(--cyan); }
 .contract .body { font-size: 21px; }
 .implementation { left: 635px; width: 340px; }
-.evidence { left: 1045px; width: 340px; border-color: #1a7f37; }
-.evidence h2 { background: #1a7f37; }
-.judgement { left: 1455px; width: 290px; height: 440px; border-color: #8250df; }
-.judgement h2 { background: #6639ba; }
+.evidence { left: 1045px; width: 340px; border-color: var(--cyan); }
+.evidence h2 { background: var(--cyan-soft); color: var(--cyan); }
+.judgement { left: 1455px; width: 290px; height: 440px; border-color: var(--gold); }
+.judgement h2 { background: var(--gold-soft); color: var(--gold); }
 .judgement .body { font-size: 21px; }
-.arrow { position: absolute; top: 600px; font-size: 42px; color: #57606a; }
-.controls { position: absolute; left: 65px; top: 835px; width: 1320px; height: 90px; border: 1px solid #d0d7de; border-radius: 12px; background: #fff; padding: 12px 20px; text-align: center; font-size: 21px; line-height: 1.4; }
+.arrow { position: absolute; top: 600px; font-size: 42px; color: var(--cyan); }
+.controls { position: absolute; left: 65px; top: 835px; width: 1320px; height: 90px; border: 1px solid var(--line); border-radius: 12px; background: var(--surface); padding: 12px 20px; text-align: center; font-size: 21px; line-height: 1.4; }
 .controls strong { display: block; }
-.loop { position: absolute; left: 315px; top: 985px; width: 1140px; padding: 8px 18px; border: 2px solid #1a7f37; border-radius: 12px; background: #fff; text-align: center; font-size: 22px; line-height: 1.4; }
-.footer { position: absolute; left: 65px; top: 1090px; width: 1680px; margin: 0; text-align: center; font-size: 19px; line-height: 1.4; color: #57606a; }
+.loop { position: absolute; left: 315px; top: 985px; width: 1140px; padding: 8px 18px; border: 2px solid var(--gold); border-radius: 12px; background: var(--gold-soft); text-align: center; font-size: 22px; line-height: 1.4; }
+.loop strong { color: var(--gold); }
+.footer { position: absolute; left: 65px; top: 1090px; width: 1680px; margin: 0; text-align: center; font-size: 19px; line-height: 1.4; color: var(--muted); }
 .connectors { position: absolute; inset: 0; pointer-events: none; }
 </style>
 </head>
@@ -69,14 +84,14 @@ h1 { position: absolute; left: 60px; top: 28px; margin: 0; font-size: 42px; }
   <svg class="connectors" width="1800" height="1160" aria-hidden="true">
     <defs>
       <marker id="ingress" markerWidth="10" markerHeight="10" refX="9" refY="5" orient="auto">
-        <path d="M0,0 L10,5 L0,10 Z" fill="#0078d4"/>
+        <path d="M0,0 L10,5 L0,10 Z" fill="#67e5f4"/>
       </marker>
       <marker id="feedback" markerWidth="10" markerHeight="10" refX="9" refY="5" orient="auto">
-        <path d="M0,0 L10,5 L0,10 Z" fill="#1a7f37"/>
+        <path d="M0,0 L10,5 L0,10 Z" fill="#f6cf65"/>
       </marker>
     </defs>
-    <path d="M1315,345 L1315,370 L315,370 L315,458" fill="none" stroke="#0078d4" stroke-width="3" marker-end="url(#ingress)"/>
-    <path d="M1600,902 L1600,1025 L50,1025 L50,235 L63,235" fill="none" stroke="#1a7f37" stroke-width="3" stroke-dasharray="10 7" marker-end="url(#feedback)"/>
+    <path d="M1315,345 L1315,370 L315,370 L315,458" fill="none" stroke="#67e5f4" stroke-width="3" marker-end="url(#ingress)"/>
+    <path d="M1600,902 L1600,1025 L50,1025 L50,235 L63,235" fill="none" stroke="#f6cf65" stroke-width="3" stroke-dasharray="10 7" marker-end="url(#feedback)"/>
   </svg>
 
   <section class="card stage contract">

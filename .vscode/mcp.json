@@ -1,0 +1,15 @@
+{
+  "servers": {
+    "golden-path-experience-preview": {
+      "type": "stdio",
+      "command": "node",
+      "args": [
+        "${workspaceFolder}/examples/mcp-app/server.mjs",
+        "--target",
+        "${workspaceFolder}",
+        "--state",
+        "${workspaceFolder}/.local/mcp-app/architecture.json"
+      ]
+    }
+  }
+}

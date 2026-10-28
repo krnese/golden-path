@@ -1,0 +1,33 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Golden Path / MCP Apps experience preview</title>
+  <!-- THEME -->
+  <style>
+    body { margin: 0; font: 13px "Segoe UI", system-ui, sans-serif; }
+    header { max-width: 1160px; margin: 0 auto; padding: 16px 24px; }
+    header p { margin: 6px 0; line-height: 1.6; }
+    summary { cursor: pointer; min-height: 32px; display: list-item; padding: 6px 0; }
+    header strong { color: var(--accent); }
+    :focus-visible { outline: 3px solid var(--focus); outline-offset: 3px; }
+    iframe { display: block; width: min(100% - 32px, 1120px); height: 1500px; margin: 0 auto 32px; border: 1px solid var(--line); border-radius: 12px; background: var(--paper); box-shadow: 0 16px 60px #00000026; }
+    @media (max-width: 600px) { header { padding: 12px 16px; } iframe { width: calc(100% - 16px); } }
+    #host-status { overflow-wrap: anywhere; }
+    [role=alert] { color: var(--danger); }
+  </style>
+</head>
+<body data-view="<!-- VIEW -->">
+  <header>
+    <strong>Experience preview</strong> · Local example, not VS Code
+    <details>
+      <summary>About this preview</summary>
+      <p>This is the real app, MCP server and SDK bridge in a sandboxed iframe. It does not establish native-client compatibility. Draft edits affect only the selected isolated example model. No reasoning agent runs here.</p>
+      <p id="host-status" role="status">Starting the app...</p>
+    </details>
+  </header>
+  <iframe id="app" title="Golden Path review workspace" sandbox="allow-scripts"></iframe>
+  <!-- SCRIPT -->
+</body>
+</html>

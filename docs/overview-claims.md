@@ -7,6 +7,9 @@ Every element of [`docs/assets/golden-path-overview.png`](assets/golden-path-ove
 responsibilities, not required software layers or a universal intent format. Its broader experience and runtime
 claims are design aims, not demonstrated portability. Test names are in `tests/kit.test.mjs` unless noted.
 
+The navy/cyan/violet/gold styling matches the optional visual-review prototype. This is a presentation
+change only: the diagram's responsibilities, evidence limits and authority boundaries are unchanged.
+
 | Element | Status | Backing |
 |---|---|---|
 | Experiences: developer, business, knowledge worker, operator | Illustrative starting points; not four verified integrations | [Background](background.md#7-separate-the-interface-from-the-authority) states the design position. No experience adapters ship in the kit. |

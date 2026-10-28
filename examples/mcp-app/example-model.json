@@ -1,0 +1,43 @@
+{
+  "schemaVersion": 1,
+  "kind": "isolated-example",
+  "revision": 0,
+  "title": "Making Golden Path decisions inspectable",
+  "requirements": [
+    {
+      "id": "R1",
+      "status": "draft",
+      "text": "Let a person inspect requirements and assumptions, revise a draft, and return the change to the agent's reasoning.",
+      "rationale": "Validate whether direct manipulation makes consequential assumptions easier to notice than a chat-only exchange.",
+      "componentIds": ["app", "server", "state"]
+    },
+    {
+      "id": "R2",
+      "status": "baseline",
+      "text": "Do not change real owner-approved acceptance or approval records through this experience prototype.",
+      "rationale": "The example is not business acceptance. Editing a draft does not grant authority to approve, merge or deploy.",
+      "componentIds": ["server", "state"]
+    }
+  ],
+  "assumptions": [
+    {
+      "id": "A1",
+      "status": "draft",
+      "text": "A structured review will reduce clarification rounds compared with a chat-only interaction.",
+      "rationale": "Unproved. Compare real review sessions before making a productivity claim.",
+      "requirementIds": ["R1"]
+    },
+    {
+      "id": "A2",
+      "status": "baseline",
+      "text": "A successful local browser preview does not establish native VS Code MCP Apps compatibility.",
+      "rationale": "The renderer, discovery and permission path must be tested in the signed-in client separately.",
+      "requirementIds": ["R1", "R2"]
+    }
+  ],
+  "components": [
+    { "id": "app", "name": "MCP App view", "responsibility": "Inspect and edit a proposal; never decide business approval." },
+    { "id": "server", "name": "Target-bound MCP server", "responsibility": "Read the same model for chat and UI; validate draft-only, revision-checked writes." },
+    { "id": "state", "name": "Local example JSON model", "responsibility": "Persist the shared state. It is not a real acceptance or approval record." }
+  ]
+}
