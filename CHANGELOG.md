@@ -7,6 +7,22 @@ History of the kit. The current way to adopt it is in the [README](README.md); t
 
 ## Unreleased
 
+- **Golden Loop: the evidence check reads tables as GitHub renders them.** Copilot's last review of #44 found
+  three parser gaps. A GFM delimiter cell may have a single hyphen (`| - | - | - |`), so a valid filled table
+  is no longer reported missing. HTML comments are found outside inline code only: `` `<!-- retained -->` `` in
+  a cell is visible output, and an unterminated `<!--` hides everything after it, as on GitHub. Tables inside
+  fenced code blocks (backticks or tildes, any length, with or without an info string) are code, not
+  evidence; inline-code cells outside fences are kept. New tests: `tests/golden-loop-parser-gfm.test.mjs`;
+  existing tests unchanged. Copilot's review of #45 then showed that a backtick in one table cell could pair
+  with a backtick in another and hide a comment that leaves Actual empty. In table rows, code spans now stay
+  within their cell, as on GitHub; prose outside tables is unchanged. New tests:
+  `tests/golden-loop-parser-cells.test.mjs`. Further review tightened table-mode boundaries: recognised
+  delimiter rows retain table mode even with single hyphens and omitted outer pipes, and only visible
+  headers with matching delimiter cell counts can start it. Hidden separators end table mode so later
+  prose keeps its inline-code handling. Visibility and evidence now reuse the same recognised headers, so
+  removing a hidden pipe cannot repair an invalid header and count prose as evidence. New regressions in
+  `tests/golden-loop-parser-boundaries.test.mjs` run in the CI matrix; existing tests are unchanged.
+
 - **Golden Loop: fix the six review findings on #41; a PR can no longer change the check that judges it.**
   The evidence check now runs on `pull_request_target`, so the workflow file and the script both come from the
   base branch; it checks out only the base commit with a read-only token and runs no PR code. The first version

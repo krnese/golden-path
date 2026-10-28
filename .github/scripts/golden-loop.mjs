@@ -98,8 +98,8 @@ const normalized = (v) => String(v ?? "").replace(/(`+)([\s\S]*?)\1/g, "$2").rep
 const placeholder = (v) => PLACEHOLDER.test(normalized(v));
 
 // GFM tables: a header row with pipes, a delimiter row with the same number of cells, then rows (outer pipes
-// optional) until a blank line or another block starts.
-const DELIMITER = /^\s*\|?\s*:?-{3,}:?\s*(?:\|\s*:?-{3,}:?\s*)*\|?\s*$/;
+// optional) until a blank line or another block starts. A delimiter cell is one or more hyphens (`| - | :-: |`).
+const DELIMITER = /^\s*\|?\s*:?-+:?\s*(?:\|\s*:?-+:?\s*)*\|?\s*$/;
 const BLOCK_START = /^\s*(?:#{1,6}\s|>|`{3,}|~{3,}|[-*+]\s|\d+[.)]\s)/;
 
 // Pick distinct columns: Expected, Actual (preferring headers that name only one of them), and the example ID.
@@ -116,19 +116,89 @@ function columns(head) {
   return xi === undefined ? null : { ei, ai, xi };
 }
 
+// The lines GitHub renders as text, with what it does not show as a table blanked out:
+// - fenced code blocks (``` or ~~~, three or more, any info string, up to the closing fence or the end) are code;
+// - HTML comments are hidden, across lines, and an unterminated <!-- hides everything to the end;
+// - a <!-- inside an inline code span is code, not a comment, so the span is kept as written.
+// In a table row GitHub splits the row into cells first and finds code spans within each cell, so a backtick in one
+// cell cannot pair with one in another; outside tables a code span may contain a pipe.
+const FENCE_OPEN = /^ {0,3}(`{3,}(?=[^`]*$)|~{3,})/;
+const PIPE = /(?<!\\)\|/;
+function tableHeader(row, delimiter) {
+  return PIPE.test(row) && DELIMITER.test(delimiter) && cells(row).length === cells(delimiter).length;
+}
+function visibleDocument(body) {
+  const out = [];
+  const headers = new Set();
+  const raw = lines(body).split("\n");
+  let fence = null;
+  let comment = false;
+  let table = false;
+  let delimiterRow = -1;
+  for (let n = 0; n < raw.length; n++) {
+    const line = raw[n];
+    if (fence) {
+      if (new RegExp(`^ {0,3}${fence[0]}{${fence.length},}[ \\t]*$`).test(line)) fence = null;
+      out.push("");
+      continue;
+    }
+    const f = !comment && line.match(FENCE_OPEN);
+    if (f) { fence = f[1]; table = false; out.push(""); continue; }
+    if (!line.trim() || (n !== delimiterRow && BLOCK_START.test(line))) table = false;
+    const next = raw[n + 1] ?? "";
+    const header = !table && !comment && tableHeader(line, next);
+    let text = "";
+    let k = 0;
+    while (k < line.length) {
+      if (comment) {
+        const end = line.indexOf("-->", k);
+        if (end < 0) { k = line.length; break; }
+        comment = false;
+        k = end + 3;
+        continue;
+      }
+      const run = line.slice(k).match(/^`+/)?.[0];
+      if (run) {
+        const from = k + run.length;
+        const cellEnd = table || header ? line.slice(from).search(PIPE) : -1;
+        const limit = cellEnd < 0 ? line.length : from + cellEnd;
+        const close = new RegExp(`(?<!\`)${run}(?!\`)`, "g");
+        close.lastIndex = from;
+        const m = close.exec(line);
+        const stop = m && m.index < limit ? m.index + run.length : from;
+        text += line.slice(k, stop);
+        k = stop;
+        continue;
+      }
+      if (line.startsWith("<!--", k)) { comment = true; k += 4; continue; }
+      text += line[k++];
+    }
+    if (header && !comment && tableHeader(text, next)) {
+      table = true;
+      delimiterRow = n + 1;
+      headers.add(n);
+    }
+    if (!text.trim()) table = false;
+    out.push(text);
+  }
+  return { rows: out, headers };
+}
+export function visibleLines(body) {
+  return visibleDocument(body).rows;
+}
+
 // Evidence is a table with distinct Expected and Actual columns. An example counts as covered only when its ID is
 // in the table's example column and both its Expected and Actual cells are filled in. IDs in prose, in HTML
 // comments, in an empty template row or next to formatted placeholders do not count.
 export function evidenceCheck(prBody, ids) {
-  const rows = lines(prBody).replace(/<!--[\s\S]*?-->/g, "").split("\n");
+  const { rows, headers } = visibleDocument(prBody);
   const filled = new Set();
   const empty = new Set();
   let hasTable = false;
   let anyFilled = false;
   for (let i = 0; i + 1 < rows.length; i++) {
-    if (!/(?<!\\)\|/.test(rows[i]) || !DELIMITER.test(rows[i + 1])) continue;
+    if (!headers.has(i)) continue;
     const head = cells(rows[i]);
-    if (cells(rows[i + 1]).length !== head.length) continue;
     const col = columns(head);
     if (!col) continue;
     hasTable = true;
