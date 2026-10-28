@@ -41,7 +41,7 @@ for (const [theme, index] of [["light", 2], ["dark", 3]]) {
 
 test("all built views embed the same theme without an external stylesheet dependency", () => {
   assert.match(css, /color-scheme: dark;/);
-  for (const name of ["architecture", "app", "host"]) {
+  for (const name of ["architecture", "app", "engineering", "host"]) {
     const html = fs.readFileSync(new URL(`../dist/${name}.html`, import.meta.url), "utf8");
     assert.ok(html.includes(`<style>${css}</style>`), `${name} is missing the shared theme`);
     assert.doesNotMatch(html, /<!-- THEME -->|<link\b[^>]*rel=["']stylesheet/);

@@ -4,12 +4,13 @@ import http from "node:http";
 import { fileURLToPath } from "node:url";
 import { Client } from "@modelcontextprotocol/client";
 import { StdioClientTransport } from "@modelcontextprotocol/client/stdio";
-import { DIRECTORY, RESOURCE, TOOL, ARCHITECTURE_RESOURCE, READ_MODEL, UPDATE_MODEL, optionsFromArgs } from "./server.mjs";
+import { DIRECTORY, RESOURCE, TOOL, ARCHITECTURE_RESOURCE, READ_MODEL, UPDATE_MODEL, ENGINEERING_RESOURCE, INSPECT_SESSION, optionsFromArgs } from "./server.mjs";
+import { inspectionInput } from "./engineering-schema.mjs";
 
-export async function startPreview(target, port = 4328, state) {
+export async function startPreview(target, port = 4328, state, session) {
   const client = new Client({ name: "golden-path-local-preview", version: "0.1.0" });
   await client.connect(new StdioClientTransport({
-    command: process.execPath, args: [path.join(DIRECTORY, "server.mjs"), "--target", target, ...(state ? ["--state", state] : [])],
+    command: process.execPath, args: [path.join(DIRECTORY, "server.mjs"), "--target", target, ...(state ? ["--state", state] : []), ...(session ? ["--session", session] : [])],
     stderr: "inherit",
   }));
   const server = http.createServer(async (req, res) => {
@@ -26,9 +27,9 @@ export async function startPreview(target, port = 4328, state) {
         res.setHeader("Content-Type", "text/html; charset=utf-8");
         res.setHeader("Content-Security-Policy", "default-src 'none'; script-src 'unsafe-inline'; style-src 'unsafe-inline'; frame-src 'self'; connect-src 'self'; frame-ancestors 'none'");
         res.end(fs.readFileSync(path.join(DIRECTORY, "dist", "host.html"), "utf8")
-          .replace("<!-- VIEW -->", state ? "architecture" : "adoption"));
+          .replace("<!-- VIEW -->", session ? "engineering" : state ? "architecture" : "adoption"));
       } else if (req.method === "GET" && req.url === "/app") {
-        const uri = state ? ARCHITECTURE_RESOURCE : RESOURCE;
+        const uri = session ? ENGINEERING_RESOURCE : state ? ARCHITECTURE_RESOURCE : RESOURCE;
         const resource = await client.readResource({ uri });
         const html = resource.contents.find((c) => c.uri === uri && typeof c.text === "string");
         if (!html) throw new Error("MCP server did not return the app resource.");
@@ -38,6 +39,11 @@ export async function startPreview(target, port = 4328, state) {
       } else if (req.method === "POST" && req.url === "/report") {
         res.setHeader("Content-Type", "application/json");
         res.end(JSON.stringify(await client.callTool({ name: TOOL, arguments: {} })));
+      } else if (session && req.method === "GET" && req.url.startsWith("/engineering?")) {
+        const query = new URL(req.url, `http://${authority}`).searchParams;
+        const args = inspectionInput.parse(Object.fromEntries(query));
+        res.setHeader("Content-Type", "application/json");
+        res.end(JSON.stringify(await client.callTool({ name: INSPECT_SESSION, arguments: args })));
       } else if (state && req.method === "GET" && req.url === "/model") {
         res.setHeader("Content-Type", "application/json");
         res.end(JSON.stringify(await client.callTool({ name: READ_MODEL, arguments: {} })));
@@ -85,8 +91,8 @@ export async function startPreview(target, port = 4328, state) {
 
 if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
   try {
-    const { target, state } = optionsFromArgs(process.argv.slice(2));
-    const preview = await startPreview(target, 4328, state);
+    const { target, state, session } = optionsFromArgs(process.argv.slice(2));
+    const preview = await startPreview(target, 4328, state, session);
     console.log(`Golden Path MCP Apps preview: ${preview.url}`);
     for (const signal of ["SIGINT", "SIGTERM"]) process.once(signal, () => {
       preview.close().catch((error) => { console.error(error.message); process.exitCode = 1; });

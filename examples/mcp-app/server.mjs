@@ -9,6 +9,8 @@ import { z } from "zod";
 import { adoptionReport } from "../../plugin/scripts/gate.mjs";
 import { readArchitecture, updateDraft } from "./architecture-state.mjs";
 import { modelSchema, updateSchema } from "./architecture-model.mjs";
+import { inspectEngineering } from "./engineering-report.mjs";
+import { inspectionInput, inspectionSchema, sessionIdSchema } from "./engineering-schema.mjs";
 
 export const TOOL = "inspect_golden_path_adoption";
 export const RESOURCE = "ui://golden-path/adoption.html";
@@ -16,17 +18,21 @@ export const DIRECTORY = path.dirname(fileURLToPath(import.meta.url));
 export const ARCHITECTURE_RESOURCE = "ui://golden-path/architecture.html";
 export const READ_MODEL = "inspect_architecture";
 export const UPDATE_MODEL = "update_architecture_draft";
+export const ENGINEERING_RESOURCE = "ui://golden-path/engineering.html";
+export const INSPECT_SESSION = "inspect_engineering_session";
 
 export function optionsFromArgs(args) {
-  const { values } = parseArgs({ args, options: { target: { type: "string" }, state: { type: "string" } }, allowPositionals: false });
+  const { values } = parseArgs({ args, options: { target: { type: "string" }, state: { type: "string" }, session: { type: "string" } }, allowPositionals: false });
   if (!values.target) throw new Error("Usage: node server.mjs --target <application-repository>");
   const target = fs.realpathSync(values.target);
   if (!fs.statSync(target).isDirectory()) throw new Error(`Not a directory: ${target}`);
   const state = values.state ? readArchitecture(values.state).statePath : undefined;
-  return { target, state };
+  const session = values.session ? sessionIdSchema.parse(values.session) : undefined;
+  if (state && session) throw new Error("Choose either an isolated architecture example or an engineering session.");
+  return { target, state, session };
 }
 
-export function createServer(target, { state } = {}) {
+export function createServer(target, { state, session } = {}) {
   const server = new McpServer({ name: "golden-path-adoption-prototype", version: "0.1.0" });
   registerAppTool(server, TOOL, {
     title: "Inspect Golden Path adoption",
@@ -65,6 +71,28 @@ export function createServer(target, { state } = {}) {
     contents: [{
       uri: RESOURCE, mimeType: RESOURCE_MIME_TYPE,
       text: fs.readFileSync(path.join(DIRECTORY, "dist", "app.html"), "utf8"),
+      _meta: { ui: { csp: { connectDomains: [], resourceDomains: [] }, prefersBorder: true } },
+    }],
+  }));
+  registerAppTool(server, INSPECT_SESSION, {
+    title: "Inspect Golden Path engineering work",
+    description: "Read a recorded local session's linked task, configured acceptance, baseline changes, existing gate findings and retained verification output. Without a sessionId, lists sessions for selection. Optional file/view inspect only artifacts listed by this report. Does not execute project checks, modify files, infer approval or query GitHub. Missing evidence remains unavailable.",
+    inputSchema: inspectionInput,
+    outputSchema: z.object({ inspection: inspectionSchema }),
+    annotations: { readOnlyHint: true, destructiveHint: false, idempotentHint: true, openWorldHint: false },
+    _meta: { ui: { resourceUri: ENGINEERING_RESOURCE, visibility: ["model", "app"] } },
+  }, async (input) => {
+    try {
+      const inspection = inspectEngineering(target, { ...input, sessionId: input.sessionId || session });
+      return { content: [{ type: "text", text: inspection.handoff }], structuredContent: { inspection } };
+    } catch (error) {
+      return { isError: true, content: [{ type: "text", text: `Engineering inspection failed: ${error.message}` }] };
+    }
+  });
+  registerAppResource(server, ENGINEERING_RESOURCE, ENGINEERING_RESOURCE, { mimeType: RESOURCE_MIME_TYPE }, async () => ({
+    contents: [{
+      uri: ENGINEERING_RESOURCE, mimeType: RESOURCE_MIME_TYPE,
+      text: fs.readFileSync(path.join(DIRECTORY, "dist", "engineering.html"), "utf8"),
       _meta: { ui: { csp: { connectDomains: [], resourceDomains: [] }, prefersBorder: true } },
     }],
   }));
@@ -113,9 +141,9 @@ export function createServer(target, { state } = {}) {
 
 if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
   try {
-    const { target, state } = optionsFromArgs(process.argv.slice(2));
+    const { target, state, session } = optionsFromArgs(process.argv.slice(2));
     fs.accessSync(path.join(DIRECTORY, "dist", "app.html"));
-    await createServer(target, { state }).connect(new StdioServerTransport());
+    await createServer(target, { state, session }).connect(new StdioServerTransport());
   } catch (error) {
     console.error(`Golden Path MCP App: ${error.message}. Run npm run build before starting.`);
     process.exitCode = 1;

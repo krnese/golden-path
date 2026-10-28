@@ -7,7 +7,7 @@ import { afterEach, test } from "node:test";
 import { Client } from "@modelcontextprotocol/client";
 import { StdioClientTransport } from "@modelcontextprotocol/client/stdio";
 import { RESOURCE_MIME_TYPE } from "@modelcontextprotocol/ext-apps/server";
-import { DIRECTORY, RESOURCE, TOOL } from "../server.mjs";
+import { DIRECTORY, RESOURCE, TOOL, INSPECT_SESSION } from "../server.mjs";
 import { startPreview } from "../preview.mjs";
 
 const scratch = [];
@@ -54,15 +54,16 @@ async function connect(t, root, apps = true) {
   return client;
 }
 
-test("the real stdio server advertises one read-only, target-bound app tool", async (t) => {
+test("the real stdio server advertises read-only, target-bound inspection tools", async (t) => {
   const client = await connect(t, fixture());
   const { tools } = await client.listTools();
-  assert.equal(tools.length, 1);
+  assert.equal(tools.length, 2);
   assert.equal(tools[0].name, TOOL);
   assert.equal(tools[0]._meta.ui.resourceUri, RESOURCE);
   assert.deepEqual(tools[0]._meta.ui.visibility, ["model", "app"]);
   assert.equal(tools[0].annotations.readOnlyHint, true);
   assert.equal(tools[0].inputSchema.additionalProperties, false);
+  assert.equal(tools.find((x) => x.name === INSPECT_SESSION).annotations.readOnlyHint, true);
 });
 
 test("the resource is the built, self-contained MCP App with no external resource permissions", async (t) => {
@@ -77,7 +78,7 @@ test("the resource is the built, self-contained MCP App with no external resourc
   assert.deepEqual(contents[0]._meta.ui.csp, { connectDomains: [], resourceDomains: [] });
 });
 
-for (const name of ["app", "architecture", "host"]) {
+for (const name of ["app", "architecture", "engineering", "host"]) {
   test(`the bundled ${name} script retains valid JavaScript when embedded in HTML`, () => {
     const html = fs.readFileSync(path.join(DIRECTORY, "dist", `${name}.html`), "utf8");
     const script = html.match(/<script type="module">([\s\S]*)<\/script>/)?.[1];

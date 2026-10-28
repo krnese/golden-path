@@ -33,9 +33,12 @@ pause, repair and owner-feedback routes, reduced motion, custom-domain
 URLs, invalid configuration, evidence integrity and stale output.
 Repository acceptance tests under `tests/` are unchanged.
 
-The visual direction is Fluent-inspired: a system Segoe UI stack, upright
-headings, cool neutral surfaces and blue actions. Gold distinguishes the path
-and owner-feedback return; red/green checks retain both text and symbols.
+The visual direction matches the MCP App: navy surfaces, cyan actions, violet
+selection/focus and gold ownership/feedback accents, with a system Segoe UI stack
+and upright headings. Coral failures and cyan successes retain both text and
+symbols. Palette tests check matching App colors and text/control contrast.
+Recorded evidence images and original vendor glyphs remain unchanged; the
+glyphs retain light backplates so their original dark shapes stay legible.
 This is Golden Path's own design, not Microsoft branding or endorsement.
 No external fonts, Fluent runtime, new vendor assets or dependencies are loaded.
 

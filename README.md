@@ -75,16 +75,25 @@ The intended experience is:
 4. **Return to reasoning and evidence.** The agent re-reads that source, explains consequences and
    uncertainty, and returns real evidence to the people who own the decision. Saving is not approval.
 
-**Available today:** the isolated [MCP Apps experience prototype](examples/mcp-app/README.md) supports
-requirement/assumption review, draft wording and rationale edits, connected context, and a saved-state
-conversation handoff. A separate adoption report is read-only. To try it, a developer builds the example,
-explicitly initializes its local model, then starts **golden-path-experience-preview** through VS Code's
-**MCP: List Servers**. The setup guide also provides a local browser preview.
+**Available today:** the optional [MCP Apps engineering inspection](examples/mcp-app/README.md) reads
+existing session/task records, acceptance artifacts, baseline changes and actual retained gate output.
+Compact views connect **Contract → Acceptance → Evidence → Changes → Handoff**, with
+**Why does this exist?** separating source-backed links from inferred hints, and **Agreement delta**
+flagging changes to contract/control sources for accountable review. Missing, skipped, stale and
+unverified evidence are never represented as current passes. A separate adoption report stays read-only.
+**Guided** starts from a business outcome and helps prepare plain-language examples for the existing
+owner-review process; **Engineering detail** exposes the same contract, tests and original evidence.
+Neither presentation turns a proposal into approved executable acceptance or hides missing evidence.
+Build the package, then start **golden-path-experience-preview** through **MCP: List Servers** and ask
+Copilot to call `inspect_engineering_session`. No example-model initialization is needed.
+The earlier editable architecture example remains explicitly opt-in, not the engineering contract.
 
 **Not yet shipped:** one-click customer enablement, automatic visual-review guidance in the installed
 skill, adapters to customers' authoritative records, or evidence that this improves non-engineering
-users' decisions. Native signed-in rendering remains to be validated; the browser preview is not that
-proof. Production adoption should reuse existing records rather than require a parallel architecture store.
+users' decisions. Native signed-in rendering and host-supported editor links for the new engineering
+view remain to be validated; the browser preview is not that proof. There is no semantic delegation
+detector or automatic approval inference. Production adoption should reuse existing records rather
+than require a parallel architecture store.
 
 The App is not included by the core installer or starter template. Disabling it does not disable
 configured acceptance protection, required CI or owner review. No App action can approve real acceptance,

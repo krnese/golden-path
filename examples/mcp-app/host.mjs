@@ -3,6 +3,7 @@ import { AppBridge, PostMessageTransport } from "@modelcontextprotocol/ext-apps/
 const frame = document.getElementById("app");
 const status = document.getElementById("host-status");
 const architecture = document.body.dataset.view === "architecture";
+const engineering = document.body.dataset.view === "engineering";
 const bridge = new AppBridge(null, { name: "Golden Path local validation host", version: "0.1.0" },
   { serverTools: {}, updateModelContext: { text: {} } }, { hostContext: { theme: "dark", platform: "web", displayMode: "inline" } });
 
@@ -11,8 +12,13 @@ async function request(url, options) {
   if (!response.ok) throw new Error(`Inspection endpoint failed (${response.status}): ${await response.text()}`);
   return response.json();
 }
-const inspect = () => architecture ? request("/model") : request("/report", { method: "POST" });
+const inspect = (args = {}) => engineering ? request(`/engineering?${new URLSearchParams(args)}`) :
+  architecture ? request("/model") : request("/report", { method: "POST" });
 bridge.oncalltool = async ({ name, arguments: args }) => {
+  if (engineering) {
+    if (name !== "inspect_engineering_session") throw new Error("This engineering view permits only read-only inspection.");
+    return inspect(args);
+  }
   if (architecture && name === "update_architecture_draft") {
     return request("/model", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(args) });
   }
@@ -32,7 +38,7 @@ bridge.oninitialized = async () => {
   try {
     await bridge.sendToolInput({ arguments: {} });
     await bridge.sendToolResult(await inspect());
-    status.textContent = architecture ?
+    status.textContent = engineering ? "MCP Apps handshake completed. Engineering artifacts are read-only; no checks run." : architecture ?
       "MCP Apps handshake completed. Chat tools and the App use the same local example model." :
       "MCP Apps handshake completed. The selected repository is inspected locally.";
   } catch (error) {

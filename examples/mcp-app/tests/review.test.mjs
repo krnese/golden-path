@@ -14,6 +14,17 @@ test("review saves do not require native form submissions forbidden by the Apps 
   assert.doesNotMatch(html, /\bautofocus\b/);
 });
 
+test("review puts editing and discussion together and keeps supporting context collapsed", () => {
+  const html = fs.readFileSync(new URL("../architecture.html", import.meta.url), "utf8");
+  assert.match(html, /<h1>Review the draft<\/h1>/);
+  assert.match(html, /<div class="actions">\s*<button id="save"[\s\S]*?<button id="discard"[\s\S]*?<button id="prepare"[^>]*>Discuss with agent<\/button>\s*<\/div>/);
+  assert.match(html, /<details class="connections">\s*<summary id="connections-summary">/);
+  assert.match(html, /<summary>How to use this review<\/summary>/);
+  assert.match(html, /<summary>About this draft<\/summary>/);
+  assert.doesNotMatch(html, /<details\b[^>]*\bopen\b/);
+  assert.doesNotMatch(html, /<nav\b|class="next"|<h1>[^<]*<br>/);
+});
+
 test("review language distinguishes requirements from beliefs rather than claiming evidence", () => {
   assert.equal(collectionContent.requirements.heading, "What matters");
   assert.equal(collectionContent.assumptions.heading, "What we're assuming");
