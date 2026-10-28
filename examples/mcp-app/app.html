@@ -1,0 +1,75 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Golden Path adoption</title>
+  <!-- THEME -->
+  <style>
+    * { box-sizing: border-box; }
+    body { margin: 0; padding: 28px; }
+    header { border-top: 2px solid var(--accent); padding-top: 18px; }
+    .eyebrow { font-size: 12px; text-transform: uppercase; letter-spacing: .12em; font-weight: 700; color: var(--accent); }
+    h1 { font-size: clamp(24px, 4vw, 34px); font-weight: 650; letter-spacing: -.025em; margin: 10px 0; }
+    p { line-height: 1.6; }
+    .muted, small { color: var(--muted); }
+    .notice { border-left: 3px solid var(--gold); padding: 10px 16px; background: var(--gold-soft); border-radius: 0 8px 8px 0; }
+    #error { border: 1px solid var(--danger-line); padding: 16px; border-radius: 8px; color: var(--danger); background: var(--danger-soft); }
+    .metadata { margin: 24px 0; padding: 16px; background: var(--surface); border: 1px solid var(--line); border-radius: 10px; }
+    .metadata p { margin: 3px 0; }
+    code, pre { font-family: var(--font-mono, Consolas, monospace); overflow-wrap: anywhere; }
+    code { font-size: 13px; }
+    .toolbar { display: flex; flex-wrap: wrap; gap: 12px; align-items: end; margin: 22px 0 12px; }
+    label { display: flex; flex-direction: column; gap: 6px; font-size: 13px; font-weight: 600; }
+    label.search { flex: 1; min-width: 180px; }
+    input, select, button { font: inherit; border: 1px solid var(--control-line); border-radius: 6px; padding: 9px 12px; color: inherit; background: var(--surface); }
+    button { font-weight: 600; cursor: pointer; }
+    button:hover { border-color: var(--accent); background: var(--soft); }
+    button:disabled { opacity: .6; cursor: wait; }
+    :focus-visible { outline: 3px solid var(--focus); outline-offset: 3px; }
+    #summary { font-size: 13px; min-height: 22px; }
+    #findings { display: grid; gap: 12px; }
+    article { border: 1px solid var(--line); border-radius: 10px; padding: 18px; background: var(--surface); }
+    .finding-title { display: flex; align-items: center; flex-wrap: wrap; gap: 12px; }
+    h2 { font-size: 16px; margin: 0; }
+    .status { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .06em; padding: 4px 8px; border-radius: 4px; color: var(--violet); background: var(--violet-soft); }
+    .status.verified { color: var(--accent); background: var(--soft); }
+    .status.missing { color: var(--gold); background: var(--gold-soft); }
+    article p { margin: 12px 0 0; font-size: 14px; white-space: pre-wrap; overflow-wrap: anywhere; }
+    .next { border-top: 1px solid var(--line); padding-top: 12px; }
+    details { margin-top: 24px; }
+    summary { cursor: pointer; font-size: 14px; }
+    pre { white-space: pre-wrap; font-size: 12px; padding: 16px; background: var(--raised); border-radius: 8px; }
+    footer { border-top: 1px solid var(--line); margin-top: 28px; padding-top: 14px; font-size: 12px; line-height: 1.7; }
+    [hidden] { display: none !important; }
+    @media (max-width: 520px) { body { padding: 16px; } .toolbar > * { width: 100%; } }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="eyebrow">Golden Path / MCP App / Experimental</div>
+    <h1>Inspect setup.<br>Keep judgment with the owner.</h1>
+    <p class="muted">Explore configuration evidence, not a protection score.</p>
+    <p class="notice"><strong>Read-only inspection.</strong> Verified means the stated configuration was observed, not that tests passed or the owner approved the result.</p>
+  </header>
+  <p id="connection" role="status">Connecting to the MCP Apps host...</p>
+  <p id="error" role="alert" hidden></p>
+  <section id="report" hidden aria-label="Adoption findings">
+    <div class="metadata">
+      <p><small>Application repository</small><br><code id="root"></code></p>
+      <p><small>Repository HEAD (configuration is read from the working tree)</small><br><code id="head"></code></p>
+      <p><small id="observed"></small></p>
+    </div>
+    <div class="toolbar">
+      <label class="search">Find a finding<input id="search" type="search" placeholder="Acceptance, ownership, client..." autocomplete="off"></label>
+      <label>Status<select id="status" aria-label="Status"><option value="all">All findings</option><option value="missing">Missing</option><option value="unverified">Unverified</option><option value="verified">Verified configuration</option></select></label>
+      <button id="refresh" type="button">Refresh inspection</button>
+    </div>
+    <p id="summary" class="muted" role="status" aria-live="polite"></p>
+    <div id="findings"></div>
+    <details><summary>Inspect the raw evidence</summary><pre id="raw"></pre></details>
+  </section>
+  <footer>No project check or acceptance command is run. No files or GitHub settings are changed.<br>Required CI, reviewed records and accountable owners remain authoritative. There is no approval action in this app.</footer>
+  <!-- SCRIPT -->
+</body>
+</html>

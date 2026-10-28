@@ -38,6 +38,31 @@ jobs:
             git show --format= --check HEAD
           fi
 
+  mcp-app-tests:
+    name: "MCP App prototype (${{ matrix.os }}, Node ${{ matrix.node }})"
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+        node: ["22", "24"]
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 10
+    steps:
+      - name: Check out source
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          persist-credentials: false
+      - name: Set up Node.js
+        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: ${{ matrix.node }}
+      - name: Install isolated prototype dependencies
+        run: npm ci --prefix examples/mcp-app --no-audit --no-fund
+      - name: Build self-contained UI resources
+        run: npm --prefix examples/mcp-app run build
+      - name: Verify MCP transport, UI resources, shared state and draft boundaries
+        run: npm --prefix examples/mcp-app test
+
   # Golden Path v3.1 kit: the one Node.js hook script and installer (node --test, built-ins only),
   # on the supported LTS lines and on Windows (CRLF, PowerShell path). The demo app is Node.js too (no Python), so it runs on every OS.
   kit-tests:

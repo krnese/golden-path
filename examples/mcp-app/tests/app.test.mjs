@@ -1,0 +1,164 @@
+import assert from "node:assert/strict";
+import fs from "node:fs";
+import os from "node:os";
+import path from "node:path";
+import { spawnSync } from "node:child_process";
+import { afterEach, test } from "node:test";
+import { Client } from "@modelcontextprotocol/client";
+import { StdioClientTransport } from "@modelcontextprotocol/client/stdio";
+import { RESOURCE_MIME_TYPE } from "@modelcontextprotocol/ext-apps/server";
+import { DIRECTORY, RESOURCE, TOOL } from "../server.mjs";
+import { startPreview } from "../preview.mjs";
+
+const scratch = [];
+afterEach(() => {
+  for (const root of scratch.splice(0)) fs.rmSync(root, { recursive: true, force: true });
+});
+function fixture() {
+  const root = fs.realpathSync.native(fs.mkdtempSync(path.join(os.tmpdir(), "gp-mcp-app-")));
+  scratch.push(root);
+  fs.mkdirSync(path.join(root, ".golden-path"));
+  fs.mkdirSync(path.join(root, "acceptance"));
+  fs.writeFileSync(path.join(root, "acceptance", "rule.test.mjs"), "owner example\n");
+  fs.writeFileSync(path.join(root, ".golden-path", "config.json"), JSON.stringify({
+    check: 'node -e "require(\'node:fs\').writeFileSync(\'unexpected\', \'executed\')"',
+    acceptance: { paths: ["acceptance/**"], owner: "@owner", command: "deliberately-not-a-command" },
+  }));
+  for (const args of [["init", "-q"], ["config", "core.autocrlf", "false"], ["add", "-A"],
+    ["-c", "user.name=Test", "-c", "user.email=test@example.invalid", "commit", "-qm", "baseline"]]) {
+    const result = spawnSync("git", args, { cwd: root, encoding: "utf8" });
+    assert.equal(result.status, 0, result.stderr);
+  }
+  return root;
+}
+function snapshot(root) {
+  const files = {};
+  function walk(dir) {
+    for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
+      if (entry.name === ".git") continue;
+      const file = path.join(dir, entry.name);
+      if (entry.isDirectory()) walk(file);
+      else files[path.relative(root, file)] = fs.readFileSync(file).toString("base64");
+    }
+  }
+  walk(root);
+  return files;
+}
+async function connect(t, root, apps = true) {
+  const client = new Client({ name: "golden-path-test", version: "0.1.0" },
+    { capabilities: apps ? { extensions: { "io.modelcontextprotocol/ui": { mimeTypes: [RESOURCE_MIME_TYPE] } } } : {} });
+  t.after(() => client.close());
+  await client.connect(new StdioClientTransport({
+    command: process.execPath, args: [path.join(DIRECTORY, "server.mjs"), "--target", root],
+  }));
+  return client;
+}
+
+test("the real stdio server advertises one read-only, target-bound app tool", async (t) => {
+  const client = await connect(t, fixture());
+  const { tools } = await client.listTools();
+  assert.equal(tools.length, 1);
+  assert.equal(tools[0].name, TOOL);
+  assert.equal(tools[0]._meta.ui.resourceUri, RESOURCE);
+  assert.deepEqual(tools[0]._meta.ui.visibility, ["model", "app"]);
+  assert.equal(tools[0].annotations.readOnlyHint, true);
+  assert.equal(tools[0].inputSchema.additionalProperties, false);
+});
+
+test("the resource is the built, self-contained MCP App with no external resource permissions", async (t) => {
+  const client = await connect(t, fixture());
+  assert.ok((await client.listResources()).resources.some((r) => r.uri === RESOURCE));
+  const { contents } = await client.readResource({ uri: RESOURCE });
+  assert.equal(contents.length, 1);
+  assert.equal(contents[0].mimeType, RESOURCE_MIME_TYPE);
+  assert.match(contents[0].text, /Keep judgment with the owner/);
+  assert.match(contents[0].text, /<script type="module">/);
+  assert.doesNotMatch(contents[0].text, /<script[^>]+src=["']https?:/);
+  assert.deepEqual(contents[0]._meta.ui.csp, { connectDomains: [], resourceDomains: [] });
+});
+
+for (const name of ["app", "architecture", "host"]) {
+  test(`the bundled ${name} script retains valid JavaScript when embedded in HTML`, () => {
+    const html = fs.readFileSync(path.join(DIRECTORY, "dist", `${name}.html`), "utf8");
+    const script = html.match(/<script type="module">([\s\S]*)<\/script>/)?.[1];
+    assert.ok(script, "Missing bundled module");
+    const result = spawnSync(process.execPath, ["--input-type=module", "--check"], { input: script, encoding: "utf8" });
+    assert.equal(result.status, 0, result.stderr);
+    assert.doesNotMatch(html, /<!-- SCRIPT -->/);
+  });
+}
+
+test("inspection returns honest evidence, never executes commands and leaves the repository unchanged", async (t) => {
+  const root = fixture();
+  const before = snapshot(root);
+  const client = await connect(t, root);
+  const result = await client.callTool({ name: TOOL, arguments: {} });
+  assert.notEqual(result.isError, true);
+  const { report, inspectedAt } = result.structuredContent;
+  assert.equal(fs.realpathSync.native(report.root), root);
+  assert.match(report.head, /^[a-f0-9]{40}$/);
+  assert.ok(Number.isFinite(Date.parse(inspectedAt)));
+  const status = (id) => report.checks.find((c) => c.id === id).status;
+  assert.equal(status("acceptance-paths"), "verified");
+  assert.equal(status("hook-invocation"), "unverified");
+  assert.equal(status("owner-judgment"), "unverified");
+  assert.equal(status("github-required-checks"), "unverified");
+  for (const field of ["ok", "ready", "approved", "protected"]) assert.equal(field in report, false);
+  assert.deepEqual(snapshot(root), before);
+});
+
+test("a host without MCP Apps still receives useful, explicit text evidence", async (t) => {
+  const client = await connect(t, fixture(), false);
+  const result = await client.callTool({ name: TOOL, arguments: {} });
+  assert.notEqual(result.isError, true);
+  assert.match(result.content[0].text, /Configuration evidence only/);
+  assert.match(result.content[0].text, /\[UNVERIFIED\] owner-judgment/);
+});
+
+test("tool arguments cannot redirect inspection to another repository", async (t) => {
+  const root = fixture();
+  const other = fixture();
+  const before = snapshot(other);
+  const client = await connect(t, root);
+  const result = await client.callTool({ name: TOOL, arguments: { target: other } });
+  assert.equal(result.isError, true);
+  assert.equal(result.structuredContent, undefined);
+  assert.deepEqual(snapshot(other), before);
+});
+
+test("an unavailable repository returns an explicit tool error, not empty successful evidence", async (t) => {
+  const root = fixture();
+  const client = await connect(t, root);
+  fs.rmSync(root, { recursive: true });
+  const result = await client.callTool({ name: TOOL, arguments: {} });
+  assert.equal(result.isError, true);
+  assert.match(result.content[0].text, /Inspection failed:/);
+  assert.equal(result.structuredContent, undefined);
+});
+
+test("startup without an explicit target fails without emitting protocol-shaped success", () => {
+  const result = spawnSync(process.execPath, [path.join(DIRECTORY, "server.mjs")], { encoding: "utf8" });
+  assert.equal(result.status, 1);
+  assert.match(result.stderr, /Usage:/);
+  assert.equal(result.stdout, "");
+});
+
+test("the loopback validation host uses real MCP resources and refuses foreign origins", async (t) => {
+  const root = fixture();
+  const before = snapshot(root);
+  const preview = await startPreview(root, 0);
+  t.after(() => preview.close());
+  const host = await fetch(preview.url);
+  assert.equal(host.status, 200);
+  assert.match(await host.text(), /sandbox="allow-scripts"/);
+  const app = await fetch(`${preview.url}/app`);
+  assert.equal(app.status, 200);
+  assert.match(app.headers.get("content-security-policy"), /default-src 'none'/);
+  assert.match(await app.text(), /Keep judgment with the owner/);
+  const report = await fetch(`${preview.url}/report`, { method: "POST" });
+  assert.equal(report.status, 200);
+  assert.ok((await report.json()).structuredContent.report.checks.length > 0);
+  const foreign = await fetch(`${preview.url}/report`, { method: "POST", headers: { Origin: "https://example.invalid" } });
+  assert.equal(foreign.status, 403);
+  assert.deepEqual(snapshot(root), before);
+});

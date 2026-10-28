@@ -7,6 +7,20 @@ History of the kit. The current way to adopt it is in the [README](README.md); t
 
 ## Unreleased
 
+- **Optional MCP Apps experience prototype.** Inspect requirements, assumptions
+  and their traceability in an isolated example model shared by chat tools and
+  the App. Draft-only writes use revision checks, a cross-process lock and atomic
+  replacement; baseline examples remain locked. The separate adoption report is
+  still read-only. Uses the official MCP Apps SDK, a bound stdio server and a
+  labelled loopback validation host. No business approval, real acceptance edit,
+  project-check execution or GitHub change is introduced. Dependencies stay
+  isolated from the core kit and starter; native VS Code rendering must be
+  validated separately from protocol and browser tests.
+  The review UX uses plain-language prompts, connected assumptions, protected
+  unsaved edits and a saved-state conversation handoff rather than a technical
+  model editor or approval dashboard. Non-engineering usability remains to be
+  tested with actual decision owners.
+
 - **Minimal greenfield GitHub starter template.** Generate a clean, method-only
   application starting point with `node examples/make-starter.mjs "<empty-dir>"`.
   It reuses the Level 1 installer, includes the copied kit's license notice and

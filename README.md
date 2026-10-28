@@ -58,6 +58,38 @@ approves the revision first and the next implementation starts in a new session.
 The [first-task guide](docs/USER-GUIDE.md) has prompts you can copy, including a request for Copilot to help
 with setup. Technical setup and commands are separate from the everyday conversation.
 
+## Optional visual reviews (prototype)
+
+**Opt-in, not another required system.** Golden Path works without an App. Visual reviews are an
+optional way to inspect the reasoning when comparison, direct editing or structured judgment is more
+useful than another chat message. They are not another adoption level or an approval dashboard.
+
+The intended experience is:
+
+1. **Enable once, keep your normal conversation.** A workspace owner handles setup within existing
+   organizational permissions; reviewers should not need to configure MCP or understand JSON.
+2. **Open a view when it helps.** Ask "Show me what we're assuming", or let the agent invoke an App
+   when visual inspection helps the decision. Stay in chat when it does not.
+3. **Inspect and shape the shared draft.** Review what matters, why it matters and what it connects to.
+   Explicitly save permitted draft changes to the same source the conversation reads.
+4. **Return to reasoning and evidence.** The agent re-reads that source, explains consequences and
+   uncertainty, and returns real evidence to the people who own the decision. Saving is not approval.
+
+**Available today:** the isolated [MCP Apps experience prototype](examples/mcp-app/README.md) supports
+requirement/assumption review, draft wording and rationale edits, connected context, and a saved-state
+conversation handoff. A separate adoption report is read-only. To try it, a developer builds the example,
+explicitly initializes its local model, then starts **golden-path-experience-preview** through VS Code's
+**MCP: List Servers**. The setup guide also provides a local browser preview.
+
+**Not yet shipped:** one-click customer enablement, automatic visual-review guidance in the installed
+skill, adapters to customers' authoritative records, or evidence that this improves non-engineering
+users' decisions. Native signed-in rendering remains to be validated; the browser preview is not that
+proof. Production adoption should reuse existing records rather than require a parallel architecture store.
+
+The App is not included by the core installer or starter template. Disabling it does not disable
+configured acceptance protection, required CI or owner review. No App action can approve real acceptance,
+merge or deploy; those responsibilities remain with existing owners and controls.
+
 ## See it work
 
 In a real trial, one sentence from Marketing ("I need invoices to be as simple as possible, so humans can
@@ -88,7 +120,7 @@ at each step, the screenshots, the gate verdicts, and what the trial does and do
   optional workflow re-runs the checks against the PR base (`--with-ci`).
 - **Works with Copilot's default agent.** No special agent to pick and no new runtime
   ([details](#works-with-your-default-agent)).
-- **Small enough to review.** One Node.js script with no npm packages, a conflict-refusing installer and a clean
+- **Small enough to review.** The core kit has one Node.js script with no npm packages, a conflict-refusing installer and a clean
   uninstall. CI runs the implementation tests on Ubuntu and Windows, Node 22 and 24.
 - **Evidence back to the owner.** The method's Report step says what changed, which checks passed on which commit
   and what is still unproved. The [walkthrough](docs/examples/golden-loop/README.md) shows this in practice.
@@ -206,6 +238,9 @@ copies. `tests/self-install.test.mjs` detects drift. This configuration protects
 has no business acceptance paths or command; cloning it does not define acceptance for your business.
 
 A standalone VS Code plugin that does not need repository files is being explored.
+The [optional visual-review prototype](#optional-visual-reviews-prototype) is a separate
+experience experiment, not a new approval system or required adoption step. Its npm dependencies
+are isolated from the core kit and starter.
 
 ## What this means in practice
 
