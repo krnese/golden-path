@@ -615,17 +615,17 @@ export function adoptionReport(target, { github = false, run = spawnSync } = {})
   const add = (id, status, evidence, next) => checks.push({ id, status, evidence, next });
   const probe = (cmd, args, cwd = root) => {
     const r = run(cmd, args, { cwd, encoding: "utf8", timeout: 10000, maxBuffer: 8 << 20, windowsHide: true });
-    return r.status === 0 ? { text: r.stdout.trim() } :
+    return r.status === 0 ? { text: r.stdout } :
       { error: String(r.error?.message || r.stderr || `${cmd} exited ${r.status}`).trim().slice(0, 400) };
   };
   let root = path.resolve(target);
   if (!fs.statSync(root).isDirectory()) throw new Error(`Not a directory: ${root}`);
   const repo = probe("git", ["rev-parse", "--show-toplevel"]);
-  if (!repo.error) root = path.resolve(repo.text);
+  if (!repo.error) root = path.resolve(repo.text.trim());
   add("repository", repo.error ? "unverified" : "verified", repo.error || root,
     "Use the application repository, not the Golden Path kit's tests as business acceptance.");
   const head = probe("git", ["rev-parse", "--verify", "HEAD"]);
-  add("baseline", head.error ? "unverified" : "verified", head.error || head.text,
+  add("baseline", head.error ? "unverified" : "verified", head.error || head.text.trim(),
     "Commit approved configuration and acceptance before starting the implementation session.");
   const method = ".github/skills/golden-path/SKILL.md";
   add("method-files", fs.existsSync(path.join(root, method)) ? "verified" : "missing",
@@ -752,7 +752,7 @@ export function adoptionReport(target, { github = false, run = spawnSync } = {})
   }
   add("github-bypass-policy", "unverified", "Bypass actors, organization exceptions and effective permissions were not audited.",
     "An authorized maintainer must review bypass policy; protect workflow, configuration and ownership changes too.");
-  return { root, head: head.error ? null : head.text, checks };
+  return { root, head: head.error ? null : head.text.trim(), checks };
 }
 
 export function main(argv) {

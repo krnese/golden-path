@@ -71,6 +71,12 @@ Generated applications do not receive later starter updates automatically.
 
 ## Read-only adoption report
 
+**Check the script source before using this command on an existing installation
+or older source checkout.** It must explicitly handle `cmd === "adoption"`.
+Older versions treat unknown commands as the stop gate, which can run configured
+project checks and write state. If support is absent, inspect setup manually or
+use a supporting kit source checkout with `--target`; do not run the unknown command.
+
 From a Golden Path source checkout:
 
 ```bash

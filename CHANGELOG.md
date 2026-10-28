@@ -26,7 +26,10 @@ History of the kit. The current way to adopt it is in the [README](README.md); t
   no project commands, settings changes, state writes or business approval are
   implied. Method-only installs remain code-free and checked installs keep one
   script. Document application-template guidance and normal-install Golden Loop
-  limits. New `tests/adoption.test.mjs` cases run in the existing CI matrix.
+  limits. Null-delimited file discovery preserves leading whitespace, and the
+  command documentation requires source inspection before use on older installs
+  whose unknown commands would invoke the stop gate. New `tests/adoption.test.mjs`
+  cases run in the existing CI matrix.
 
 - **Golden Loop: the evidence check reads tables as GitHub renders them.** Copilot's last review of #44 found
   three parser gaps. A GFM delimiter cell may have a single hyphen (`| - | - | - |`), so a valid filled table

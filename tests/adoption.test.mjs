@@ -135,6 +135,19 @@ describe("Adoption: one read-only journey for greenfield and brownfield", () => 
     const root = configured({}, { acceptance: { paths: ["acceptance/**", "rules/**"], owner: "@owner", command: "test" } });
     assert.equal(status(adoptionReport(root), "acceptance-paths"), "missing");
   });
+  for (const tracked of [true, false]) {
+    test(`whitespace-prefixed ${tracked ? "tracked" : "untracked"} filenames retain their path identity`, () => {
+      const root = configured({}, { acceptance: { paths: [" acceptance/**"], owner: "@owner" } });
+      write(root, " acceptance/rule.test.mjs", "example");
+      if (tracked) git(root, "add", "--", " acceptance/rule.test.mjs");
+      const before = snapshot(root);
+      const report = adoptionReport(root);
+      assert.equal(status(report, "acceptance-paths"), "verified");
+      assert.match(check(report, "acceptance-paths").evidence, /^1 files matched;/);
+      assert.equal(status(report, "developer-test-paths"), "verified");
+      assert.deepEqual(snapshot(root), before);
+    });
+  }
   for (const paths of ["/outside/**", "../outside/**", "C:/outside/**", "acceptance\\**", 42]) {
     test(`invalid acceptance patterns are unverified: ${paths}`, () => {
       const root = configured({}, { acceptance: { paths: [paths], owner: "@owner" } });

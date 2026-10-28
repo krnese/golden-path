@@ -29,7 +29,12 @@ already has a config, an authorized maintainer must review and change it explici
 approved configuration and acceptance, then start a new agent session. The installer also does not
 create CODEOWNERS or change required checks, branch protection or review settings.
 
-For guided setup without changing anything, use
+For guided setup without changing anything, first inspect the installed script
+source for explicit `cmd === "adoption"` handling. Older versions treat unknown
+commands as the stop gate, which can run project checks and write state. Without
+support, inspect setup manually or use a supporting kit source checkout with
+`--target` as described in the [adoption report](ADOPTION.md#read-only-adoption-report).
+Only after confirming support, use
 `node .github/hooks/golden-path/gate.mjs adoption` (PowerShell:
 `node .github\hooks\golden-path\gate.mjs adoption`). Add `--json` for structured
 evidence or `--github` for authenticated read-only default-branch inspection.
