@@ -40,12 +40,12 @@ const change = (extra = {}) => ({
 test("architecture tools are explicit and the write tool is not labelled read-only", async (t) => {
   const client = await connect(t, fixture());
   const { tools } = await client.listTools();
-  assert.equal(tools.length, 3);
+  assert.equal(tools.length, 4);
   assert.equal(tools.find((x) => x.name === READ_MODEL)._meta.ui.resourceUri, ARCHITECTURE_RESOURCE);
   assert.equal(tools.find((x) => x.name === UPDATE_MODEL).annotations.readOnlyHint, false);
   assert.equal(tools.find((x) => x.name === UPDATE_MODEL).annotations.idempotentHint, false);
   const resource = await client.readResource({ uri: ARCHITECTURE_RESOURCE });
-  assert.match(resource.contents[0].text, /Shape the draft/);
+  assert.match(resource.contents[0].text, /Review the draft/);
 });
 
 test("two independent MCP clients and the file see the same persisted draft revision", async (t) => {

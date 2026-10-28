@@ -74,7 +74,7 @@ test("the visual story has concrete invoice artifacts, owner feedback and a veri
     assert.ok(evidence.includes('class="trial"'));
   });
 });
-test("the Fluent-inspired theme is self-contained and shares its colors with SVG artifacts", () => {
+test("the MCP App palette is self-contained and shared with site SVG artifacts", () => {
   withBuild({}, output => {
     const css = fs.readFileSync(path.join(output, "styles.css"), "utf8");
     const script = fs.readFileSync(path.join(output, "main.js"), "utf8");
@@ -85,8 +85,51 @@ test("the Fluent-inspired theme is self-contained and shares its colors with SVG
       assert.ok(css.includes(selector), `Missing shared SVG style: ${selector}`);
     }
     assert.ok(!/#[0-9a-f]{6}\b/i.test(script), "SVG rendering must not embed a competing palette");
-    assert.match(css, /\.primary \{ background: var\(--brand\); color: var\(--paper\); \}/);
+    assert.match(css, /\.primary \{ background: var\(--brand\); color: var\(--on-brand\); \}/);
     assert.match(css, /\.flow-track.owner-loop \{ stroke: var\(--gold\);/);
+  });
+});
+test("the site matches the App dark palette with readable text, controls and status colors", () => {
+  const css = fs.readFileSync(path.join(siteRoot, "styles.css"), "utf8");
+  const palette = Object.fromEntries([...css.matchAll(/--([\w-]+): (#[\da-f]{6});/g)].map((x) => [x[1], x[2]]));
+  const appCss = fs.readFileSync(path.join(siteRoot, "..", "examples", "mcp-app", "theme.css"), "utf8");
+  const appPalette = Object.fromEntries([...appCss.matchAll(/--([\w-]+): light-dark\(#[\da-f]{6}, (#[\da-f]{6})\);/g)].map((x) => [x[1], x[2]]));
+  for (const token of ["ink", "muted", "paper", "surface", "raised", "line", "control-line", "violet", "violet-soft", "gold"]) {
+    assert.equal(palette[token], appPalette[token], `${token} must match the MCP App`);
+  }
+  for (const [siteToken, appToken] of [
+    ["brand", "accent"], ["brand-hover", "accent-hover"], ["on-brand", "on-accent"],
+    ["brand-tint", "soft"], ["error-bg", "danger-soft"], ["error-ink", "danger"],
+    ["success-bg", "soft"], ["success-ink", "accent"], ["review-bg", "gold-soft"], ["review-ink", "gold"],
+  ]) assert.equal(palette[siteToken], appPalette[appToken], `${siteToken} must match ${appToken}`);
+  const luminance = (hex) => {
+    const [r, g, b] = hex.slice(1).match(/../g).map((part) => {
+      const channel = parseInt(part, 16) / 255;
+      return channel <= .04045 ? channel / 12.92 : ((channel + .055) / 1.055) ** 2.4;
+    });
+    return r * .2126 + g * .7152 + b * .0722;
+  };
+  const check = (foreground, background, minimum) => {
+    assert.ok(palette[foreground] && palette[background], `Missing ${foreground} or ${background}`);
+    const values = [luminance(palette[foreground]), luminance(palette[background])].sort((a, b) => b - a);
+    const ratio = (values[0] + .05) / (values[1] + .05);
+    assert.ok(ratio >= minimum, `${foreground} on ${background}: ${ratio.toFixed(2)}:1 < ${minimum}:1`);
+  };
+  for (const surface of ["paper", "surface", "raised", "brand-tint", "violet-soft"]) {
+    for (const text of ["ink", "muted"]) check(text, surface, 4.5);
+    check("violet", surface, 3);
+  }
+  for (const [text, background] of [
+    ["on-brand", "brand"], ["on-brand", "brand-hover"], ["brand", "brand-tint"],
+    ["violet", "violet-soft"], ["error-ink", "error-bg"], ["success-ink", "success-bg"], ["review-ink", "review-bg"],
+  ]) check(text, background, 4.5);
+  check("control-line", "paper", 3);
+  check("control-line", "surface", 3);
+  assert.match(css, /color-scheme: dark;/);
+  withBuild({}, (output, html) => {
+    assert.ok(html.includes(`<meta name="theme-color" content="${palette.paper}">`));
+    const favicon = fs.readFileSync(path.join(output, "favicon.svg"), "utf8");
+    for (const color of [palette.paper, palette.gold]) assert.ok(favicon.includes(`fill="${color}"`));
   });
 });
 test("enlarged recorded details preserve full evidence and have accessible titles and readable transcripts", () => {

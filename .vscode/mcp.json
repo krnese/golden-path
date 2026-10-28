@@ -6,9 +6,7 @@
       "args": [
         "${workspaceFolder}/examples/mcp-app/server.mjs",
         "--target",
-        "${workspaceFolder}",
-        "--state",
-        "${workspaceFolder}/.local/mcp-app/architecture.json"
+        "${workspaceFolder}"
       ]
     }
   }

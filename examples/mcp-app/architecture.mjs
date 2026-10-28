@@ -57,7 +57,7 @@ function select(collection, id) {
     selected = { collection, id };
     dirty = false;
     get("error").hidden = true;
-    get("feedback").textContent = "Viewing the saved draft. No changes made.";
+    get("feedback").textContent = "";
     render();
     get("review-title").focus();
   });
@@ -66,6 +66,7 @@ function renderConnections(item) {
   const { model } = current;
   const requirement = selected.collection === "requirements";
   const { linked, assumptions } = connections(model, selected.collection, item);
+  get("connections-summary").textContent = `Connections and assumptions (${linked.length + assumptions.length})`;
   get("trace-title").textContent = requirement ? "Where this shows up" : "What depends on this assumption";
   get("trace-hint").textContent = requirement ?
     "Connected parts of the example. These links provide context, not proof that the requirement is met." :
@@ -119,18 +120,11 @@ function render() {
   get("state-path").textContent = statePath;
   get("revision").textContent = String(model.revision);
   get("raw").textContent = JSON.stringify(model, null, 2);
-  get("items").replaceChildren();
   get("item-select").replaceChildren();
   for (const [collection, labels] of Object.entries(collectionContent)) {
     const group = document.createElement("optgroup");
     group.label = labels.heading;
     get("item-select").append(group);
-    const heading = document.createElement("h2");
-    heading.textContent = labels.heading;
-    const hint = document.createElement("p");
-    hint.className = "hint";
-    hint.textContent = labels.hint;
-    get("items").append(heading, hint);
     for (const item of model[collection]) {
       const option = document.createElement("option");
       option.textContent = `${item.id} / ${item.status === "draft" ? "Draft" : "Locked"} - ${item.text.slice(0, 90)}`;
@@ -138,36 +132,17 @@ function render() {
       option.dataset.id = item.id;
       option.selected = selected.collection === collection && selected.id === item.id;
       group.append(option);
-      const button = document.createElement("button");
-      button.type = "button";
-      button.className = "item";
-      button.setAttribute("aria-pressed", String(selected.collection === collection && selected.id === item.id));
-      const meta = document.createElement("span");
-      meta.className = "item-meta";
-      meta.textContent = `${item.id} / ${item.status === "draft" ? "Draft" : "Locked example"}`;
-      const summary = document.createElement("span");
-      summary.className = "item-text";
-      summary.textContent = item.text;
-      button.append(meta, summary);
-      button.addEventListener("click", () => select(collection, item.id));
-      get("items").append(button);
-    }
-    if (!model[collection].length) {
-      const empty = document.createElement("p");
-      empty.className = "hint";
-      empty.textContent = "None recorded. Ask the agent what may be missing.";
-      get("items").append(empty);
     }
   }
   const item = model[selected.collection].find((x) => x.id === selected.id);
   if (!item) { error("This item is no longer available. Check for updates to continue."); return; }
   const labels = collectionContent[selected.collection];
-  get("item-title").textContent = `${labels.item} / ${item.id}`;
-  get("review-title").textContent = labels.title;
-  get("item-status").textContent = item.status === "draft" ? "Draft · Open to change" : "Locked example · Read only";
+  get("review-title").textContent = `${labels.heading} / ${item.id}`;
+  get("item-status").textContent = item.status === "draft" ? "Draft" : "Read only · Example";
   get("editor-note").textContent = item.status === "draft" ?
-    "Edit the wording and reason below. Saving updates the draft for you and the agent; it does not approve it." :
-    "This example cannot be edited here. Discuss a proposed change with the owner in your conversation.";
+    "Save to share your changes with the agent." :
+    "Read only. Discuss proposed changes with the owner in chat.";
+  get("editor-note").hidden = item.status === "draft";
   get("statement-label").textContent = labels.statement;
   get("statement-hint").textContent = labels.statementHint;
   get("rationale-label").textContent = labels.rationale;
@@ -176,7 +151,7 @@ function render() {
   get("rationale").value = item.rationale;
   clearValidation();
   renderConnections(item);
-  get("workspace").hidden = get("next").hidden = false;
+  get("workspace").hidden = false;
   refreshHandoff();
   controls();
 }
@@ -214,7 +189,7 @@ function receive(result, saved = false, fromConversation = false) {
   render();
   get("feedback").textContent = saved ?
     `Draft saved as version ${data.model.revision}. The agent can now re-read it. This is not approval.` :
-    `Showing saved version ${data.model.revision}. Start with what matters, then question the assumptions.`;
+    "";
   return true;
 }
 app.ontoolresult = (result) => receive(result, false, true);

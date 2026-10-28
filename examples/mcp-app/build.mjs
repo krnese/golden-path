@@ -6,7 +6,7 @@ import { build } from "esbuild";
 const root = path.dirname(fileURLToPath(import.meta.url));
 await fs.mkdir(path.join(root, "dist"), { recursive: true });
 const theme = await fs.readFile(path.join(root, "theme.css"), "utf8");
-for (const name of ["app", "architecture", "host"]) {
+for (const name of ["app", "architecture", "engineering", "host"]) {
   const result = await build({
     entryPoints: [path.join(root, `${name}.mjs`)],
     bundle: true, write: false, format: "esm", platform: "browser", target: "es2022",

@@ -1,4 +1,193 @@
-# Golden Path MCP Apps experience prototype
+# Golden Path MCP Apps engineering inspection
+
+An optional **read-only engineering review in VS Code**, using existing repository
+artifacts rather than a parallel contract database. The default workspace server
+now exposes engineering inspection and adoption inspection only. It does not
+enable the older isolated draft editor or require its example model.
+
+## One contract, two levels of explanation
+
+The default **Guided** presentation starts with the desired business outcome.
+Focused questions cover normal behavior, exceptions, failure and what must not
+change. Answers become readable proposed examples that the person can correct
+and review. Four navigation stages organize the experience: **Describe your
+goal → Agree on expected behavior → Build and verify → Review the result**.
+They show review position, not automatic completion, approval or permission to
+build. Advancing never runs a check, modifies a file or approves acceptance.
+
+The two-column layout pairs one focused question with live understanding,
+locally proposed decisions and actual evidence. Suggested exception responses
+are unselected until chosen; expand the response editor to adapt them. Back/Next,
+stage selection and sidebar edits let you revisit answers. Compact screens stack
+the same content rather than introduce a different workflow. Tips, recorded
+contract details and technical output expand only when needed.
+Sidebar links keep original evidence and agreement-change review accessible
+in both presentations; keyboard navigation focuses the visible review panel.
+
+The same inspected artifacts distinguish **proposed**, **approved**,
+**implemented** and **verified** behavior. Changed files are not completed
+behavior, developer checks are not business acceptance, and unavailable approval
+is never hidden behind encouraging language. **Engineering detail** exposes
+the exact same records, original check output and source/diff navigation.
+Switching presentations does not copy the contract or reset the entered answers.
+Sidebar counts distinguish current passed checks, recorded failures/skips and
+checks needing current verification. A stale failure remains visible; an older
+pass does not become a current success. Counts can overlap when a recorded
+failure or skip also needs current verification.
+
+**Review my examples** produces a message, not acceptance files. The default is
+to request owner review. A person may explicitly express an owner decision on
+the meaning of the displayed behavior examples; the message makes clear this
+is only for separately drafting and reviewing executable acceptance, not approval
+of unseen tests or implementation. Approval must be established through the
+existing owner-reviewed record and controls. The inspector does not verify the
+identity/authority of a chat sender or promote that message to approved acceptance.
+
+If the host advertises text-message support, **Share this message in chat**
+explicitly calls the supported MCP Apps `sendMessage` interaction. Otherwise,
+select/copy/paste works. Failed delivery is explicit and retains the message.
+Nothing is sent automatically. Notes remain local to the current view, are not
+written to browser storage or a separate contract store, and are lost on closing
+or reloading the App. Copy them into the existing request/conversation to retain
+them. Incoming inspection results never replace those notes.
+
+**Still requiring a human trial:** a non-professional developer must demonstrate
+that they can express the problem, correct and approve meaningful examples,
+understand what is being built, judge the actual evidence and recognize a
+decision that needs intervention without reading code. Automated UI/content
+tests and browser inspection do not establish this acceptance outcome. No new
+owner-approved acceptance tests have been authored in this implementation.
+
+## Engineering review: one connected slice
+
+Build with Node.js 22+ from the kit repository root:
+
+```powershell
+npm ci --prefix examples\mcp-app --no-audit --no-fund
+npm --prefix examples\mcp-app run build
+npm --prefix examples\mcp-app test
+```
+
+In VS Code, start/restart **golden-path-experience-preview** using **MCP: List
+Servers**. In an MCP Apps-capable Copilot chat, ask:
+
+> Call inspect_engineering_session and show the MCP App. Let me choose a
+> recorded session, inspect its contract, acceptance, changes and evidence, and
+> identify the next accountable action. Do not execute checks or modify files.
+
+Choose a recorded session explicitly; the App never silently chooses whichever
+session happens to be newest. For this checkout's ongoing real engineering
+session, the recorded ID is visible in the selector. Session IDs are gate record
+identifiers, not private reasoning traces or chat transcripts.
+
+| View | Existing source | What it establishes / does not establish |
+| --- | --- | --- |
+| Contract | `.golden-path/state/<session>.json` `task`, linked repository document, configuration and method | Shows the recorded request verbatim, not a synthesized agreement. Missing linkage is unavailable; a link is not approval |
+| Acceptance | Configured acceptance paths, file content, last path commit | Browse examples/tests and textual IDs. Owner approval, per-example execution and coverage stay unverified unless independently established |
+| Evidence & findings | Retained actual gate JSON, existing integrity functions, selected gate events | Passed, failed, skipped, unverified and unavailable are separate. Historical or stale passes are not current passes |
+| Changes | Git diff from the fixed recorded session base, including uncommitted and non-ignored untracked files | Actual source/diff navigation, not proof the baseline was approved or a coverage verdict |
+| Why does this exist? | Exact path references, configured membership, recorded task link and shared example IDs | Verified source relationships, inferred text-ID hints and unavailable rationale are explicitly separated; no AI reasoning trace |
+| Agreement delta | Changes to the linked task, acceptance, config, method, ownership and workflow/hook sources | Deterministic path-based review signals. Ordinary implementation candidates can still change intent or authority; there is no semantic enforcement or approval engine |
+| Handoff | The inspected artifacts, findings and actual check statuses | Selectable report for the existing conversation/PR; nothing sent automatically and no permission granted |
+
+Use the tabs and expandable output, not a dashboard wall of text. **Inspect
+source**, **Inspect diff**, and **Why does this exist?** connect the views.
+The source viewer always works within the App. **Open in VS Code** is offered
+only when the host advertises `openLinks`; it requests a `vscode:` URI and shows
+an explicit fallback if the host declines it. Native file-opening support must
+be verified in the target client; no custom editor API is assumed. The App
+supports host light/dark context and requires no external network permissions.
+
+### Actual verification, not reconstructed evidence
+
+Existing hook state retains a fixed base and summary outcome. The ledger records
+selected mechanical events, **not complete test output or semantic delegation**.
+The App never reconstructs individual passes from `gate_green` or an old
+`PASSED` state.
+
+To retain per-check evidence, explicitly run this from a trusted terminal after
+reviewing the target repository's configured commands:
+
+```powershell
+node examples\mcp-app\capture-evidence.mjs --target "<application-repo>" --session "<recorded-session-id>"
+```
+
+This optional script executes that repository's existing installed
+`.github/hooks/golden-path/gate.mjs check --base <recorded-base>` once and retains
+its JSON under `.local/golden-path-evidence/<session>.json`. Failed runs exit
+nonzero and retain the actual failures; skip/unverified fields are preserved.
+The App itself cannot invoke the script. It does not modify the gate, acceptance,
+session state or workflow. Ensure `.local/` is ignored in the target repository
+before capturing; it is already ignored in this kit.
+
+The envelope adds only session/repository identity, time, HEAD and the gate's
+existing working-tree fingerprint before/after verification. It is local,
+unsigned evidence, not an audit or approval system. Different HEAD, baseline,
+fingerprint or an unstable run is labelled stale. Ignored files and external
+services are outside this fingerprint; matching provenance is not proof every
+test input or dependency is unchanged. Individual test skips remain visible in
+the raw output even if their command exits zero; a passed command is not a claim
+every test ran.
+
+For a local real-session preview (not native compatibility proof), use:
+
+```powershell
+node examples\mcp-app\preview.mjs --target "<application-repo>" --session "<recorded-session-id>"
+```
+
+The loopback host forwards only the bound read-only tool. No separate web portal
+is needed for normal VS Code use. Reports limit sessions, acceptance files and
+changed files to 100 each, source inspection to 2 MiB per artifact, displayed
+source/diffs to 64,000 characters and recent mechanical events to 15. Limits
+and unreadable sources are explicit rather than empty successful results.
+
+### Scope and remaining uncertainty
+
+- The first slice supports the existing gate state/config/task convention, not
+  arbitrary issue trackers or a universal intent schema. A request kept only in
+  chat or GitHub is unavailable locally unless the session links a repository
+  source. Missing business acceptance is shown as missing, not filled with demo
+  examples or developer tests.
+- No GitHub query, approval verification, branch-protection change, command
+  execution, acceptance editing, merge or deployment is exposed by the App.
+- Existing integrity heuristics are reused, not strengthened into a tamper-proof
+  boundary. Contract/control path changes require human review; the absence of a
+  signal is not proof no delegation change occurred.
+- Actual native rendering, `vscode:` link opening and developer comprehension
+  must be tried in the signed-in VS Code client. Protocol/browser tests alone
+  cannot establish them. Passing checks does not prove business correctness.
+- Golden Path and its existing controls work without this package.
+
+### Observed engineering-slice validation
+
+Local Windows/Node.js 24 validation uses this checkout's existing recorded
+engineering session, not a fabricated acceptance run:
+
+| Scenario | Expected | Observed |
+| --- | --- | --- |
+| Read the real session | Use its original fixed comparison base | Recorded base `91acaec2`; inspected HEAD `f5bb5c14`, including later committed and working-tree changes; not silently rebased to make the diff smaller |
+| No task document or business acceptance configured | Say unavailable | Contract link absent; zero acceptance artifacts; business acceptance unavailable despite developer gate success |
+| Retain actual verification | Preserve original gate output and provenance | Explicit capture reported `PASSED`, stable fingerprint; 29 configured tests plus existing integrity checks; empty acceptance path set is not displayed as passed acceptance protection |
+| Edit business notes, inspect a source, switch presentation | Notes stay intact; same artifacts | Outcome retained through mode change and source read; original configuration displayed with source text; no repository write |
+| Why / agreement inspection | Source-backed links separate from meaning | Exact path-reference links labelled verified, text-ID associations inferred, missing rationale unavailable; control-source changes surfaced for review |
+| Guided proposals | Readable examples, no silent approval | Normal/exception/failure/boundary answers appeared in the review message; unsupported host chat sharing hidden, select/copy fallback available |
+| Focused journey | One question at a time; revisitable local decisions | Selected an exception response, answered the remaining questions and generated the same proposal; mode switches retained answers; stage movement did not send messages or approve anything |
+| Reference-style responsive layout | Two columns where useful, stacked on narrow screens | Guided view checked at outer widths 320/390/600/768/1000; no horizontal overflow. All seven engineering views checked at 320/390/600/1000; no horizontal overflow |
+
+`npm --prefix examples\mcp-app run build` and
+`npm --prefix examples\mcp-app test` passed with **52 tests, no failures or skips**.
+The tests cover all evidence statuses, stale/foreign/unstable captures, missing
+contracts, changed acceptance, terminal failures, bounded source access, real
+stdio tools/resources, guided proposal safety and actual UI script execution.
+This is developer evidence for the implementation, not a non-professional user
+study, business acceptance or a substitute for the pull request's CI results.
+
+## Earlier isolated draft-review experiment
+
+The following describes the separate example editor. It is not the engineering
+contract or the default server configuration. To enable it explicitly, start
+`server.mjs --target "<repo>" --state "<initialized-example-file>"`; this exposes
+the bounded example writes in addition to the read-only inspection tools.
 
 An optional shared decision workspace, not another reasoning agent. Inspect a
 requirement or assumption, see its linked components/requirements, edit the draft
@@ -27,12 +216,16 @@ understand MCP, JSON, revisions or component identifiers to review the wording.
   state, and confirmation before discarding edits. Inputs are read-only during
   save/reload so an in-flight response cannot erase newly typed text. Incoming
   conversation results do not replace a dirty form.
-- **A clear next action.** "Prepare conversation handoff" produces a selectable
+- **Task first, not a landing page.** A compact heading and grouped picker lead
+  straight to the wording and reason. Save, discard and discussion actions stay
+  together. Connections, guidance and source details expand only when needed;
+  they do not precede the work or imply completed steps.
+- **A clear next action.** "Discuss with agent" produces a selectable
   prompt from the last loaded saved model, never unsaved form text. It asks the
   agent to re-read the source, discuss uncertainty, obtain missing examples of
   success, and return actual evidence to the owner. It does not send anything,
   claim completed stages, or create a parallel report/approval store.
-- **Small screens and keyboard.** Narrow views use a grouped item picker rather
+- **Small screens and keyboard.** All views use a grouped item picker rather
   than forcing people through a long navigation list before each edit. Fields
   have visible labels, explanatory text, keyboard focus and inline errors.
 - **One visual language.** A shared, bundled palette uses deep navy surfaces,
@@ -81,9 +274,10 @@ and styles; the Apps request no external network/resource permissions.
 
 ## Try it in VS Code
 
-The optional [.vscode/mcp.json](../../.vscode/mcp.json) entry binds this server to
-the workspace and the initialized example file. It does not install Golden Path
-into another project or enable a check/approval policy.
+The default [.vscode/mcp.json](../../.vscode/mcp.json) entry is read-only. For this
+older editor, explicitly add `--state` and the initialized example file to a
+separate server configuration. It does not install Golden Path into another
+project or enable a check/approval policy.
 
 1. Build and initialize the prototype first.
 2. Open **MCP: List Servers**, select **golden-path-experience-preview**, and start
@@ -98,7 +292,7 @@ into another project or enable a check/approval policy.
 4. Choose `R1` under **What matters**, edit its wording/reason and **Save draft**.
    Choose `A1` under **What we're assuming** to challenge an
    assumption. Select `R2` or `A2` to inspect a locked baseline example.
-5. Use **Prepare conversation handoff**, select/copy the prompt and paste it into
+5. Use **Discuss with agent**, select/copy the prompt and paste it into
    the conversation. Unsaved edits are explicitly excluded from that summary.
 6. Ask Copilot to call `inspect_architecture` again. It must see the revision and
    content saved by the App, then reason from that state rather than a chat-only

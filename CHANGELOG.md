@@ -7,6 +7,27 @@ History of the kit. The current way to adopt it is in the [README](README.md); t
 
 ## Unreleased
 
+- **Consistent GitHub Pages palette.** The landing page now matches the MCP App's
+  navy, cyan, violet and gold colors, including diagrams, check states, controls
+  and favicon. Contrast and palette-parity tests preserve legibility; original
+  recorded evidence and vendor glyphs are unchanged.
+
+- **Read-only engineering inspection MCP App.** Inspect existing session/task
+  sources, acceptance artifacts, fixed-baseline changes, actual retained gate
+  results and boundary findings in compact tabbed views. "Why does this exist?"
+  separates verified source links, inferred text-ID hints and unavailable
+  rationale; "Agreement delta" flags contract/control source changes without
+  claiming semantic enforcement. An explicit terminal-only capture helper
+  retains existing gate JSON and local provenance; the App cannot run checks or
+  modify acceptance. Missing, skipped and stale results stay distinct from
+  current passes. Default workspace configuration is now read-only; the older
+  isolated editor requires explicit `--state`. No core kit controls changed.
+  Guided and engineering presentations share the same inspection. Outcome-first
+  questions prepare human-readable proposals and explicit owner messages for
+  the existing acceptance review process; optional host-supported chat sharing
+  has a copy/paste fallback. No approval store or automatic acceptance promotion
+  is introduced. Non-professional developer acceptance still needs a human trial.
+
 - **Optional MCP Apps experience prototype.** Inspect requirements, assumptions
   and their traceability in an isolated example model shared by chat tools and
   the App. Draft-only writes use revision checks, a cross-process lock and atomic
