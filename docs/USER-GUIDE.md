@@ -12,6 +12,13 @@ VS Code. You bring the goal and your knowledge of what matters.
 ## 1. Add Golden Path to your project
 
 Open **your own project** in VS Code, open Copilot Chat, and select Agent mode.
+For a new project, [use the Golden Path starter template](https://github.com/krnese/golden-path-starter/generate)
+to create a fresh repository, clone it and open it in VS Code. The method is
+already installed there; continue with your first task below. You still need to
+agree real examples and configure any stronger checks and review settings.
+For an existing project, stay in its current repository; do not migrate it into
+the template.
+
 If Golden Path is not installed, you can ask Copilot to help with setup:
 
 > Help me add Golden Path to this project using the instructions at
@@ -26,6 +33,20 @@ This is a request to your assistant, not a one-click installer. It needs access
 to the public repository and permission to use the relevant tools. If something
 is missing, it should explain what you need instead of claiming setup succeeded.
 The installer needs Node.js 22+ and git.
+
+Already installed? Say:
+
+> Help me use Golden Path for this task. Inspect what is already configured,
+> reuse our existing checks and review process, and explain what is missing or
+> unverified before proposing setup changes. Do not change settings or run
+> discovered project commands just to inspect setup.
+
+The skill includes guided adoption for both new and existing projects. Its
+[read-only report](ADOPTION.md#read-only-adoption-report) can inspect configuration;
+it cannot approve your examples or prove the client invokes its controls.
+For a new project, work in your application repository or a small application
+template, not this kit's development tree. Existing projects stay where they are;
+there is no migration to a Golden Path template.
 
 **The simple starting option adds the skill and project instructions. It does
 not automatically run checks or protect acceptance.** Start a new Copilot chat
@@ -121,8 +142,11 @@ your reasons:
 - `Owner judgment: needs revision`
 - `Owner judgment: cannot yet judge`
 
-If a merge closes the issue before you have judged it, the issue is reopened
-until you do. After recording your judgment, close the issue yourself.
+This repository's Golden Loop automation can reopen a labelled issue automatically
+closed by a merged change before owner judgment. That automation is not included
+in the normal kit installation; do not assume your repository has it. Without it,
+record your judgment through your existing issue or PR process. After recording
+your judgment, close the issue yourself when appropriate.
 
 ## 5. Give the next useful piece of feedback
 

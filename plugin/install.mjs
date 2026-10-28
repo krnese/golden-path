@@ -91,7 +91,7 @@ export function applyBlock(existing, fmt, body, remove = false) {
   if (existing != null && existing.includes(b)) {
     const i = existing.indexOf(b);
     const pre = existing.slice(0, i), rest = existing.slice(i + b.length);
-    const post = rest.slice(rest.indexOf(e) + e.length).replace(/^\n+/, "");
+    const post = rest.slice(rest.indexOf(e) + e.length).replace(/^(?:\r?\n)+/, "");
     if (remove) return pre.trim() || post.trim() ? pre.replace(/\n+$/, "") + "\n" + post : "";
     return pre + blockText(fmt, body) + post;
   }

@@ -8,6 +8,7 @@
 //   node gate.mjs stop    (default)     agentStop: block while checks are red ({"decision":"block","reason":...})
 //   node gate.mjs subagent start|stop   record use of the opt-in reviewer only, never blocks
 //   node gate.mjs check --base <sha>    run the checks once (CI): compare against an explicit fixed commit
+//   node gate.mjs adoption --target REPO [--github] [--json]   read-only adoption diagnostics
 //
 // What it is: fast feedback inside the agent session. It checks completion against the configured tests,
 // not customer acceptance. Branch protection and human review stay the durable boundary.
@@ -608,8 +609,177 @@ export function authorizeRevision(root, { base, head, reviews }) {
   return { authorized: !problems.length, base, head, files, problems };
 }
 
+// Configuration evidence only: never run project commands, write state or infer business approval.
+export function adoptionReport(target, { github = false, run = spawnSync } = {}) {
+  const checks = [];
+  const add = (id, status, evidence, next) => checks.push({ id, status, evidence, next });
+  const probe = (cmd, args, cwd = root) => {
+    const r = run(cmd, args, { cwd, encoding: "utf8", timeout: 10000, maxBuffer: 8 << 20, windowsHide: true });
+    return r.status === 0 ? { text: r.stdout } :
+      { error: String(r.error?.message || r.stderr || `${cmd} exited ${r.status}`).trim().slice(0, 400) };
+  };
+  let root = path.resolve(target);
+  if (!fs.statSync(root).isDirectory()) throw new Error(`Not a directory: ${root}`);
+  const repo = probe("git", ["rev-parse", "--show-toplevel"]);
+  if (!repo.error) root = path.resolve(repo.text.trim());
+  add("repository", repo.error ? "unverified" : "verified", repo.error || root,
+    "Use the application repository, not the Golden Path kit's tests as business acceptance.");
+  const head = probe("git", ["rev-parse", "--verify", "HEAD"]);
+  add("baseline", head.error ? "unverified" : "verified", head.error || head.text.trim(),
+    "Commit approved configuration and acceptance before starting the implementation session.");
+  const method = ".github/skills/golden-path/SKILL.md";
+  add("method-files", fs.existsSync(path.join(root, method)) ? "verified" : "missing",
+    fs.existsSync(path.join(root, method)) ? `${method} exists; discovery is not proved.` : "No copy-in skill found; plugin discovery is not inspected.",
+    "Use either plugin mode or copy-in, not both; verify discovery in the selected client.");
+
+  const configPath = path.join(root, CONFIG_REL);
+  let cfg = {}, configError = null;
+  if (fs.existsSync(configPath)) {
+    try {
+      cfg = JSON.parse(fs.readFileSync(configPath, "utf8"));
+      if (!cfg || typeof cfg !== "object" || Array.isArray(cfg)) {
+        configError = "Configuration must be a JSON object.";
+        cfg = {};
+      } else if (cfg.acceptance !== undefined && (!cfg.acceptance || typeof cfg.acceptance !== "object" || Array.isArray(cfg.acceptance))) {
+        configError = "acceptance must be a JSON object.";
+      }
+    } catch (e) {
+      if (!(e instanceof SyntaxError)) throw e;
+      configError = `Invalid configuration JSON: ${e.message}`;
+    }
+  }
+  add("configuration", configError ? "unverified" : fs.existsSync(configPath) ? "verified" : "missing",
+    configError || (fs.existsSync(configPath) ? `${CONFIG_REL} parsed; existing settings were not changed.` : "No checked-completion configuration; method-only use is valid."),
+    "Review only missing settings. Installer reruns do not overwrite existing configuration.");
+  const command = (id, value) => add(id, typeof value === "string" && value.trim() ? "verified" :
+    value == null || value === "" ? "missing" : "unverified",
+    typeof value === "string" && value.trim() ? "Non-empty command configured; NOT executed." : "No valid non-empty command configured.",
+    "Reuse an existing command; separately verify which tests it runs and whether it fits the local time budget.");
+  command("check-command", cfg.check);
+  const acc = cfg.acceptance && typeof cfg.acceptance === "object" && !Array.isArray(cfg.acceptance) ? cfg.acceptance : {};
+  command("acceptance-command", acc.command);
+  add("acceptance-owner", typeof acc.owner === "string" && acc.owner.trim() && acc.owner.trim() !== DEFAULT_CONFIG.acceptance.owner ? "verified" : "missing",
+    typeof acc.owner === "string" ? `Configured message owner: ${acc.owner}. This is not GitHub authorization.` : "No named acceptance owner configured.",
+    "Name who owns the rule's meaning; configure actual GitHub ownership separately.");
+  const listing = probe("git", ["ls-files", "-z", "--cached", "--others", "--exclude-standard"]);
+  const files = listing.error ? [] : [...new Set(listing.text.split("\0").filter(Boolean))]
+    .filter((rel) => fs.existsSync(path.join(root, rel)) && fs.statSync(path.join(root, rel)).isFile()).sort();
+  const patterns = (id, value) => {
+    const valid = Array.isArray(value) && value.every((p) => typeof p === "string" && p.trim() &&
+      !p.includes("\\") && !path.posix.isAbsolute(p) && !/^[A-Za-z]:/.test(p) && !p.split("/").includes(".."));
+    const matched = valid ? files.filter((f) => matches(f, value)) : [];
+    const absent = valid ? value.filter((p) => !files.some((f) => matches(f, [p]))) : [];
+    add(id, listing.error || !valid ? "unverified" : value.length && !absent.length ? "verified" : "missing",
+      listing.error || (!valid ? "Expected an array of repository-relative path patterns using /." :
+        `${matched.length} files matched; patterns with no files: ${absent.join(", ") || (value.length ? "none" : "not configured")}.`),
+      "Match the existing test locations. Ignored files are not included; configuration does not prove test coverage.");
+    return matched;
+  };
+  const acceptance = patterns("acceptance-paths", acc.paths === undefined ? [] : acc.paths);
+  patterns("developer-test-paths", cfg.protected === undefined ? DEFAULT_CONFIG.protected : cfg.protected);
+  const coPath = [".github/CODEOWNERS", "CODEOWNERS", "docs/CODEOWNERS"].find((f) => fs.existsSync(path.join(root, f)));
+  const co = coPath ? fs.readFileSync(path.join(root, coPath), "utf8") : "";
+  const ownership = (id, selected) => {
+    const missing = selected.filter((f) => !codeOwners(co, f)?.length);
+    const unsupported = selected.filter((f) => {
+      const owners = codeOwners(co, f) || [];
+      return owners.length && !owners.some((o) => /^@[A-Za-z0-9](?:[A-Za-z0-9-]*[A-Za-z0-9])?$/.test(o));
+    });
+    add(id, !coPath || missing.length ? "missing" : listing.error || !selected.length || unsupported.length ? "unverified" : "verified",
+      !coPath ? "No CODEOWNERS file found." : `${coPath} (working tree, supported pattern subset): ${selected.length} files; ` +
+        `unowned: ${missing.join(", ") || "none"}; no supported individual owner: ${unsupported.join(", ") || "none"}.`,
+      "Review last-match ownership and merge approved assignments. Teams/emails alone are not resolved by the kit's revision check.");
+  };
+  ownership("acceptance-ownership", acceptance);
+  const controls = files.filter((f) => matches(f, [...KIT_PATTERNS, ".github/workflows/**", ".github/skills/golden-path/**"]) ||
+    [coPath, ".github/hooks/golden-path-loop.json", ".github/copilot-instructions.md", ".golden-path/ci-setup.sh"].includes(f));
+  ownership("control-file-ownership", controls);
+  add("hook-invocation", "unverified", "Files and local records do not prove the selected client invokes and honours the controls.",
+    "Verify discovery, a refused acceptance edit and red-check blocking in a disposable repository.");
+  add("acceptance-execution", "unverified", "No project command was executed; test coverage and runtime are not verified.",
+    "Run the agreed checks separately and retain their actual outputs at the checked revision.");
+  add("owner-judgment", "unverified", "Business approval cannot be established from repository configuration.",
+    "Have the owner approve examples before implementation, then judge real outputs and gaps in the existing issue or PR.");
+
+  const githubIds = ["github-required-checks", "github-owner-review", "github-stale-approvals"];
+  const unavailable = (why) => {
+    for (const id of githubIds) add(id, "unverified", why, "Have an authorized maintainer inspect effective default-branch rules and a representative PR.");
+  };
+  if (!github) unavailable("GitHub was not queried. Use --github for authenticated, read-only default-branch inspection.");
+  else {
+    const json = (args) => {
+      const r = probe("gh", args);
+      if (r.error) return r;
+      try { return { data: JSON.parse(r.text) }; }
+      catch (e) {
+        if (!(e instanceof SyntaxError)) throw e;
+        return { error: `Invalid JSON from gh: ${e.message}` };
+      }
+    };
+    const metadata = json(["repo", "view", "--json", "nameWithOwner,defaultBranchRef"]);
+    const name = metadata.data?.nameWithOwner, branch = metadata.data?.defaultBranchRef?.name;
+    if (metadata.error || !/^[\w.-]+\/[\w.-]+$/.test(name ?? "") || typeof branch !== "string" || !branch) {
+      unavailable(metadata.error || "GitHub repository/default branch could not be identified.");
+    } else {
+      const endpoint = `repos/${name}/`;
+      const rules = json(["api", `${endpoint}rules/branches/${encodeURIComponent(branch)}?per_page=100`, "--paginate", "--slurp"]);
+      const protection = json(["api", `${endpoint}branches/${encodeURIComponent(branch)}/protection`]);
+      const pagesValid = Array.isArray(rules.data) && rules.data.every((page) => Array.isArray(page) &&
+        page.every((r) => r && typeof r === "object" && typeof r.type === "string"));
+      const protectionValid = protection.data && typeof protection.data === "object" && !Array.isArray(protection.data);
+      const active = pagesValid ? rules.data.flat() : [];
+      const pulls = active.filter((r) => r.type === "pull_request");
+      const legacy = protectionValid ? protection.data : {};
+      const contexts = [...new Set([
+        ...active.filter((r) => r.type === "required_status_checks").flatMap((r) => (r.parameters?.required_status_checks || []).map((s) => s.context)),
+        ...(legacy.required_status_checks?.contexts || []),
+        ...(legacy.required_status_checks?.checks || []).map((s) => s.context),
+      ])].filter((s) => typeof s === "string");
+      const readErrors = [rules.error || (!pagesValid && "Unexpected rules response"),
+        protection.error || (!protectionValid && "Unexpected branch-protection response")].filter(Boolean).join("; ");
+      const observed = (id, yes, detail) => add(id, yes ? "verified" : readErrors ? "unverified" : "missing",
+        `${name}@${branch}: ${detail}${readErrors ? ` Partial evidence: ${readErrors}` : ""}`,
+        "Observed settings are not a merge guarantee. Verify required application checks, a representative PR and bypass policy.");
+      observed("github-required-checks", contexts.includes("golden-path-check"),
+        `Required contexts: ${contexts.join(", ") || "none"}. Expected kit context: golden-path-check; heavier checks need separate review.`);
+      observed("github-owner-review", pulls.some((r) => r.parameters?.require_code_owner_review === true && r.parameters?.required_approving_review_count >= 1) ||
+        (legacy.required_pull_request_reviews?.require_code_owner_reviews === true && legacy.required_pull_request_reviews?.required_approving_review_count >= 1),
+        "Checks for required Code Owner review with at least one approval.");
+      observed("github-stale-approvals", pulls.some((r) => r.parameters?.dismiss_stale_reviews_on_push === true) ||
+        legacy.required_pull_request_reviews?.dismiss_stale_reviews === true,
+        "Checks whether new commits dismiss stale approvals.");
+    }
+  }
+  add("github-bypass-policy", "unverified", "Bypass actors, organization exceptions and effective permissions were not audited.",
+    "An authorized maintainer must review bypass policy; protect workflow, configuration and ownership changes too.");
+  return { root, head: head.error ? null : head.text.trim(), checks };
+}
+
 export function main(argv) {
   const cmd = argv[0] || "stop";
+  if (cmd === "adoption") {
+    if (argv.length === 2 && ["--help", "-h"].includes(argv[1])) {
+      process.stdout.write("usage: adoption [--target REPO] [--github] [--json]\nRead-only configuration evidence; no project commands or settings changes. Exit 0 means a report was produced, not that adoption is complete.\n");
+      return 0;
+    }
+    let target = process.cwd(), github = false, json = false;
+    for (let i = 1; i < argv.length; i++) {
+      if (argv[i] === "--target" && argv[i + 1] && !argv[i + 1].startsWith("--")) target = argv[++i];
+      else if (argv[i] === "--github") github = true;
+      else if (argv[i] === "--json") json = true;
+      else { process.stderr.write("usage: adoption [--target REPO] [--github] [--json]\n"); return 64; }
+    }
+    try {
+      const report = adoptionReport(target, { github });
+      process.stdout.write(json ? JSON.stringify(report, null, 2) + "\n" :
+        `Golden Path adoption: ${report.root}\nConfiguration evidence only; not a protection badge or a test run.\n\n` +
+        report.checks.map((r) => `[${r.status.toUpperCase()}] ${r.id}: ${r.evidence}\n  Next: ${r.next}`).join("\n\n") + "\n");
+      return 0;
+    } catch (e) {
+      process.stderr.write(`adoption UNVERIFIED: ${e.message}\n`);
+      return 1;
+    }
+  }
   if (cmd === "authorize-acceptance-revision") {
     const arg = (k) => { const i = argv.indexOf(k); return i >= 0 ? argv[i + 1] : undefined; };
     const [base, head, file] = [arg("--base"), arg("--head"), arg("--reviews")];

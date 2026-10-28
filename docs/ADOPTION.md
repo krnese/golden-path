@@ -6,6 +6,117 @@ For an engineering lead or developer working with a product/domain owner in an e
 repository. Start with one business rule, not a new platform or a complete acceptance suite.
 This checklist uses existing Golden Path behavior; it does not configure GitHub settings for you.
 
+## One entry point
+
+In the application repository, ask Copilot:
+
+> Help me use Golden Path for this task. Inspect existing setup, agree a few
+> examples with their owner, reuse our checks, and configure only what is missing.
+> Explain proposed changes first; preserve existing tests and configuration.
+
+The installed skill includes [guided adoption](../plugin/skills/golden-path/references/ADOPTION.md).
+The agent helps interpret the task and setup; deterministic diagnostics supply
+configuration facts. Neither approves the business outcome. Start with one task,
+not a mandatory new specification or a complete acceptance suite.
+
+## Greenfield and brownfield
+
+| Starting point | Smallest useful next step |
+| --- | --- |
+| New application | [Use the starter template](https://github.com/krnese/golden-path-starter/generate), agree the first task and add a real application check as code takes shape |
+| Existing application | Inspect existing tests, CI and ownership; install into that repository and reuse working controls |
+| Clone of this kit | Use it as the installer source or demonstration; its own tests are not your application's acceptance |
+
+A dedicated [Golden Path starter](https://github.com/krnese/golden-path-starter)
+provides a minimal, stack-neutral greenfield entry point through GitHub's
+**Use this template > Create a new repository** action. It includes method-only
+guidance and the kit's license notice, not this kit's development tree, fictional
+owners, demo acceptance or placeholder passing checks. Choose an application stack
+and license appropriate to your project. Approve real examples and configure
+ownership for each generated repository.
+Template generation copies files and starts a new history; it is not proof of
+required GitHub review or checks, and subsequent template updates do not automatically
+upgrade generated repositories. Verify effective settings independently.
+[GitHub's template guide](https://docs.github.com/en/repositories/creating-and-managing-repositories/creating-a-repository-from-a-template)
+describes the creation flow. The starter is a separate repository; generating it
+locally does not create GitHub settings.
+
+For brownfield adoption, do not move the application into a template or replace its
+CI. Existing developer tests are not automatically owner-approved acceptance.
+Method-only and check-only use remain valid; describe their limits honestly.
+
+## Maintaining the starter template
+
+The starter's source is [examples/starter/README.md](../examples/starter/README.md)
+plus the current method-only installer output, not a manually maintained second
+copy of the kit. Generate a candidate in a new or empty directory:
+
+```bash
+node examples/make-starter.mjs "<empty-target-directory>"
+```
+
+PowerShell: `node examples\make-starter.mjs "<empty-target-directory>"`.
+The generator refuses nonempty targets and creates only:
+
+- The Level 1 skill/references, Copilot instructions, task prompt and installation manifest.
+- A first-task README describing limits and reviewed upgrades.
+- `.github/GOLDEN-PATH-LICENSE`, preserving the copied kit's copyright and permission.
+
+It does not initialize git, make commits, publish a repository, create acceptance,
+choose an application license or configure CI. Review the generated tree before
+publishing or opening an update PR in the dedicated starter repository. Only an
+authorized maintainer marks that repository as a template in GitHub settings.
+Do not mark the entire kit development repository as the application starter.
+Generated applications do not receive later starter updates automatically.
+
+## Read-only adoption report
+
+**Check the script source before using this command on an existing installation
+or older source checkout.** It must explicitly handle `cmd === "adoption"`.
+Older versions treat unknown commands as the stop gate, which can run configured
+project checks and write state. If support is absent, inspect setup manually or
+use a supporting kit source checkout with `--target`; do not run the unknown command.
+
+From a Golden Path source checkout:
+
+```bash
+node plugin/scripts/gate.mjs adoption --target "<application-repo>"
+```
+
+In a checked copy-in installation:
+
+```bash
+node .github/hooks/golden-path/gate.mjs adoption
+```
+
+PowerShell: use `node plugin\scripts\gate.mjs adoption --target "<application-repo>"`
+or `node .github\hooks\golden-path\gate.mjs adoption`. Plugin installations can
+invoke the plugin's `scripts/gate.mjs` with `--target` instead. Method-only installs
+stay code-free; run diagnostics from the kit source if desired.
+
+Add `--json` for `{root, head, checks: [{id, status, evidence, next}]}` output.
+Add `--github` for optional authenticated read-only inspection using `gh` in the
+target repository. It identifies that repository's default branch, queries active
+paginated rules and legacy branch protection, and reports observed required
+`golden-path-check`, Code Owner review and stale-approval settings. Access failures,
+unsupported plans and incomplete evidence are unverified, not silently missing.
+A positive setting from a partial response is explicitly qualified.
+
+Each item is **verified**, **missing** or **unverified**. Verified means only the
+stated configuration fact was observed. Local ownership uses the existing
+CODEOWNERS pattern subset and the working tree; compare it with the reviewed
+default branch before relying on it. The report never runs configured commands,
+writes state or a ledger, installs files, changes settings or sends notifications.
+It cannot establish client invocation, test quality, business approval or bypass
+safety. Required heavier suites and any custom replacement CI need maintainer
+review; the kit context is not inferred from arbitrary workflow names.
+
+Exit `0` means the report was produced, **not** that adoption is complete.
+Invalid arguments exit `64`; a fatal inspection error exits `1` with UNVERIFIED.
+This is a diagnostic, not a required CI gate or overall protection badge. Use the
+remaining checklist to verify behaviour and owner approval; normal work need not
+wait for every optional control.
+
 ## 1. Agree one bounded outcome
 
 Choose a deterministic rule such as a discount, approval threshold or API contract.

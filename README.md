@@ -95,10 +95,27 @@ at each step, the screenshots, the gate verdicts, and what the trial does and do
 
 ## Quickstart
 
-Needs Node.js 22+ and git, on any OS. From a clone of this repository:
+**Choose where your application starts:**
+
+| New application (greenfield) | Existing application (brownfield) |
+| --- | --- |
+| [Use the Golden Path starter template](https://github.com/krnese/golden-path-starter/generate) to create a fresh, independent repository with method-only guidance | Install into your existing repository using the commands below; keep your tests, CI and review process |
+
+The starter contains no application stack, demo tests, fictional owners or placeholder passing checks.
+GitHub template generation does not establish required review, checks or business acceptance. Configure
+and verify those for your new repository. Use this kit repository as the installer source, not as the
+application template. See [starter contents and maintenance](docs/ADOPTION.md#maintaining-the-starter-template).
+
+For installation from source, clone this kit; the commands need Node.js 22+ and git on any OS.
+Reading the method-only starter needs no Node.js runtime.
 
 **New here?** The [first-task guide](docs/USER-GUIDE.md) shows what to say to Copilot,
 how to agree examples and how to review the result, without starting with this project's test suite.
+In your application repository, ask **"Help me use Golden Path for this task."** The skill guides one
+journey for new and existing projects: inspect what is there, agree examples, configure only missing
+controls, and return actual results. A [read-only adoption report](docs/ADOPTION.md#read-only-adoption-report)
+distinguishes observed configuration from missing or unverified safeguards.
+
 For the method-only starting option:
 
 ```bash
@@ -174,17 +191,19 @@ Every element of the overview is checked in [docs/overview-claims.md](docs/overv
 
 ## Two ways to use Golden Path
 
-1. **Fork or clone this repository.** Golden Path is already
-   installed here at Level 2 (`.github/skills/golden-path/`, the marked block in
-   `.github/copilot-instructions.md`, the hook in `.github/hooks/`, config in `.golden-path/config.json`,
-   whose check is a **fast** packaging + installer + self-install subset that fits the hook budget; the full suite stays in CI). Those are installed *copies*; **`plugin/` is the source of
-   truth**. After changing anything under `plugin/`, rerun `node plugin/install.mjs --target .` and commit;
-   a test (`tests/self-install.test.mjs`) fails in CI if the copies drift.
-   This repository's own configuration protects developer tests but has no business acceptance paths or
-   acceptance command; cloning it does not define acceptance for your business.
+1. **Start a new application** with the [starter template](https://github.com/krnese/golden-path-starter/generate).
+   It creates a fresh repository with method-only guidance, not this kit's development files or checks.
 2. **Add it to your own repository** with `node plugin/install.mjs --target <your-repo>` (levels below). It
    copies the same files into *your* repository's `.github/` (and `.golden-path/` at L2). Paths such as
    `.github/skills/golden-path/` below mean those files in your repository after install.
+
+**Working on the kit itself?** Fork or clone this repository. Golden Path is already installed here
+at Level 2 (`.github/skills/golden-path/`, instructions in `.github/copilot-instructions.md`, the hook
+in `.github/hooks/`, and `.golden-path/config.json`). Its local check is a fast packaging, installer
+and self-install subset; the full suite stays in CI. These are installed copies; **`plugin/` is the
+source of truth**. After changing it, run `node plugin/install.mjs --target .` and commit the matching
+copies. `tests/self-install.test.mjs` detects drift. This configuration protects developer tests but
+has no business acceptance paths or command; cloning it does not define acceptance for your business.
 
 A standalone VS Code plugin that does not need repository files is being explored.
 
