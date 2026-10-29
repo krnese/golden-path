@@ -218,12 +218,14 @@ test("the actual UI renders all panels, preserves guided notes across inspection
   assert.equal(ids.get("tips-toggle").getAttribute("aria-expanded"), "true");
   ids.get("tips-toggle").listeners.click();
   assert.equal(ids.get("tips-toggle").getAttribute("aria-expanded"), "false");
+  ids.get("acceptance").focused = false;
   for (const [id, value] of [["expected", "Normal behavior."], ["failure", "Explicit failure."], ["boundary", "No payments."]]) {
     assert.equal(ids.get(`question-${id}`).hidden, false);
     ids.get(id).value = value;
     ids.get("journey-next").listeners.click();
   }
   assert.equal(ids.get("acceptance").hidden, false);
+  assert.equal(ids.get("acceptance").focused, true);
   assert.equal(ids.get("brief-review").children.length, 5);
   assert.equal(ids.get("journey-next").hidden, true);
   assert.equal(ids.get("example-proposal").hidden, false);
@@ -311,7 +313,9 @@ test("the actual UI renders all panels, preserves guided notes across inspection
   app.ontoolresult({ structuredContent: { inspection: report } });
   assert.equal(ids.get("goal").value, "Keep my unsaved outcome.");
   assert.equal(ids.get("suggested-brief").hidden, false);
+  ids.get("acceptance").focused = false;
   ids.get("apply-brief").listeners.click();
+  assert.equal(ids.get("acceptance").focused, true);
   assert.equal(ids.get("goal").value, report.brief.outcome);
   assert.equal(ids.get("expected").value, report.brief.behavior);
   assert.equal(ids.get("boundary").value, "No payments.");

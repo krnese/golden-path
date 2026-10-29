@@ -13,6 +13,7 @@ History of the kit. The current way to adopt it is in the [README](README.md); t
   workflow and declaration presence facts. Regression checks cover each case.
   Applying a supplied replacement brief resets an earlier owner expression to
   review, including when accepted delivery leaves the App open.
+  Entering brief review focuses the visible panel rather than a hidden control.
 
 - **Ship the companion journey in both entry points.** The kit and generated
   method-only starter explain Guided briefing, continuing in existing Copilot

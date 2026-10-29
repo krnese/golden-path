@@ -45,6 +45,7 @@ to review; using a partial one asks only for the remaining fields.
 Suggested exception responses are unselected until chosen. Unknowns can be
 stated explicitly rather than invented. Returning from an edit preserves all
 other answers and skips their questions.
+Entering brief review moves keyboard focus to the newly visible review panel.
 
 The review has one primary handoff: **Continue in Copilot chat**, or select/copy
 when messaging is unsupported. The exact outgoing text is available on demand.

@@ -755,7 +755,7 @@ function reviewBrief() {
       return row;
     }));
     guidedStep = "review";
-    showTab("acceptance");
+    showTab("acceptance", true);
     get("proposal-status").textContent = "Review this exact message before sharing. It has not been sent or saved as acceptance.";
     controls();
   } catch (failure) {
