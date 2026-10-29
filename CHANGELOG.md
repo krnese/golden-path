@@ -7,6 +7,16 @@ History of the kit. The current way to adopt it is in the [README](README.md); t
 
 ## Unreleased
 
+- **Starter-to-App first-use journey.** The concise starter landing page now
+  includes a real guided-preview screenshot and optional setup prompt. Installed
+  guidance covers permission, prerequisite/conflict checks, actual server
+  verification and host opening. A read-only verifier checks the expected
+  registration, tools, repository binding and App resource without running
+  project checks. Projects with no recorded sessions open a connected welcome
+  view with an explicit chat/copy path; technical details stay available without
+  fabricating acceptance, evidence or approvals. Native host rendering remains
+  a separate verification step.
+
 - **Outcome-first starter landing page.** The generated README now leads with
   the value, one first-task prompt and a concise explanation of its limits.
   Optional App setup, maintenance and legacy registration migration live in a

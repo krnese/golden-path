@@ -53,6 +53,8 @@ export function main(args) {
     if (values["dry-run"]) console.log(JSON.stringify(result.config, null, 2));
     else {
       console.log(`${result.changed ? "Created" : "Already configured:"} ${result.file}`);
+      console.log(`Next, verify the actual server: node "${path.join(HERE, "verify.mjs")}" --target "${fs.realpathSync(values.target)}"`);
+      console.log("Configuration alone is not setup complete.");
       console.log(`In VS Code, open Chat: Open Customizations > MCP Servers, start/restart ${SERVER_NAME}, then reopen the App.`);
       console.log("The host must launch this workspace server from the application repository root. Review cross-drive absolute paths before sharing.");
       console.log("No checks, acceptance, session records or approvals were created. Review the configuration before committing it.");

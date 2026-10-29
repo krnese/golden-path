@@ -94,8 +94,13 @@ The generator refuses nonempty targets and creates only:
 - A first-task README describing limits and reviewed upgrades.
 - `.github/GOLDEN-PATH-LICENSE`, preserving the copied kit's copyright and permission.
 
-The generated README leads with the outcome, value and first task, and links to
+The generated README leads with the outcome, value and first task, offers an App
+preview and optional setup prompt, and links to
 the [optional MCP App setup and update guide](MCP-APP-SETUP.md).
+The installed method carries the corresponding agent procedure, including
+permission, preservation of existing settings, real server verification and
+explicit host trust/rendering follow-through. A registration file is not proof
+the user can open the App.
 It uses a separate kit checkout and an explicit, conflict-refusing
 `examples/mcp-app/configure.mjs --target "<application-repo>"` invocation; it
 does not bundle App code, dependencies or an automatically started server into

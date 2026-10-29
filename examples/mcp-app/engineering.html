@@ -34,6 +34,14 @@
     .session-picker > div { flex: 1; min-width: 0; }
     .sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; border: 0; }
     .workspace-shell { display: grid; grid-template-columns: minmax(0, 2.1fr) minmax(220px, 1fr); gap: 14px; align-items: start; margin-top: 12px; }
+    .welcome { max-width: 760px; margin: 24px auto; padding: 28px; border: 1px solid var(--line); border-radius: 12px; background: var(--surface); }
+    .welcome h2 { font-size: 26px; letter-spacing: -.03em; margin: 12px 0; }
+    .welcome .flow { display: flex; flex-wrap: wrap; gap: 8px; margin: 18px 0; color: var(--accent); }
+    .welcome .flow span { border: 1px solid var(--line); border-radius: 6px; padding: 6px 10px; }
+    .welcome textarea { line-height: 1.6; resize: vertical; }
+    .welcome .actions { margin: 12px 0; }
+    .welcome .primary-action { border-color: var(--accent); background: var(--soft); }
+    @media (max-width: 420px) { .welcome { margin: 12px auto; padding: 16px; } .welcome h2 { font-size: 22px; } }
     .primary, .sidebar { min-width: 0; }
     .mode-cards { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 14px; }
     .mode-card { display: flex; align-items: center; gap: 12px; min-height: 52px; text-align: left; padding: 9px 12px; border-color: var(--line); background: transparent; }
@@ -155,14 +163,28 @@
   <div class="page">
     <header><div class="row"><h1>Engineering with Golden Path</h1><span class="badge">PREVIEW</span></div><span class="badge">Read only · Local evidence</span></header>
     <p class="intro muted">Turn your idea into working software with guardrails, checks and clear evidence.</p>
+    <p id="error" class="notice" role="alert" hidden></p>
+    <section id="first-run" class="welcome" aria-labelledby="welcome-title" hidden>
+      <span class="badge passed">Connected · Read-only inspection</span>
+      <h2 id="welcome-title" tabindex="-1">Your project is connected.</h2>
+      <p id="welcome-project" class="muted"></p>
+      <p>Describe what you want to build in chat. Your agreement and evidence will appear here as real work is recorded.</p>
+      <div class="flow" aria-label="From intent to evidence"><span>Outcome</span><span>Examples</span><span>Work</span><span>Evidence</span></div>
+      <label for="welcome-prompt">Start your first task in the existing chat</label>
+      <textarea id="welcome-prompt" rows="4" readonly>Help me use Golden Path to build [describe your outcome]. Recommend the smallest useful first version and help me agree examples of success before implementation. Keep the agreement in our existing task or PR. Don't invent acceptance or passing checks, and don't change repository protections without my approval.</textarea>
+      <div class="actions"><button id="select-welcome" class="primary-action" type="button">Select message to copy</button><button id="send-welcome" type="button" hidden>Share in chat</button></div>
+      <p id="welcome-status" class="muted" role="status">Replace the outcome placeholder in chat before sending. Nothing is sent automatically.</p>
+      <p class="muted">No local engineering session is recorded yet. Opening this App does not approve acceptance or run checks.</p>
+      <div class="actions"><button id="explore-welcome" type="button">Explore the guided view</button><button id="details-welcome" type="button">Inspect setup details</button><button id="refresh-welcome" type="button" disabled>Refresh recorded work</button></div>
+    </section>
     <div class="sr-only"><label for="presentation">Presentation</label><select id="presentation" tabindex="-1"><option value="guided">Guided</option><option value="engineering">Engineering detail</option></select></div>
-    <div class="workspace-shell">
+    <div id="workspace" class="workspace-shell" hidden>
     <div class="primary">
+    <button id="back-welcome" class="text-button" type="button" hidden>Back to getting started</button>
     <div class="mode-cards" role="group" aria-label="Level of explanation">
       <button id="mode-guided" class="mode-card" type="button" aria-pressed="true"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="7" r="3.5"/><path d="M5 21v-3a7 7 0 0 1 14 0v3"/></svg><span><strong>Guided</strong><small>Step by step, plain language</small></span></button>
       <button id="mode-engineering" class="mode-card" type="button" aria-pressed="false"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="m8 6-6 6 6 6m8-12 6 6-6 6m-2-15-4 18"/></svg><span><strong>Engineering</strong><small>Technical details and evidence</small></span></button>
     </div>
-    <p id="error" class="notice" role="alert" hidden></p>
     <div class="work-card">
     <div class="journey guided" role="group" aria-label="Review stages, not completion status">
       <button id="stage-1" type="button" aria-current="step"><span class="step-number">1</span>Describe<br>your goal</button>
@@ -280,7 +302,6 @@
     </main>
     <div class="journey-actions guided"><button id="journey-back" type="button" disabled>← Back</button><button id="journey-next" type="button">Next →</button></div>
     </div>
-    <p id="status" role="status">Connecting to the MCP Apps host...</p>
     </div>
     <aside class="sidebar" aria-label="Your review summary">
       <section class="side-card progress-card"><span class="progress-ring" aria-hidden="true"></span><div><h2>Your review position</h2><p id="review-position">1 of 4 stages</p><div class="quiet">Navigation, not completion</div></div></section>
@@ -318,6 +339,7 @@
       </details>
     </aside>
     </div>
+    <p id="status" role="status">Connecting to the MCP Apps host...</p>
   </div>
   <dialog id="artifact-dialog" aria-labelledby="artifact-title">
     <div class="row"><h2 id="artifact-title" tabindex="-1">Repository artifact</h2><button id="close-artifact" type="button">Close</button></div>

@@ -10,6 +10,7 @@ let connected = false;
 let requestNumber = 0;
 let changeLimit = 4;
 let activePanel = "contract";
+let exploredFirstRun = false;
 let questionIndex = 0;
 const questions = ["exception", "expected", "failure", "boundary"];
 const exampleResponses = {
@@ -37,6 +38,17 @@ function controls() {
   get("session").disabled = busy;
   for (const button of document.querySelectorAll("[data-artifact]")) button.disabled = busy || !connected;
   get("send-examples").hidden = !connected || !app.getHostCapabilities()?.message?.text;
+  get("send-welcome").hidden = !connected || !app.getHostCapabilities()?.message?.text;
+  get("refresh-welcome").disabled = !connected || busy;
+}
+function firstRunPresentation() {
+  const firstRun = !!current && !current.session && current.sessions.length === 0;
+  get("first-run").hidden = !firstRun || exploredFirstRun;
+  get("workspace").hidden = !current || (firstRun && !exploredFirstRun);
+  get("back-welcome").hidden = !firstRun || !exploredFirstRun;
+  if (firstRun) {
+    get("welcome-project").textContent = `Repository: ${current.root.split(/[\\/]/).filter(Boolean).at(-1)}`;
+  }
 }
 function presentation() {
   const guided = get("presentation").value === "guided";
@@ -202,7 +214,10 @@ function render() {
   get("session").value = report.session?.id || "";
   get("snapshot").textContent = `HEAD ${report.head.slice(0, 8)} · Base ${report.session?.base?.slice(0, 8) || "unavailable"} · Inspected ${new Date(report.inspectedAt).toLocaleTimeString()}`;
   const gaps = report.findings.filter((x) => x.status !== "passed").length;
-  get("status").textContent = report.session ? `${gaps} evidence/review gaps · not approval.` : "Choose the recorded session you want to inspect. This is not a list of chat transcripts.";
+  get("status").textContent = report.session ? `${gaps} evidence/review gaps · not approval.` :
+    report.sessions.length ? "Choose the recorded session you want to inspect. This is not a list of chat transcripts." :
+    "Connected. Begin in chat; refresh after real work is recorded.";
+  firstRunPresentation();
   const contract = get("contract-content");
   contract.replaceChildren(element("h2", "What was authorized?"));
   if (report.contract) {
@@ -360,6 +375,37 @@ app.onhostcontextchanged = ({ theme }) => {
 get("session").addEventListener("change", () => load());
 get("why-file").addEventListener("change", renderRelationships);
 get("refresh").addEventListener("click", () => load());
+get("refresh-welcome").addEventListener("click", () => load());
+get("select-welcome").addEventListener("click", () => {
+  get("welcome-prompt").focus();
+  get("welcome-prompt").select();
+  get("welcome-status").textContent = "Message selected. Copy it into the existing chat and replace the outcome placeholder. It has not been sent.";
+});
+get("send-welcome").addEventListener("click", async () => {
+  get("send-welcome").disabled = true;
+  try {
+    const result = await app.sendMessage({ role: "user", content: [{ type: "text", text: get("welcome-prompt").value }] });
+    if (result.isError) throw new Error("The host declined the message.");
+    get("welcome-status").textContent = "Shared in the existing chat. Describe your outcome there; no acceptance or session record has been created by this App.";
+  } catch (failure) {
+    get("welcome-status").textContent = `Could not share in chat: ${failure.message}. Select and copy the message instead.`;
+  } finally { get("send-welcome").disabled = false; }
+});
+function exploreFirstRun(mode) {
+  exploredFirstRun = true;
+  get("presentation").value = mode;
+  presentation();
+  firstRunPresentation();
+  showTab("contract");
+  get(mode === "guided" ? "goal" : "contract").focus();
+}
+get("explore-welcome").addEventListener("click", () => exploreFirstRun("guided"));
+get("details-welcome").addEventListener("click", () => exploreFirstRun("engineering"));
+get("back-welcome").addEventListener("click", () => {
+  exploredFirstRun = false;
+  firstRunPresentation();
+  get("welcome-title").focus();
+});
 get("acceptance-search").addEventListener("input", renderAcceptance);
 get("change-search").addEventListener("input", () => { changeLimit = 4; renderChanges(); });
 get("more-changes").addEventListener("click", () => { changeLimit += 4; renderChanges(); });

@@ -7,6 +7,16 @@ run checks, merge or deploy.
 
 ## First-time setup
 
+For an agent-assisted setup, ask your normal Copilot agent:
+
+> Help me start this project with Golden Path and enable its visual App. Check
+> prerequisites, explain and perform setup with my permission, then help me open
+> it. Start with my intended outcome; don't invent acceptance or passing checks.
+
+The installed adoption procedure covers permission, conflicts, verification and
+host actions. The commands below are the supported path, not required manual work
+for every user.
+
 The starter stays method-only: no App runtime or dependencies are copied into
 your application. To opt in, install Git and Node.js 22+ and use VS Code/Copilot
 with MCP Apps support. From your application repository in PowerShell:
@@ -17,6 +27,7 @@ npm ci --prefix ..\golden-path-kit\examples\mcp-app --no-audit --no-fund
 npm --prefix ..\golden-path-kit\examples\mcp-app run build
 node ..\golden-path-kit\examples\mcp-app\configure.mjs --target . --dry-run
 node ..\golden-path-kit\examples\mcp-app\configure.mjs --target .
+node ..\golden-path-kit\examples\mcp-app\verify.mjs --target .
 ```
 
 Review the source and dependency lock before installing. The kit is a separate
@@ -24,10 +35,17 @@ sibling checkout; commands do not install dependencies into your application.
 If `golden-path-kit` already exists, review and update that checkout instead of
 cloning over it. In another shell, use its native path separators.
 
-The final command explicitly creates `.mcp.json` at the application repository
+The configuration command explicitly creates `.mcp.json` at the application repository
 root, using the portable Copilot `mcpServers` format. Only the two read-only
 Golden Path inspection tools are enabled. The server runs from the kit, with
 **your application** as `--target`.
+
+The verification command starts that expected configured server from the
+application root, checks its read-only tools, validates the actual inspection and
+repository binding, and reads the current App resource. It refuses to execute
+modified server entries. It does not execute project checks or create sessions,
+acceptance or evidence. **Configuration alone is not setup complete:** verify
+host discovery and actual native rendering in VS Code as the next step.
 
 The host must launch the workspace server from the application repository root:
 `--target .` binds that working directory. The usual sibling layout yields a
@@ -48,6 +66,11 @@ after reviewing the configuration. Then ask Copilot:
 > Call inspect_engineering_session and show the Golden Path MCP App for this
 > repository. Let me choose a recorded session if one exists. Show missing
 > configuration and evidence as unavailable; do not create checks or infer approval.
+
+A project with no recorded sessions opens a connected welcome view. Select its
+first-task message to copy into the existing chat, or share it explicitly if the
+host supports messaging. You can explore the guided view or inspect technical
+details without inventing records. Refresh the view after real work is recorded.
 
 A fresh method-only application has no configured gate, recorded engineering
 sessions or retained test output. The App must show those gaps, not passing

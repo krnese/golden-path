@@ -77,6 +77,20 @@ Method-only applications need no fabricated gate configuration; missing controls
 sessions and verification remain unavailable. After updates, rebuild, restart
 the MCP server and reopen the App so server and UI versions match.
 
+After configuration, run
+`node examples/mcp-app/verify.mjs --target "<application-repo>"`.
+It verifies the expected configured process, read-only tools, actual inspection,
+repository binding and current App resource, without running application checks.
+Modified server commands are refused pending review. Host discovery, trust and
+native rendering still need to be verified in VS Code; configuration alone is
+not setup complete.
+
+A project with no local recorded sessions opens a connected welcome view rather
+than a dashboard of missing evidence. Select its first-task message to copy into
+chat, share it explicitly if supported by the host, or explore the guided view.
+Technical details remain inspectable, and refresh shows newly recorded work.
+No session, acceptance or passing result is created to populate the view.
+
 Build with Node.js 22+ from the kit repository root:
 
 ```powershell

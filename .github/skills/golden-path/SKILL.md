@@ -1,6 +1,6 @@
 ---
 name: golden-path
-description: 'Use for Golden Path setup, new-project bootstrap, team and brownfield adoption, and delegated engineering work: preserve owner-approved acceptance, implement within the boundary, and return evidence for owner judgment.'
+description: 'Use for Golden Path setup, visual App enablement, new-project bootstrap, team and brownfield adoption, and delegated engineering work: preserve owner-approved acceptance, implement within the boundary, and return evidence for owner judgment.'
 ---
 
 # Golden Path

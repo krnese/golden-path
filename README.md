@@ -103,6 +103,10 @@ The App runtime is not bundled by the core installer or starter template. The
 [optional App setup](docs/MCP-APP-SETUP.md)
 uses a separate kit checkout and explicitly configures the bound server without overwriting existing
 MCP settings. Method-only applications show missing configuration and evidence as unavailable.
+The starter offers a setup prompt and App preview; installed guidance helps the
+agent enable and verify the actual read-only server. A new project opens a
+connected welcome view with a first-task message, not a wall of missing checks.
+Host trust and native rendering still require verification in VS Code.
 Disabling it does not disable
 configured acceptance protection, required CI or owner review. No App action can approve real acceptance,
 merge or deploy; those responsibilities remain with existing owners and controls.

@@ -275,3 +275,20 @@ test("loopback engineering host serves actual read-only reports and refuses fore
   const rejected = await fetch(`${preview.url}/engineering?`, { headers: { Origin: "https://example.invalid" } });
   assert.equal(rejected.status, 403);
 });
+
+test("loopback engineering preview supports first-run inspection without inventing a session", async () => {
+  const { root } = fixture();
+  fs.rmSync(path.join(root, ".golden-path", "state", "real-session.json"));
+  const preview = await startPreview(root, 0, undefined, undefined, true);
+  try {
+    const response = await fetch(`${preview.url}/engineering?`);
+    const report = (await response.json()).structuredContent.inspection;
+    assert.equal(report.session, null);
+    assert.deepEqual(report.sessions, []);
+    assert.equal(report.evidence.freshness, "unavailable");
+    assert.match(await (await fetch(`${preview.url}/app`)).text(), /Your project is connected/);
+    assert.match(await (await fetch(preview.url)).text(), /data-view="engineering"/);
+  } finally {
+    await preview.close();
+  }
+});

@@ -2,10 +2,8 @@
 
 **Build with AI without handing over the definition of success.**
 
-The Golden Path starter helps you turn an idea into a useful application with
-Copilot, while keeping ownership of what gets built. You choose the application
-and technology; the starter supplies a lightweight engineering approach, not
-another agent platform.
+Turn an idea into a useful application with Copilot, while keeping ownership of
+what gets built. You choose the technology; Golden Path supplies the engineering approach.
 
 ## What you get
 
@@ -35,15 +33,27 @@ a separate change first. After implementation, review the actual results and
 gaps together. Passing tests is evidence for your judgment, not approval to
 merge or deploy.
 
+## Open the visual App
+
+![Golden Path guided App preview](https://raw.githubusercontent.com/krnese/golden-path/main/docs/assets/mcp-app-guided.png)
+
+Inspect the agreement, progress and evidence together. To enable the
+[optional visual App](https://github.com/krnese/golden-path/blob/main/docs/MCP-APP-SETUP.md),
+ask the same agent:
+
+> Help me start this project with Golden Path and enable its visual App. Check
+> prerequisites, explain and perform setup with my permission, then help me open
+> it. Start with my intended outcome; don't invent acceptance or passing checks.
+
+The agent handles setup; you review permissions and host trust prompts.
+**You do not need it to start.** Image: local guided preview, not approved acceptance.
+
 ## Lightweight on purpose
 
 This is **method-only guidance**. No application stack is chosen, and no
 application, dependencies or placeholder-green workflows are bundled. Your
 agent helps configure checks your project actually needs; authorized maintainers
 approve repository-wide changes. It is not an automatic scaffolding or repository-hardening service.
-
-An [optional visual App](https://github.com/krnese/golden-path/blob/main/docs/MCP-APP-SETUP.md)
-helps inspect the work. **You do not need it to start.**
 
 ## Working with a team
 
