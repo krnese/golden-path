@@ -7,6 +7,13 @@ History of the kit. The current way to adopt it is in the [README](README.md); t
 
 ## Unreleased
 
+- **Optional MCP App setup carried by the starter.** The generated README now
+  includes explicit setup, update and disable instructions using a separate kit
+  checkout. A conflict-refusing configuration helper binds the server to the
+  application without installing dependencies or acceptance controls there.
+  Engineering inspection now supports method-only applications with absent
+  gate configuration reported as unavailable, not invented checks or passes.
+
 - **Consistent GitHub Pages palette.** The landing page now matches the MCP App's
   navy, cyan, violet and gold colors, including diagrams, check states, controls
   and favicon. Contrast and palette-parity tests preserve legibility; original

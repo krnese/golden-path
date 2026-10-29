@@ -49,7 +49,12 @@ export function sessionRecord(root, id) {
   sessionIdSchema.parse(id);
   return record(root, id);
 }
-function config(root) {
+function config(root, findings) {
+  if (!present(root, CONFIG)) {
+    findings.push({ name: "Golden Path configuration", status: "unavailable",
+      output: "No gate configuration is installed. Method-only guidance remains usable; this inspection does not create checks, acceptance or session records. Review a checked installation only when real project checks are available." });
+    return { owner: "Not recorded", check: null, acceptanceCommand: null, acceptancePaths: [], protected: [] };
+  }
   const cfg = JSON.parse(read(root, CONFIG));
   const acc = cfg.acceptance || {};
   for (const [name, value] of [["acceptance.paths", acc.paths || []], ["protected", cfg.protected || []]]) {
@@ -133,8 +138,8 @@ export function inspectEngineering(target, { sessionId, file, view = "source" } 
   if (path.resolve(git(root, "rev-parse", "--show-toplevel").trim()) !== root) throw new Error("Select the application repository root.");
   const head = git(root, "rev-parse", "HEAD").trim();
   const hash = diffHash(root);
-  const cfg = config(root);
   const findings = [];
+  const cfg = config(root, findings);
   const sessions = [];
   if (present(root, ".golden-path/state")) {
     const directory = fs.realpathSync(path.join(root, ".golden-path", "state"));
@@ -239,7 +244,7 @@ export function inspectEngineering(target, { sessionId, file, view = "source" } 
   }
   if (result.freshness !== "current") findings.push({ name: "Verification freshness", status: "unverified",
     output: result.freshness === "stale" ? "Retained checks describe a different or unstable snapshot. Recorded passes are not passes for the current work." : "No provenance-bound per-check result is available. Ledger summaries below are historical observations, not reconstructed test output." });
-  const files = [...new Set([CONFIG, ...(present(root, METHOD) ? [METHOD] : []), ...(contract ? [contract] : []),
+  const files = [...new Set([...(present(root, CONFIG) ? [CONFIG] : []), ...(present(root, METHOD) ? [METHOD] : []), ...(contract ? [contract] : []),
     ...acceptance.map((x) => x.path), ...changes.map((x) => x.path), ...(result.source ? [result.source] : [])])];
   const relationships = [];
   for (const item of acceptance) {
@@ -247,7 +252,10 @@ export function inspectEngineering(target, { sessionId, file, view = "source" } 
     relationships.push({ from: item.path, to: result.source, confidence: "unavailable", reason: "Per-example execution is not established by an aggregate command result." });
   }
   if (contract) relationships.push({ from: statePath(sessionId), to: contract, confidence: "verified", reason: "The existing session state explicitly names this task document; that link is not proof of approval." });
-  if (result.source) relationships.push({ from: result.source, to: CONFIG, confidence: "verified", reason: `Retained gate JSON for this session; freshness ${result.freshness}. Configuration may have changed since that run.` });
+  if (result.source) relationships.push({ from: result.source, to: present(root, CONFIG) ? CONFIG : null,
+    confidence: present(root, CONFIG) ? "verified" : "unavailable",
+    reason: present(root, CONFIG) ? `Retained gate JSON for this session; freshness ${result.freshness}. Configuration may have changed since that run.` :
+      "Retained gate JSON exists, but the current gate configuration is unavailable." });
   for (const file of files) {
     if (!present(root, file)) continue;
     try {

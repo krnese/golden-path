@@ -62,6 +62,15 @@ The generator refuses nonempty targets and creates only:
 - A first-task README describing limits and reviewed upgrades.
 - `.github/GOLDEN-PATH-LICENSE`, preserving the copied kit's copyright and permission.
 
+The generated README also carries the optional MCP App setup and update path.
+It uses a separate kit checkout and an explicit, conflict-refusing
+`examples/mcp-app/configure.mjs --target "<application-repo>"` invocation; it
+does not bundle App code, dependencies or an automatically started server into
+the starter. A fresh method-only application is inspectable with configuration,
+sessions and verification reported as unavailable. No gate or acceptance is
+created just to populate the App. Keep this guidance in the README source so
+regeneration carries it into the published template.
+
 It does not initialize git, make commits, publish a repository, create acceptance,
 choose an application license or configure CI. Review the generated tree before
 publishing or opening an update PR in the dedicated starter repository. Only an

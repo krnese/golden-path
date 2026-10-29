@@ -43,6 +43,66 @@ Client discovery and effective GitHub controls must be verified, not assumed.
 This template does not select a license for your application. Choose one suitable
 for your project while retaining the notice for copied Golden Path materials.
 
+## Optional: open the Golden Path MCP App in VS Code
+
+The App adds guided contract, acceptance, evidence, change and handoff inspection
+over your application's existing artifacts. **Why does this exist?** separates
+verified relationships from inferred hints; **Agreement delta** identifies known
+agreement-source changes requiring review. Guided and engineering views use the
+same records. It cannot approve acceptance, run checks, merge or deploy.
+
+The starter stays method-only: no App runtime or dependencies are copied into
+your application. To opt in, install Git and Node.js 22+ and use VS Code/Copilot
+with MCP Apps support. From your application repository in PowerShell:
+
+```powershell
+git clone --branch main --single-branch https://github.com/krnese/golden-path.git ..\golden-path-kit
+npm ci --prefix ..\golden-path-kit\examples\mcp-app --no-audit --no-fund
+npm --prefix ..\golden-path-kit\examples\mcp-app run build
+node ..\golden-path-kit\examples\mcp-app\configure.mjs --target . --dry-run
+node ..\golden-path-kit\examples\mcp-app\configure.mjs --target .
+```
+
+Review the source and dependency lock before installing. The kit is a separate
+sibling checkout; commands do not install dependencies into your application.
+If `golden-path-kit` already exists, review and update that checkout instead of
+cloning over it. In another shell, use its native path separators.
+
+The final command explicitly creates `.vscode/mcp.json` pointing at the kit
+server, with **your application** as `--target`. It refuses to overwrite an
+existing configuration, including JSON with comments: use `--dry-run` to obtain
+the proposed entry and merge it manually while preserving your other servers.
+The usual sibling layout yields a workspace-relative server path; review any
+machine-specific path if the kit is on a different drive.
+
+In VS Code, run **MCP: List Servers**, start **golden-path-experience**, and approve
+the host's trust/permission prompts only after reviewing the configuration.
+Then ask Copilot:
+
+> Call inspect_engineering_session and show the Golden Path MCP App for this
+> repository. Let me choose a recorded session if one exists. Show missing
+> configuration and evidence as unavailable; do not create checks or infer approval.
+
+A fresh method-only application has no configured gate, recorded engineering
+sessions or retained test output. The App must show those gaps, not passing
+checks or an approved contract. Its local guided notes are proposals only and
+are lost when the panel reloads; retain agreed intent in your existing task or
+owner-review process. The read-only `inspect_golden_path_adoption` tool can also
+show missing setup. Add real checks separately using the reviewed upgrade below.
+
+### Keeping the App up to date
+
+Template changes do not update previously generated applications. The App is
+loaded from the separate kit checkout, so review its changes, fast-forward that
+checkout, rerun the `npm ci` and build commands above, then **restart the MCP
+server and close/reopen the App panel**. Otherwise an old running server may
+serve a newer UI with an incompatible inspection format.
+
+Updating the App does not upgrade the copied Golden Path method or application
+controls. Review those installation changes separately. To disable the App,
+stop its server and remove only its server entry from `.vscode/mcp.json`; the
+method and any existing acceptance protections continue working.
+
 ## Add stronger checks when they are useful
 
 Use the [Golden Path kit](https://github.com/krnese/golden-path) and its

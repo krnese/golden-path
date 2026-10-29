@@ -60,6 +60,17 @@ owner-approved acceptance tests have been authored in this implementation.
 
 ## Engineering review: one connected slice
 
+For an application created from the starter, follow the
+[optional setup and update instructions](../starter/README.md#optional-open-the-golden-path-mcp-app-in-vs-code).
+`node examples/mcp-app/configure.mjs --target "<application-repo>" --dry-run`
+previews the VS Code server entry; omit `--dry-run` to create a new
+`.vscode/mcp.json`. Existing configurations are never overwritten: merge the
+preview manually if other servers or JSON-with-comments settings already exist.
+The server runs from this kit checkout but inspects only the bound application.
+Method-only applications need no fabricated gate configuration; missing controls,
+sessions and verification remain unavailable. After updates, rebuild, restart
+the MCP server and reopen the App so server and UI versions match.
+
 Build with Node.js 22+ from the kit repository root:
 
 ```powershell
