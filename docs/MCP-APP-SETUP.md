@@ -1,11 +1,39 @@
 # Optional: open the Golden Path MCP App in VS Code
 
 The App is optional. You can start building with the Golden Path method without
-installing it. Use this guide only when you want visual inspection of contract,
+installing it. Use this guide to prepare a brief or inspect recorded agreement,
 acceptance, evidence, changes and handoff. The App cannot approve acceptance,
 run checks, merge or deploy.
 
+## What you will see
+
+**Guided: shape and review your brief.** Start with your outcome, answer only
+missing details and edit the brief before choosing **Continue in Copilot chat**.
+The conversation and implementation stay in your existing chat.
+
+![Guided brief review with five editable sections and a chat handoff](assets/mcp-app-guided.png)
+
+**Engineering: inspect changes, checks and evidence.** Look behind the brief
+without losing your answers. Switching does not start work or run checks.
+A project with no recorded work shows a calm empty state; **Inspect repository
+setup** opens the full technical view.
+
+![Engineering on a project with no recorded work, offering Guided or repository setup](assets/mcp-app-engineering.png)
+
+These are local browser previews, not native VS Code rendering or proof of
+approved acceptance. The sample Guided brief is unshared.
+
 ## First-time setup
+
+For an agent-assisted setup, ask your normal Copilot agent:
+
+> Help me start this project with Golden Path and enable its visual App. Check
+> prerequisites, explain and perform setup with my permission, then help me open
+> it. Start with my intended outcome; don't invent acceptance or passing checks.
+
+The installed adoption procedure covers permission, conflicts, verification and
+host actions. The commands below are the supported path, not required manual work
+for every user.
 
 The starter stays method-only: no App runtime or dependencies are copied into
 your application. To opt in, install Git and Node.js 22+ and use VS Code/Copilot
@@ -17,6 +45,7 @@ npm ci --prefix ..\golden-path-kit\examples\mcp-app --no-audit --no-fund
 npm --prefix ..\golden-path-kit\examples\mcp-app run build
 node ..\golden-path-kit\examples\mcp-app\configure.mjs --target . --dry-run
 node ..\golden-path-kit\examples\mcp-app\configure.mjs --target .
+node ..\golden-path-kit\examples\mcp-app\verify.mjs --target .
 ```
 
 Review the source and dependency lock before installing. The kit is a separate
@@ -24,10 +53,17 @@ sibling checkout; commands do not install dependencies into your application.
 If `golden-path-kit` already exists, review and update that checkout instead of
 cloning over it. In another shell, use its native path separators.
 
-The final command explicitly creates `.mcp.json` at the application repository
+The configuration command explicitly creates `.mcp.json` at the application repository
 root, using the portable Copilot `mcpServers` format. Only the two read-only
 Golden Path inspection tools are enabled. The server runs from the kit, with
 **your application** as `--target`.
+
+The verification command starts that expected configured server from the
+application root, checks its read-only tools, validates the actual inspection and
+repository binding, and reads the current App resource. It refuses to execute
+modified server entries. It does not execute project checks or create sessions,
+acceptance or evidence. **Configuration alone is not setup complete:** verify
+host discovery and actual native rendering in VS Code as the next step.
 
 The host must launch the workspace server from the application repository root:
 `--target .` binds that working directory. The usual sibling layout yields a
@@ -48,6 +84,42 @@ after reviewing the configuration. Then ask Copilot:
 > Call inspect_engineering_session and show the Golden Path MCP App for this
 > repository. Let me choose a recorded session if one exists. Show missing
 > configuration and evidence as unavailable; do not create checks or infer approval.
+
+A project with no recorded sessions opens a connected welcome view.
+**Guided** and **Engineering** stay visible and open either presentation directly.
+The welcome message can be copied into the existing chat or shared explicitly
+when the host supports messaging. No sessions or results are invented to
+populate the view.
+
+Guided can review an optional proposed brief supplied from the conversation.
+It asks only for missing details, one at a time, then offers an editable brief
+with one handoff action. Complete supplied briefs go straight to review after
+explicit application. Repository inventory and detailed check counts remain in
+Engineering, not in the Guided briefing.
+**Continue in Copilot chat** sends the reviewed message when supported, then
+requests closure only after the host accepts it. The host controls closing;
+delivery and closure failures are distinct. Reopen the App to inspect recorded
+work and evidence, not an App-owned conversation or approval database.
+
+### Return after work is recorded
+
+Ask Copilot to open the App again for the same repository and recorded task.
+Choose the relevant session when more than one exists. Guided summarizes
+changes, verification freshness and decisions needing review; **Review check
+results** and **Inspect changes** open the corresponding Engineering tabs.
+Refresh after new work or checks are recorded: this is a snapshot, not live
+monitoring, and an unavailable or stale result is not a current pass.
+
+Keep the reviewed brief and evidence links in the existing task or PR.
+Switching views preserves the current local draft, but closing or reloading
+the App does not retain those unsent answers.
+
+### Optional repository snapshot
+
+The repository pulse is offline by default. **Refresh GitHub** explicitly uses
+the server's existing GitHub CLI credentials for read-only workflow/run, issue,
+PR and branch-control queries. Unreadable state stays unknown. No credentials,
+settings or project checks are changed. See the [App's scope and limits](../examples/mcp-app/README.md#read-only-repository-pulse).
 
 A fresh method-only application has no configured gate, recorded engineering
 sessions or retained test output. The App must show those gaps, not passing

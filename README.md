@@ -81,9 +81,22 @@ Compact views connect **Contract → Acceptance → Evidence → Changes → Han
 **Why does this exist?** separating source-backed links from inferred hints, and **Agreement delta**
 flagging changes to contract/control sources for accountable review. Missing, skipped, stale and
 unverified evidence are never represented as current passes. A separate adoption report stays read-only.
-**Guided** starts from a business outcome and helps prepare plain-language examples for the existing
-owner-review process; **Engineering detail** exposes the same contract, tests and original evidence.
+**Guided** asks only for missing details, then offers an editable brief for the existing
+owner-review process; **Engineering** exposes the recorded contract, tests and original evidence.
 Neither presentation turns a proposal into approved executable acceptance or hides missing evidence.
+Reviewed briefs can be handed back to the existing Copilot chat, with a
+host-controlled close request after message acceptance. Reopening surfaces
+recorded progress; the read-only repository pulse adds local setup facts and
+explicit, credential-dependent GitHub snapshots without applying settings.
+
+![Guided: review an editable brief before continuing in Copilot chat](docs/assets/mcp-app-guided.png)
+
+*Local browser preview with an unshared sample brief, not approved acceptance.*
+Switch to **Engineering** to look behind the brief without starting implementation
+or running checks. A project with no recorded work shows a calm
+[empty view](docs/assets/mcp-app-engineering.png), with full repository setup one action away.
+See the [setup and return journey](docs/MCP-APP-SETUP.md).
+
 Build the package, then start **golden-path-experience-preview** through
 **Chat: Open Customizations > MCP Servers** and ask Copilot to call
 `inspect_engineering_session`. The portable [`.mcp.json`](.mcp.json) registration
@@ -103,6 +116,10 @@ The App runtime is not bundled by the core installer or starter template. The
 [optional App setup](docs/MCP-APP-SETUP.md)
 uses a separate kit checkout and explicitly configures the bound server without overwriting existing
 MCP settings. Method-only applications show missing configuration and evidence as unavailable.
+The starter offers a setup prompt and App preview; installed guidance helps the
+agent enable and verify the actual read-only server. A new project opens a
+connected welcome view with a first-task message, not a wall of missing checks.
+Host trust and native rendering still require verification in VS Code.
 Disabling it does not disable
 configured acceptance protection, required CI or owner review. No App action can approve real acceptance,
 merge or deploy; those responsibilities remain with existing owners and controls.

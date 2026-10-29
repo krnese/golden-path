@@ -10,6 +10,7 @@ import { adoptionReport } from "../../plugin/scripts/gate.mjs";
 import { readArchitecture, updateDraft } from "./architecture-state.mjs";
 import { modelSchema, updateSchema } from "./architecture-model.mjs";
 import { inspectEngineering } from "./engineering-report.mjs";
+import { inspectRepository } from "./repository-context.mjs";
 import { inspectionInput, inspectionSchema, sessionIdSchema } from "./engineering-schema.mjs";
 
 export const TOOL = "inspect_golden_path_adoption";
@@ -76,15 +77,24 @@ export function createServer(target, { state, session } = {}) {
   }));
   registerAppTool(server, INSPECT_SESSION, {
     title: "Inspect Golden Path engineering work",
-    description: "Read a recorded local session's linked task, configured acceptance, baseline changes, existing gate findings and retained verification output. Without a sessionId, lists sessions for selection. Optional file/view inspect only artifacts listed by this report. Does not execute project checks, modify files, infer approval or query GitHub. Missing evidence remains unavailable.",
+    description: "Read local work, acceptance, baseline changes, retained checks and repository setup. Without sessionId, list sessions for selection. Optional brief carries a proposed draft from the existing conversation, never approval; do not invent missing fields. Optional github:true explicitly reads live GitHub state through the existing gh credentials; default inspection is offline. Optional file/view reads listed artifacts only. Does not execute project checks, modify records or infer approval. Missing evidence remains unavailable.",
     inputSchema: inspectionInput,
     outputSchema: z.object({ inspection: inspectionSchema }),
-    annotations: { readOnlyHint: true, destructiveHint: false, idempotentHint: true, openWorldHint: false },
+    annotations: { readOnlyHint: true, destructiveHint: false, idempotentHint: true, openWorldHint: true },
     _meta: { ui: { resourceUri: ENGINEERING_RESOURCE, visibility: ["model", "app"] } },
   }, async (input) => {
     try {
       const inspection = inspectEngineering(target, { ...input, sessionId: input.sessionId || session });
-      return { content: [{ type: "text", text: inspection.handoff }], structuredContent: { inspection } };
+      inspection.repository = await inspectRepository(inspection.root, { github: input.github === true });
+      if (input.brief) inspection.brief = input.brief;
+      return { content: [{ type: "text", text: [
+        inspection.handoff,
+        `Repository pulse observed ${inspection.repository.inspectedAt}; local definitions are not execution or enforcement.`,
+        ...inspection.repository.local.map(item => `${item.name}: ${item.status.toUpperCase()}. ${item.detail}`),
+        `GitHub snapshot: ${inspection.repository.github.inspectedAt || "not requested"}.`,
+        ...inspection.repository.github.facts.map(item => `${item.name}: ${item.status.toUpperCase()}. ${item.detail}${item.url ? ` Source: ${item.url}` : ""}`),
+        ...(inspection.brief ? ["A proposed brief from the conversation is available for explicit review in Guided. It is not approval."] : []),
+      ].join("\n") }], structuredContent: { inspection } };
     } catch (error) {
       return { isError: true, content: [{ type: "text", text: `Engineering inspection failed: ${error.message}` }] };
     }

@@ -7,6 +7,68 @@ History of the kit. The current way to adopt it is in the [README](README.md); t
 
 ## Unreleased
 
+- **Companion release review fixes.** Re-enable brief review after failed or
+  accepted chat delivery when the view remains open, open full setup directly
+  from the welcome action, and exclude tracked-but-deleted files from local
+  workflow and declaration presence facts. Regression checks cover each case.
+  Applying a supplied replacement brief resets an earlier owner expression to
+  review, including when accepted delivery leaves the App open.
+  Entering brief review focuses the visible panel rather than a hidden control.
+
+- **Ship the companion journey in both entry points.** The kit and generated
+  method-only starter explain Guided briefing, continuing in existing Copilot
+  chat and returning to Engineering evidence. Refresh real Guided and
+  Engineering screenshots and document the empty state, targeted inspection
+  links, snapshot limits and restart/update procedure. The starter still links
+  the separate kit: no runtime or dependency bundle is added.
+  Initial inspection failures also retain an accessible retry action before
+  any valid snapshot has loaded; recovery preserves local drafts.
+
+- **A clearer bridge to Engineering.** Explain each presentation's purpose and
+  introduce technical inspection as looking behind the brief, not starting work.
+  Guided links directly to check results and changes. Unrecorded projects get a
+  calm Engineering empty state with an explicit path to full repository setup.
+
+- **Briefing-first Guided iteration.** Replace the Guided dashboard and four-stage
+  navigation with one outcome, selective missing-detail questions and an editable
+  brief review. Complete conversation briefs go directly to review after explicit
+  application. Returning work gets a compact changes/evidence/decision summary;
+  failures remain prominent and full technical inspection stays in Engineering.
+
+- **Clearer first-use App.** Guided and Engineering controls stay visible above
+  the welcome screen and open either presentation directly. Guided uses plain
+  language for the recorded agreement and a neutral no-work-yet summary for
+  expected setup gaps, without suppressing actual inspection problems or
+  recorded failures. Engineering retains technical detail and gap counts.
+
+- **Brief, continue, return.** Guided can review a proposed brief from the
+  existing conversation, send the reviewed message to Copilot and request App
+  closure only after host acceptance. Failed sends preserve the view; failed
+  closure is distinct and never triggers a resend. Returning summaries expose
+  recorded changes, evidence and review gaps without a new progress database.
+  An offline repository pulse inventories local definitions; explicit GitHub
+  refresh uses existing CLI credentials and read-only queries for workflows, runs,
+  issues, PRs and branch controls. Unknown permissions remain unknown, not empty
+  success. Guided and Engineering remain separate, compact presentations.
+
+- **Compact App typography and spacing.** Guided and Engineering remain separate
+  presentations, with their existing stages, inspection tabs and review sidebar.
+  Body text is 12px and the main title 18px; tighter cards, controls and section
+  spacing reduce visual overhead without scaling the page or hiding caveats.
+  Supporting text stays at least 11px and touch controls retain larger targets.
+  The starter's real guided-preview screenshot reflects the compact layout.
+
+- **Starter-to-App first-use journey.** The concise starter landing page now
+  includes a real guided-preview screenshot and optional setup prompt. Installed
+  guidance covers permission, prerequisite/conflict checks, actual server
+  verification and host opening. A read-only verifier checks the expected
+  registration, tools, repository binding and App resource without running
+  project checks. Projects with no recorded sessions open a connected welcome
+  view with an explicit chat/copy path; technical details stay available without
+  fabricating acceptance, evidence or approvals. Native host rendering remains
+  a separate verification step. The no-session loopback preview accepts both
+  queryless and empty-query inspection requests across supported Node versions.
+
 - **Outcome-first starter landing page.** The generated README now leads with
   the value, one first-task prompt and a concise explanation of its limits.
   Optional App setup, maintenance and legacy registration migration live in a

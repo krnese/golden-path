@@ -4,15 +4,44 @@ const frame = document.getElementById("app");
 const status = document.getElementById("host-status");
 const architecture = document.body.dataset.view === "architecture";
 const engineering = document.body.dataset.view === "engineering";
+const handoffDemo = engineering && new URLSearchParams(location.search).get("handoff") === "demo";
 const bridge = new AppBridge(null, { name: "Golden Path local validation host", version: "0.1.0" },
-  { serverTools: {}, updateModelContext: { text: {} } }, { hostContext: { theme: "dark", platform: "web", displayMode: "inline" } });
+  { serverTools: {}, updateModelContext: { text: {} }, ...(handoffDemo ? { message: { text: {} } } : {}) },
+  { hostContext: { theme: "dark", platform: "web", displayMode: "inline" } });
+
+if (handoffDemo) {
+  document.getElementById("handoff-demo").hidden = false;
+  bridge.onmessage = async ({ role, content }) => {
+    if (role !== "user" || content.some(item => item.type !== "text")) throw new Error("The simulation accepts user text only.");
+    const message = document.getElementById("simulated-message");
+    message.textContent = content.map(item => item.text).join("\n");
+    message.hidden = false;
+    status.closest("details").open = true;
+    status.textContent = "Simulation accepted this message. Nothing was sent to Copilot or saved to repository records.";
+    return {};
+  };
+  bridge.onrequestteardown = async () => {
+    try {
+      await bridge.teardownResource({});
+      frame.hidden = true;
+      document.getElementById("reopen-app").hidden = false;
+      status.textContent = "Simulation closed the App after message acceptance. Reopen to read actual repository records; no chat or progress was created by this simulation.";
+    } catch (error) {
+      status.textContent = `Simulation could not close the App: ${error.message}. The accepted message is still displayed below.`;
+      status.setAttribute("role", "alert");
+    }
+  };
+}
+document.getElementById("reopen-app").addEventListener("click", () => location.reload());
 
 async function request(url, options) {
   const response = await fetch(url, options);
   if (!response.ok) throw new Error(`Inspection endpoint failed (${response.status}): ${await response.text()}`);
   return response.json();
 }
-const inspect = (args = {}) => engineering ? request(`/engineering?${new URLSearchParams(args)}`) :
+const inspect = (args = {}) => engineering ? request("/engineering", {
+  method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(args),
+}) :
   architecture ? request("/model") : request("/report", { method: "POST" });
 bridge.oncalltool = async ({ name, arguments: args }) => {
   if (engineering) {

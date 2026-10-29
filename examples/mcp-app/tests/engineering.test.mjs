@@ -271,7 +271,44 @@ test("loopback engineering host serves actual read-only reports and refuses fore
   t.after(() => preview.close());
   const result = await fetch(`${preview.url}/engineering?sessionId=real-session`);
   assert.equal((await result.json()).structuredContent.inspection.contract, "task.md");
-  assert.match(await (await fetch(`${preview.url}/app`)).text(), /Engineering with Golden Path/);
+  assert.match(await (await fetch(`${preview.url}/app`)).text(), /<h1>Golden Path<\/h1>/);
   const rejected = await fetch(`${preview.url}/engineering?`, { headers: { Origin: "https://example.invalid" } });
   assert.equal(rejected.status, 403);
+});
+
+test("loopback engineering preview supports first-run inspection without inventing a session", async () => {
+  const { root } = fixture();
+  fs.rmSync(path.join(root, ".golden-path", "state", "real-session.json"));
+  const preview = await startPreview(root, 0, undefined, undefined, true);
+  try {
+    for (const endpoint of ["/engineering", "/engineering?"]) {
+      const response = await fetch(`${preview.url}${endpoint}`);
+      assert.equal(response.status, 200);
+      assert.equal(response.headers.get("content-type"), "application/json");
+      const report = (await response.json()).structuredContent.inspection;
+      assert.equal(report.session, null);
+      assert.deepEqual(report.sessions, []);
+      assert.equal(report.evidence.freshness, "unavailable");
+    }
+    assert.equal((await fetch(`${preview.url}/engineering-other?`)).status, 404);
+    assert.match(await (await fetch(`${preview.url}/app`)).text(), /Your project is connected/);
+    assert.match(await (await fetch(preview.url)).text(), /data-view="engineering"/);
+    const proposed = { outcome: "Proposed outcome from the existing conversation.", behavior: "é".repeat(2000) };
+    const body = JSON.stringify({ brief: proposed });
+    const posted = await fetch(`${preview.url}/engineering`, {
+      method: "POST", headers: { Origin: preview.url, "Content-Type": "application/json" }, body,
+    });
+    assert.equal(posted.status, 200);
+    const postedReport = (await posted.json()).structuredContent.inspection;
+    assert.deepEqual(postedReport.brief, proposed);
+    assert.equal(postedReport.session, null);
+    assert.equal(postedReport.repository.github.inspectedAt, null);
+    assert.match(postedReport.repository.github.facts[0].detail, /Not fetched/);
+    const forbidden = await fetch(`${preview.url}/engineering`, {
+      method: "POST", headers: { Origin: "https://example.invalid", "Content-Type": "application/json" }, body,
+    });
+    assert.equal(forbidden.status, 403);
+  } finally {
+    await preview.close();
+  }
 });

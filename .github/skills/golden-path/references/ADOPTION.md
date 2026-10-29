@@ -50,6 +50,38 @@ change, grounded in existing records, with repository-wide controls underneath.
    method for implementation and real expected-versus-actual output, gaps and
    owner judgment. Passing tests does not authorize merge or deployment.
 
+## Enable the optional visual App
+
+When the user asks to open or enable the Golden Path visual App, help them reach
+the view, not just a configuration file. The App remains optional; method-only
+work must still be usable if setup is declined or unsupported.
+
+1. Establish the application repository root and check Git, Node.js 22+, and
+   VS Code/Copilot MCP Apps support. Explain any missing prerequisite explicitly.
+   Read the kit's [App setup guide](https://github.com/krnese/golden-path/blob/main/docs/MCP-APP-SETUP.md)
+   and inspect existing MCP configuration without executing its commands.
+2. Explain the separate kit checkout, dependency installation/build, and proposed
+   workspace registration. Obtain permission for those effects; don't infer it
+   from asking to see the App. Review existing checkouts rather than overwriting
+   or silently updating them. Do not copy the App runtime into the application.
+3. Use the supported setup commands, preview the registration with `--dry-run`,
+   then configure it only within permission. Preserve other servers and refuse
+   conflicts; do not silently duplicate a legacy registration or weaken trust.
+4. Run `node "<kit>/examples/mcp-app/verify.mjs" --target "<application-root>"`.
+   It starts the expected configured read-only server and verifies its tools,
+   actual inspection, repository binding and App resource. A failed verification
+   is a setup failure, not success. Do not run project checks to populate the UI.
+5. Guide the user through host discovery/start and trust prompts. Invoke
+   `inspect_engineering_session` without a session ID to open the view; let the
+   user choose existing work instead of selecting the newest session. A fresh
+   project should show the connected welcome view. If the tool is not discovered,
+   help restart the server or open a fresh chat; report native rendering as
+   unverified until the user can see it. Configuration alone is not setup complete.
+6. Continue with the user's intended outcome in the same conversation. Missing
+   sessions, acceptance and evidence are normal initially. Never create fake
+   session records, approved examples or passing checks merely to fill the App.
+   Share agreed intent through existing task/PR records; local notes are proposals.
+
 ## New application: guided bootstrap
 
 Start from the desired outcome, not a required stack or a universal generator.

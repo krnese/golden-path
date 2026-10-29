@@ -9,6 +9,7 @@ import { StdioClientTransport } from "@modelcontextprotocol/client/stdio";
 import { makeStarter } from "../../make-starter.mjs";
 import { plannedFiles } from "../../../plugin/install.mjs";
 import { configureApp, main, SERVER_NAME } from "../configure.mjs";
+import { verifyApp, main as verifyMain } from "../verify.mjs";
 import { inspectEngineering } from "../engineering-report.mjs";
 import { inspectionSchema } from "../engineering-schema.mjs";
 import { DIRECTORY, ENGINEERING_RESOURCE, INSPECT_SESSION } from "../server.mjs";
@@ -52,6 +53,8 @@ test("generated starter links optional setup without bundling or activating the 
     assert.match(setup, expected);
   }
   assert.match(setup, /Not required for a new starter or a first-time setup/);
+  assert.match(setup, /verify\.mjs --target \./);
+  assert.match(setup, /Configuration alone is not setup complete/);
   for (const rel of [".mcp.json", ".vscode", "node_modules", ".golden-path/config.json", ".golden-path/state"]) {
     assert.equal(fs.existsSync(path.join(root, rel)), false, rel);
   }
@@ -67,6 +70,21 @@ test("starter landing page leads with the outcome and first task, not setup or m
   assert.match(readme, /Help me use Golden Path to build \[outcome\]/);
   assert.match(readme, /Don't change repository\s+> protections without my approval/);
   assert.match(readme, /You do not need it to start/);
+  assert.match(readme, /## Open the visual App/);
+  assert.match(readme, /enable its visual App/);
+  assert.match(readme, /with my permission/);
+  assert.match(readme, /\*\*Guided:\*\* shape your brief and continue in Copilot chat/);
+  assert.match(readme, /\*\*Engineering:\*\* return to inspect changes, checks and evidence/);
+  assert.match(readme, /!\[.*\]\(https:\/\/raw\.githubusercontent\.com\/krnese\/golden-path\/main\/docs\/assets\/mcp-app-guided\.png\)/);
+  const screenshot = fs.readFileSync(path.resolve(DIRECTORY, "..", "..", "docs", "assets", "mcp-app-guided.png"));
+  assert.equal(screenshot.subarray(0, 8).toString("hex"), "89504e470d0a1a0a");
+  const engineering = fs.readFileSync(path.resolve(DIRECTORY, "..", "..", "docs", "assets", "mcp-app-engineering.png"));
+  assert.equal(engineering.subarray(0, 8).toString("hex"), "89504e470d0a1a0a");
+  const setup = fs.readFileSync(path.resolve(DIRECTORY, "..", "..", "docs", "MCP-APP-SETUP.md"), "utf8");
+  assert.match(setup, /!\[.*\]\(assets\/mcp-app-engineering\.png\)/);
+  assert.match(setup, /## What you will see/);
+  assert.match(setup, /### Return after work is recorded/);
+  assert.match(setup, /Switching does not start work or run checks/);
   assert.doesNotMatch(readme, /migration|migrating|configure\.mjs|npm ci|```/i);
   const firstTask = readme.indexOf("## Start building");
   assert.ok(firstTask > 0 && firstTask < readme.indexOf("[optional visual App]"));
@@ -79,6 +97,11 @@ test("generated skill and task prompt carry shared bootstrap, team and brownfiel
     assert.equal(fs.readFileSync(path.join(root, ...rel.split("/")), "utf8"), expected, rel);
   }
   const adoption = files[".github/skills/golden-path/references/ADOPTION.md"];
+  for (const expected of [/## Enable the optional visual App/, /verify\.mjs/,
+    /Configuration alone is not setup complete/, /without a session ID/,
+    /Obtain permission for those effects/, /Never create fake/]) {
+    assert.match(adoption, expected);
+  }
   for (const expected of [/self-configuring, not self-authorizing/, /one engineering agreement per\s+change/,
     /## New application: guided bootstrap/, /build not configured/,
     /Drafting executable owner acceptance remains a separate reviewed change/,
@@ -123,6 +146,36 @@ test("malformed existing gate configuration remains an explicit inspection error
   const root = starter();
   fs.writeFileSync(path.join(root, ".golden-path", "config.json"), "{not JSON");
   assert.throws(() => inspectEngineering(root), SyntaxError);
+});
+
+test("setup verification checks the configured server and real App without writing project records", async () => {
+  const root = starter();
+  const { config } = configureApp(root);
+  const before = git(root, "status", "--porcelain");
+  const verified = await verifyApp(root);
+  assert.equal(path.relative(root, verified.root), "");
+  assert.equal(verified.sessions, 0);
+  assert.equal(verified.evidence, "unavailable");
+  assert.equal(git(root, "status", "--porcelain"), before);
+  assert.equal(fs.existsSync(path.join(root, ".golden-path", "state")), false);
+  assert.equal(fs.existsSync(path.join(root, ".golden-path", "config.json")), false);
+  config.mcpServers[SERVER_NAME].command = "unreviewed-command";
+  writeConfig(root, JSON.stringify(config));
+  await assert.rejects(verifyApp(root), /differs.*no configured command was run/);
+});
+
+test("setup verification rejects missing, malformed and broken configurations explicitly", async () => {
+  const root = starter();
+  await assert.rejects(verifyApp(root), /ENOENT/);
+  writeConfig(root, "{broken");
+  await assert.rejects(verifyApp(root), SyntaxError);
+  configureApp(root, { dryRun: true });
+  fs.unlinkSync(path.join(root, ".mcp.json"));
+  configureApp(root);
+  fs.writeFileSync(path.join(root, ".golden-path", "config.json"), "{broken");
+  await assert.rejects(verifyApp(root), /Engineering inspection failed/);
+  assert.equal(await verifyMain([]), 2);
+  assert.equal(await verifyMain(["--unknown"]), 2);
 });
 
 test("configuration preview writes nothing; explicit setup binds only the application and is idempotent", () => {

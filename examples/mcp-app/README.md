@@ -1,28 +1,66 @@
 # Golden Path MCP Apps engineering inspection
 
-An optional **read-only engineering review in VS Code**, using existing repository
+An optional **briefing and read-only engineering review in VS Code**, using existing repository
 artifacts rather than a parallel contract database. The default workspace server
 now exposes engineering inspection and adoption inspection only. It does not
 enable the older isolated draft editor or require its example model.
 
-## One contract, two levels of explanation
+## Preview the two views
 
-The default **Guided** presentation starts with the desired business outcome.
-Focused questions cover normal behavior, exceptions, failure and what must not
-change. Answers become readable proposed examples that the person can correct
-and review. Four navigation stages organize the experience: **Describe your
-goal → Agree on expected behavior → Build and verify → Review the result**.
-They show review position, not automatic completion, approval or permission to
-build. Advancing never runs a check, modifies a file or approves acceptance.
+**Guided** prepares an editable brief for the existing Copilot conversation.
 
-The two-column layout pairs one focused question with live understanding,
-locally proposed decisions and actual evidence. Suggested exception responses
-are unselected until chosen; expand the response editor to adapt them. Back/Next,
-stage selection and sidebar edits let you revisit answers. Compact screens stack
-the same content rather than introduce a different workflow. Tips, recorded
-contract details and technical output expand only when needed.
-Sidebar links keep original evidence and agreement-change review accessible
-in both presentations; keyboard navigation focuses the visible review panel.
+![Guided brief review and explicit handoff to Copilot chat](../../docs/assets/mcp-app-guided.png)
+
+**Engineering** explains what can be inspected without starting work.
+Unrecorded projects have an explicit path to full repository setup.
+
+![Engineering introduction and neutral no-recorded-work view](../../docs/assets/mcp-app-engineering.png)
+
+Local browser previews, not native-host proof. The sample brief is unshared;
+neither screenshot demonstrates approved acceptance or passing project checks.
+Follow the [setup, handoff and return journey](../../docs/MCP-APP-SETUP.md).
+An initial inspection error keeps **Retry inspection** available outside the
+snapshot-dependent views. Retrying reads artifacts only and preserves local answers.
+After a chat send finishes, retained drafts can be edited and reviewed again
+even if delivery failed or the host left the App open. **Inspect setup details**
+on the welcome screen opens the full technical view directly.
+
+## Two presentations, the same recorded facts
+
+**Guided | Engineering** remains visible above the welcome screen and workspace;
+either control opens its presentation directly. Switching preserves local answers.
+Their descriptions explain the jobs: **Shape and review your brief** versus
+**Inspect changes, checks and evidence**. Engineering's **Behind the brief**
+introduction makes clear that switching does not start implementation or run checks.
+A genuinely unrecorded project opens with **No engineering work recorded yet**;
+**Inspect repository setup** reveals all existing technical panels and facts.
+Unexpected inspection problems and recorded failures do not use that empty state.
+Returning Guided work links **Review check results** directly to Evidence and
+**Inspect changes** directly to Changes, preserving the local brief in both cases.
+**Guided** is a single-column briefing, not a smaller engineering dashboard.
+It starts with the outcome, asks one missing detail at a time, then presents
+five readable brief sections with individual Edit actions. Supplied answers
+are not asked again. Explicitly using a complete conversation brief goes directly
+to review; using a partial one asks only for the remaining fields.
+Suggested exception responses are unselected until chosen. Unknowns can be
+stated explicitly rather than invented. Returning from an edit preserves all
+other answers and skips their questions.
+Entering brief review moves keyboard focus to the newly visible review panel.
+
+The review has one primary handoff: **Continue in Copilot chat**, or select/copy
+when messaging is unsupported. The exact outgoing text is available on demand.
+An optional owner expression stays separate from approval of executable tests.
+There is no implementation progress stepper, evidence-count sidebar or repository
+inventory in Guided. Advancing never runs checks or implements the brief.
+
+Reopening with recorded work starts with what changed, verification freshness
+and decisions needing review, rather than reopening the questionnaire. Multiple
+records require explicit selection. A follow-up brief is optional and its draft
+survives switching between this summary and the form. Recorded check failures,
+including stale failures, and unreadable inspection records remain prominent.
+Technical evidence is one explicit action away in **Engineering**.
+Both presentations retain compact type, readable supporting text and larger
+touch controls. Browser and host zoom are not overridden.
 
 The same inspected artifacts distinguish **proposed**, **approved**,
 **implemented** and **verified** behavior. Changed files are not completed
@@ -30,12 +68,12 @@ behavior, developer checks are not business acceptance, and unavailable approval
 is never hidden behind encouraging language. **Engineering detail** exposes
 the exact same records, original check output and source/diff navigation.
 Switching presentations does not copy the contract or reset the entered answers.
-Sidebar counts distinguish current passed checks, recorded failures/skips and
+Engineering sidebar counts distinguish current passed checks, recorded failures/skips and
 checks needing current verification. A stale failure remains visible; an older
 pass does not become a current success. Counts can overlap when a recorded
 failure or skip also needs current verification.
 
-**Review my examples** produces a message, not acceptance files. The default is
+**Review brief** produces a message, not acceptance files. The default is
 to request owner review. A person may explicitly express an owner decision on
 the meaning of the displayed behavior examples; the message makes clear this
 is only for separately drafting and reviewing executable acceptance, not approval
@@ -43,13 +81,66 @@ of unseen tests or implementation. Approval must be established through the
 existing owner-reviewed record and controls. The inspector does not verify the
 identity/authority of a chat sender or promote that message to approved acceptance.
 
-If the host advertises text-message support, **Share this message in chat**
-explicitly calls the supported MCP Apps `sendMessage` interaction. Otherwise,
-select/copy/paste works. Failed delivery is explicit and retains the message.
+If the host advertises text-message support, **Continue in Copilot chat**
+explicitly calls the supported MCP Apps `sendMessage` interaction. Only after
+the host accepts that message does the App call `requestTeardown`; the host
+decides whether to close it. Failed delivery leaves the message and App in place.
+A failed close request is reported separately from successful delivery, and the
+same accepted message is not resent. Otherwise, select/copy/paste works.
 Nothing is sent automatically. Notes remain local to the current view, are not
 written to browser storage or a separate contract store, and are lost on closing
 or reloading the App. Copy them into the existing request/conversation to retain
 them. Incoming inspection results never replace those notes.
+
+### Brief, continue, return
+
+The conversation and implementation stay in Copilot chat. The App is a briefing
+and review companion, not a second chat client. Optional `brief` fields on
+`inspect_engineering_session` carry a proposed starting point from the existing
+conversation: `outcome`, `behavior`, `exception`, `failure` and `boundary`.
+Missing fields are not invented. Guided offers an explicit **Use this draft**
+action, preserving existing local answers until chosen; this never sets an
+owner decision or approval. For example, ask Copilot to open the App with a
+proposed brief from the discussion, then correct it before continuing in chat.
+Applying a replacement draft resets any earlier owner expression to review;
+new examples never inherit a decision made for the previous brief.
+
+The reviewed message asks Copilot to retain the brief and evidence links in the
+existing task or PR. Reopening inspects those real records, not a remembered
+conversation. A returning summary surfaces baseline changes, evidence freshness,
+review gaps and a useful next action. When several sessions exist, choose the
+relevant work; the App does not silently select the newest. Engineering tabs
+inspect recorded work; no navigation starts implementation or checks.
+
+### Read-only repository pulse
+
+Local inspection inventories up to 20 non-ignored workflow definitions and their
+textual Action references, root package scripts, guidance, ownership declarations
+and local acceptance configuration. Only files present in the checkout count;
+tracked deletions are not configured declarations or workflows.
+It does not evaluate arbitrary YAML, execute
+scripts, infer commands for other build systems or establish enforcement.
+
+**Refresh GitHub**, or explicit `github: true` on the inspection tool, uses the
+server's existing `gh` CLI credentials and bounded read-only github.com queries.
+New REST requests explicitly use GET; branch-control facts reuse the existing
+adoption diagnostic, including its repository-metadata query and paginated
+rules/legacy-protection handling, rather than a second policy evaluator.
+Default inspection is offline. No login, installation, credential
+switching or settings changes happen automatically. Supported origins are
+github.com HTTPS and Git SSH URLs; other hosts remain explicitly unknown.
+
+Remote facts show up to five hosted workflows, recent runs on the checked-out
+branch, open issues and PRs, plus effective default-branch rules and classic
+protection where readable. Runs from another HEAD are historical; matching HEAD
+does not validate all required application checks. The adoption diagnostic checks
+the kit's named check, Code Owner review and stale-review dismissal, not a
+universal repository-hardening policy. Matching HEAD also
+does not validate uncommitted changes or prove all required checks passed.
+Issue search may lag updates; PR listing does not establish reviews, mergeability
+or required-check satisfaction. Missing authentication, tooling, permissions,
+timeouts and malformed responses remain **unknown**, never empty success.
+Every snapshot has sources and timestamps; it is not continuous monitoring.
 
 **Still requiring a human trial:** a non-professional developer must demonstrate
 that they can express the problem, correct and approve meaningful examples,
@@ -76,6 +167,20 @@ The server runs from this kit checkout but inspects only the bound application.
 Method-only applications need no fabricated gate configuration; missing controls,
 sessions and verification remain unavailable. After updates, rebuild, restart
 the MCP server and reopen the App so server and UI versions match.
+
+After configuration, run
+`node examples/mcp-app/verify.mjs --target "<application-repo>"`.
+It verifies the expected configured process, read-only tools, actual inspection,
+repository binding and current App resource, without running application checks.
+Modified server commands are refused pending review. Host discovery, trust and
+native rendering still need to be verified in VS Code; configuration alone is
+not setup complete.
+
+A project with no local recorded sessions opens a connected welcome view rather
+than a dashboard of missing evidence. Select its first-task message to copy into
+chat, share it explicitly if supported by the host, or explore the guided view.
+Technical details remain inspectable, and refresh shows newly recorded work.
+No session, acceptance or passing result is created to populate the view.
 
 Build with Node.js 22+ from the kit repository root:
 
@@ -167,8 +272,9 @@ and unreadable sources are explicit rather than empty successful results.
   chat or GitHub is unavailable locally unless the session links a repository
   source. Missing business acceptance is shown as missing, not filled with demo
   examples or developer tests.
-- No GitHub query, approval verification, branch-protection change, command
-  execution, acceptance editing, merge or deployment is exposed by the App.
+- GitHub inspection is explicit and read-only; it does not verify owner approval
+  or authorize changes. No project-command execution, protection change,
+  acceptance editing, merge or deployment is exposed by the App.
 - Existing integrity heuristics are reused, not strengthened into a tamper-proof
   boundary. Contract/control path changes require human review; the absence of a
   signal is not proof no delegation change occurred.
