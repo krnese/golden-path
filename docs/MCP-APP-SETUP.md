@@ -72,6 +72,17 @@ first-task message to copy into the existing chat, or share it explicitly if the
 host supports messaging. You can explore the guided view or inspect technical
 details without inventing records. Refresh the view after real work is recorded.
 
+Guided can review an optional proposed brief supplied from the conversation.
+**Continue in Copilot chat** sends the reviewed message when supported, then
+requests closure only after the host accepts it. The host controls closing;
+delivery and closure failures are distinct. Reopen the App to inspect recorded
+work and evidence, not an App-owned conversation or approval database.
+
+The repository pulse is offline by default. **Refresh GitHub** explicitly uses
+the server's existing GitHub CLI credentials for read-only workflow/run, issue,
+PR and branch-control queries. Unreadable state stays unknown. No credentials,
+settings or project checks are changed. See the [App's scope and limits](../examples/mcp-app/README.md#read-only-repository-pulse).
+
 A fresh method-only application has no configured gate, recorded engineering
 sessions or retained test output. The App must show those gaps, not passing
 checks or an approved contract. Its local guided notes are proposals only and

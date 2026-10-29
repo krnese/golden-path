@@ -59,6 +59,10 @@ test("the actual UI renders all panels, preserves guided notes across inspection
     getHostContext() { return undefined; }
     getHostCapabilities() { return this.capabilities || {}; }
     async sendMessage(message) { this.sent = message; return { isError: true }; }
+    async requestTeardown() {
+      this.closeRequests = (this.closeRequests || 0) + 1;
+      if (this.closeFailure) throw new Error("Host does not support closure");
+    }
   }
   const source = fs.readFileSync(new URL("../engineering.mjs", import.meta.url), "utf8").replace(/^import .+;\r?$/gm, "");
   const AsyncFunction = Object.getPrototypeOf(async function () {}).constructor;
@@ -85,6 +89,7 @@ test("the actual UI renders all panels, preserves guided notes across inspection
   ids.get("select-welcome").listeners.click();
   assert.equal(ids.get("welcome-prompt").focused, true);
   assert.match(ids.get("welcome-status").textContent, /has not been sent/);
+  assert.doesNotMatch(ids.get("welcome-status").textContent, /placeholder/);
   ids.get("details-welcome").listeners.click();
   assert.equal(ids.get("presentation").value, "engineering");
   assert.equal(ids.get("workspace").hidden, false);
@@ -146,7 +151,9 @@ test("the actual UI renders all panels, preserves guided notes across inspection
   app.ontoolresult({ structuredContent: { inspection: report } });
   assert.equal(ids.get("send-welcome").hidden, false);
   await ids.get("send-welcome").listeners.click();
-  assert.match(ids.get("welcome-status").textContent, /Could not share in chat/);
+  assert.match(ids.get("welcome-status").textContent, /unshared Guided answers/);
+  assert.equal(app.sent, undefined);
+  assert.equal(app.closeRequests, undefined);
   app.sent = undefined;
   assert.equal(ids.get("send-examples").hidden, false);
   ids.get("prepare-examples").listeners.click();
@@ -173,4 +180,46 @@ test("the actual UI renders all panels, preserves guided notes across inspection
   assert.equal(ids.get("back-welcome").hidden, true);
   assert.match(ids.get("status").textContent, /Choose the recorded session/);
   assert.equal(ids.get("goal").value, "Keep my unsaved outcome.");
+  assert.equal(ids.get("returning").hidden, false);
+  assert.match(ids.get("return-next").textContent, /Choose the recorded work/);
+  report.brief = { outcome: "A proposed starting point from the conversation.", behavior: "An observable result." };
+  app.ontoolresult({ structuredContent: { inspection: report } });
+  assert.equal(ids.get("goal").value, "Keep my unsaved outcome.");
+  assert.equal(ids.get("suggested-brief").hidden, false);
+  ids.get("apply-brief").listeners.click();
+  assert.equal(ids.get("goal").value, report.brief.outcome);
+  assert.equal(ids.get("expected").value, report.brief.behavior);
+  assert.equal(ids.get("boundary").value, "No payments.");
+  assert.equal(ids.get("owner-decision").value, "review");
+  ids.get("prepare-examples").listeners.click();
+  const calls = [];
+  let accept;
+  app.sendMessage = message => {
+    calls.push("send");
+    app.sent = message;
+    return new Promise(resolve => { accept = resolve; });
+  };
+  const delivery = ids.get("send-examples").listeners.click();
+  assert.equal(ids.get("send-examples").disabled, true);
+  await ids.get("send-examples").listeners.click();
+  assert.deepEqual(calls, ["send"]);
+  assert.equal(app.closeRequests, undefined);
+  accept({});
+  await delivery;
+  assert.equal(app.closeRequests, 1);
+  assert.match(ids.get("proposal-status").textContent, /closure requested.*host decides/);
+  await ids.get("send-examples").listeners.click();
+  assert.deepEqual(calls, ["send"]);
+  assert.equal(app.closeRequests, 1);
+  ids.get("goal").value = "A corrected outcome after successful delivery.";
+  ids.get("goal").listeners.input();
+  ids.get("prepare-examples").listeners.click();
+  assert.equal(ids.get("send-examples").disabled, false);
+  app.sendMessage = async () => { calls.push("send"); return {}; };
+  app.closeFailure = true;
+  await ids.get("send-examples").listeners.click();
+  assert.match(ids.get("proposal-status").textContent, /Message accepted, but closure could not be requested/);
+  assert.equal(app.closeRequests, 2);
+  await ids.get("send-examples").listeners.click();
+  assert.deepEqual(calls, ["send", "send"]);
 });

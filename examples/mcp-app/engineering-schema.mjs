@@ -1,10 +1,35 @@
 import { z } from "zod";
 
 export const sessionIdSchema = z.string().regex(/^[A-Za-z0-9_-]{1,80}$/);
+export const briefSchema = z.object({
+  outcome: z.string().trim().min(1).max(2000).optional(),
+  behavior: z.string().trim().min(1).max(2000).optional(),
+  exception: z.string().trim().min(1).max(2000).optional(),
+  failure: z.string().trim().min(1).max(2000).optional(),
+  boundary: z.string().trim().min(1).max(2000).optional(),
+}).strict();
+export const repositoryFactSchema = z.object({
+  name: z.string(),
+  status: z.enum(["configured", "verified", "missing", "failed", "pending", "unknown", "stale"]),
+  detail: z.string(),
+  source: z.string(),
+  url: z.string().url().optional(),
+});
+export const repositorySchema = z.object({
+  inspectedAt: z.string().datetime(),
+  local: z.array(repositoryFactSchema),
+  github: z.object({
+    repository: z.string().nullable(),
+    inspectedAt: z.string().datetime().nullable(),
+    facts: z.array(repositoryFactSchema),
+  }),
+});
 export const inspectionInput = z.object({
   sessionId: sessionIdSchema.optional(),
   file: z.string().min(1).max(500).optional(),
   view: z.enum(["source", "diff"]).optional(),
+  github: z.boolean().optional(),
+  brief: briefSchema.optional(),
 }).strict();
 export const checkSchema = z.object({
   name: z.string(),
@@ -69,6 +94,8 @@ export const inspectionSchema = z.object({
   events: z.array(z.object({ event: z.string(), at: z.string(), detail: z.string() })),
   files: z.array(z.string()),
   handoff: z.string(),
+  brief: briefSchema.optional(),
+  repository: repositorySchema.optional(),
   artifact: z.object({
     path: z.string(), view: z.enum(["source", "diff"]), text: z.string(),
     truncated: z.boolean(), editorUrl: z.string(),

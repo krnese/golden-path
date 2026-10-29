@@ -227,7 +227,7 @@ export function inspectEngineering(target, { sessionId, file, view = "source" } 
   findings.push({ name: "Delegation and unresolved assumptions", status: "unverified",
     output: "The gate has no semantic delegation-change or assumption detector. Read the contract, diff and owner discussion; absence of a gate finding is not clearance." });
   findings.push({ name: "GitHub and deployment authority", status: "unverified",
-    output: "This local inspection does not query PR checks, reviews, branch protection or deployment authorization." });
+    output: "Local gate evidence does not establish live PR checks, reviews, branch settings or deployment authority. The optional GitHub repository snapshot reports separate bounded API facts, not an authorization verdict." });
   if (st?.terminal || st?.outcome === "FAILED") findings.push({ name: "Terminal session failure", status: "failed",
     output: `The recorded session requires review by ${cfg.owner}. A permitted stop after retry exhaustion is not success; this App does not reset or override it.` });
   const events = history(root, sessionId, findings);

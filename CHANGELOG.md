@@ -7,6 +7,16 @@ History of the kit. The current way to adopt it is in the [README](README.md); t
 
 ## Unreleased
 
+- **Brief, continue, return.** Guided can review a proposed brief from the
+  existing conversation, send the reviewed message to Copilot and request App
+  closure only after host acceptance. Failed sends preserve the view; failed
+  closure is distinct and never triggers a resend. Returning summaries expose
+  recorded changes, evidence and review gaps without a new progress database.
+  An offline repository pulse inventories local definitions; explicit GitHub
+  refresh uses existing CLI credentials and read-only queries for workflows, runs,
+  issues, PRs and branch controls. Unknown permissions remain unknown, not empty
+  success. Guided and Engineering remain separate, compact presentations.
+
 - **Compact App typography and spacing.** Guided and Engineering remain separate
   presentations, with their existing stages, inspection tabs and review sidebar.
   Body text is 12px and the main title 18px; tighter cards, controls and section

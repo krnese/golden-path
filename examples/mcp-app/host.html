@@ -14,16 +14,21 @@
     :focus-visible { outline: 3px solid var(--focus); outline-offset: 3px; }
     iframe { display: block; width: min(100% - 16px, 800px); height: 600px; margin: 0 auto 12px; border: 1px solid var(--line); border-radius: 8px; background: var(--paper); }
     #host-status { overflow-wrap: anywhere; }
+    #simulated-message { white-space: pre-wrap; overflow-wrap: anywhere; max-height: 240px; overflow: auto; }
     [role=alert] { color: var(--danger); }
+    [hidden] { display: none !important; }
   </style>
 </head>
 <body data-view="<!-- VIEW -->">
   <header>
     <strong>Experience preview</strong> · Local example, not VS Code
+    <p id="handoff-demo" hidden><strong>Handoff simulation only.</strong> Messages are displayed here, not sent to Copilot. No conversation or project records are created.</p>
+    <button id="reopen-app" type="button" hidden>Reopen App simulation</button>
     <details>
       <summary>About this preview</summary>
       <p>This is the real app, MCP server and SDK bridge in a sandboxed iframe. It does not establish native-client compatibility. Draft edits affect only the selected isolated example model. No reasoning agent runs here.</p>
       <p id="host-status" role="status">Starting the app...</p>
+      <pre id="simulated-message" hidden></pre>
     </details>
   </header>
   <iframe id="app" title="Golden Path review workspace" sandbox="allow-scripts"></iframe>

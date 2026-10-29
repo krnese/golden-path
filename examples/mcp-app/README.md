@@ -38,7 +38,7 @@ checks needing current verification. A stale failure remains visible; an older
 pass does not become a current success. Counts can overlap when a recorded
 failure or skip also needs current verification.
 
-**Review my examples** produces a message, not acceptance files. The default is
+**Review brief for Copilot** produces a message, not acceptance files. The default is
 to request owner review. A person may explicitly express an owner decision on
 the meaning of the displayed behavior examples; the message makes clear this
 is only for separately drafting and reviewing executable acceptance, not approval
@@ -46,13 +46,62 @@ of unseen tests or implementation. Approval must be established through the
 existing owner-reviewed record and controls. The inspector does not verify the
 identity/authority of a chat sender or promote that message to approved acceptance.
 
-If the host advertises text-message support, **Share this message in chat**
-explicitly calls the supported MCP Apps `sendMessage` interaction. Otherwise,
-select/copy/paste works. Failed delivery is explicit and retains the message.
+If the host advertises text-message support, **Continue in Copilot chat**
+explicitly calls the supported MCP Apps `sendMessage` interaction. Only after
+the host accepts that message does the App call `requestTeardown`; the host
+decides whether to close it. Failed delivery leaves the message and App in place.
+A failed close request is reported separately from successful delivery, and the
+same accepted message is not resent. Otherwise, select/copy/paste works.
 Nothing is sent automatically. Notes remain local to the current view, are not
 written to browser storage or a separate contract store, and are lost on closing
 or reloading the App. Copy them into the existing request/conversation to retain
 them. Incoming inspection results never replace those notes.
+
+### Brief, continue, return
+
+The conversation and implementation stay in Copilot chat. The App is a briefing
+and review companion, not a second chat client. Optional `brief` fields on
+`inspect_engineering_session` carry a proposed starting point from the existing
+conversation: `outcome`, `behavior`, `exception`, `failure` and `boundary`.
+Missing fields are not invented. Guided offers an explicit **Use this draft**
+action, preserving existing local answers until chosen; this never sets an
+owner decision or approval. For example, ask Copilot to open the App with a
+proposed brief from the discussion, then correct it before continuing in chat.
+
+The reviewed message asks Copilot to retain the brief and evidence links in the
+existing task or PR. Reopening inspects those real records, not a remembered
+conversation. A returning summary surfaces baseline changes, evidence freshness,
+review gaps and a useful next action. When several sessions exist, choose the
+relevant work; the App does not silently select the newest. The later navigation
+stages inspect recorded work; advancing does not start implementation or checks.
+
+### Read-only repository pulse
+
+Local inspection inventories up to 20 non-ignored workflow definitions and their
+textual Action references, root package scripts, guidance, ownership declarations
+and local acceptance configuration. It does not evaluate arbitrary YAML, execute
+scripts, infer commands for other build systems or establish enforcement.
+
+**Refresh GitHub**, or explicit `github: true` on the inspection tool, uses the
+server's existing `gh` CLI credentials and bounded read-only github.com queries.
+New REST requests explicitly use GET; branch-control facts reuse the existing
+adoption diagnostic, including its repository-metadata query and paginated
+rules/legacy-protection handling, rather than a second policy evaluator.
+Default inspection is offline. No login, installation, credential
+switching or settings changes happen automatically. Supported origins are
+github.com HTTPS and Git SSH URLs; other hosts remain explicitly unknown.
+
+Remote facts show up to five hosted workflows, recent runs on the checked-out
+branch, open issues and PRs, plus effective default-branch rules and classic
+protection where readable. Runs from another HEAD are historical; matching HEAD
+does not validate all required application checks. The adoption diagnostic checks
+the kit's named check, Code Owner review and stale-review dismissal, not a
+universal repository-hardening policy. Matching HEAD also
+does not validate uncommitted changes or prove all required checks passed.
+Issue search may lag updates; PR listing does not establish reviews, mergeability
+or required-check satisfaction. Missing authentication, tooling, permissions,
+timeouts and malformed responses remain **unknown**, never empty success.
+Every snapshot has sources and timestamps; it is not continuous monitoring.
 
 **Still requiring a human trial:** a non-professional developer must demonstrate
 that they can express the problem, correct and approve meaningful examples,
@@ -184,8 +233,9 @@ and unreadable sources are explicit rather than empty successful results.
   chat or GitHub is unavailable locally unless the session links a repository
   source. Missing business acceptance is shown as missing, not filled with demo
   examples or developer tests.
-- No GitHub query, approval verification, branch-protection change, command
-  execution, acceptance editing, merge or deployment is exposed by the App.
+- GitHub inspection is explicit and read-only; it does not verify owner approval
+  or authorize changes. No project-command execution, protection change,
+  acceptance editing, merge or deployment is exposed by the App.
 - Existing integrity heuristics are reused, not strengthened into a tamper-proof
   boundary. Contract/control path changes require human review; the absence of a
   signal is not proof no delegation change occurred.

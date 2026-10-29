@@ -41,6 +41,15 @@
     .welcome textarea { line-height: 1.5; resize: vertical; }
     .welcome .actions { margin: 8px 0; }
     .welcome .primary-action { border-color: var(--accent); background: var(--soft); }
+    .returning { margin: 10px 0; padding: 12px; border: 1px solid var(--line); border-radius: 8px; background: var(--surface); }
+    .return-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+    .return-grid article { margin: 0; }
+    .return-grid h3 { margin-bottom: 4px; }
+    .repository-pulse { margin: 10px 0; border: 1px solid var(--line); border-radius: 8px; padding: 8px 12px; }
+    .repository-pulse > summary { font-weight: 650; }
+    .repository-pulse pre { max-height: 180px; overflow: auto; }
+    .repository-pulse .fact-source { font-size: 11px; color: var(--muted); overflow-wrap: anywhere; }
+    .primary-action { border-color: var(--violet); background: var(--violet-soft); }
     @media (max-width: 420px) { .welcome { margin: 10px auto; padding: 12px; } .welcome h2 { font-size: 20px; } }
     .primary, .sidebar { min-width: 0; }
     .mode-cards { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 10px; }
@@ -123,6 +132,7 @@
     }
     @media (max-width: 420px) {
       .sidebar { grid-template-columns: minmax(0, 1fr); }
+      .return-grid { grid-template-columns: minmax(0, 1fr); }
       .mode-card { gap: 6px; padding: 6px; }
       .mode-card small { font-size: 11px; }
       .mode-card .icon { width: 18px; flex-basis: 18px; }
@@ -172,12 +182,30 @@
       <p>Describe what you want to build in chat. Your agreement and evidence will appear here as real work is recorded.</p>
       <div class="flow" aria-label="From intent to evidence"><span>Outcome</span><span>Examples</span><span>Work</span><span>Evidence</span></div>
       <label for="welcome-prompt">Start your first task in the existing chat</label>
-      <textarea id="welcome-prompt" rows="4" readonly>Help me use Golden Path to build [describe your outcome]. Recommend the smallest useful first version and help me agree examples of success before implementation. Keep the agreement in our existing task or PR. Don't invent acceptance or passing checks, and don't change repository protections without my approval.</textarea>
-      <div class="actions"><button id="select-welcome" class="primary-action" type="button">Select message to copy</button><button id="send-welcome" type="button" hidden>Share in chat</button></div>
-      <p id="welcome-status" class="muted" role="status">Replace the outcome placeholder in chat before sending. Nothing is sent automatically.</p>
+      <textarea id="welcome-prompt" rows="4" readonly>Help me use Golden Path for a useful first version. Use what we have already discussed to propose an outcome, boundaries and examples of success; ask focused questions where context is missing. Keep the agreement in our existing task or PR. Don't invent acceptance or passing checks, and don't change repository protections without my approval.</textarea>
+      <div class="actions"><button id="send-welcome" class="primary-action" type="button" hidden>Continue in Copilot chat</button><button id="select-welcome" type="button">Select message to copy</button></div>
+      <p id="welcome-status" class="muted" role="status">Continue the conversation there, or prepare a brief in Guided. Nothing is sent automatically.</p>
       <p class="muted">No local engineering session is recorded yet. Opening this App does not approve acceptance or run checks.</p>
       <div class="actions"><button id="explore-welcome" type="button">Explore the guided view</button><button id="details-welcome" type="button">Inspect setup details</button><button id="refresh-welcome" type="button" disabled>Refresh recorded work</button></div>
     </section>
+    <section id="returning" class="returning" aria-labelledby="return-title" hidden>
+      <div class="row"><h2 id="return-title">Your work, at a glance</h2><button id="refresh-returning" type="button" disabled>Refresh recorded work</button></div>
+      <p id="return-context" class="muted"></p>
+      <div class="return-grid">
+        <article><h3>What changed?</h3><p id="return-changes"></p></article>
+        <article><h3>What was verified?</h3><p id="return-verified"></p></article>
+        <article><h3>What needs you?</h3><p id="return-decisions"></p></article>
+        <article><h3>What is next?</h3><p id="return-next"></p><button id="return-action" type="button"></button></article>
+      </div>
+    </section>
+    <details id="repository-pulse" class="repository-pulse" hidden>
+      <summary>Repository pulse <span id="pulse-summary" class="muted"></span></summary>
+      <p>Read-only facts, not a readiness score. Configured is not verified; missing, stale and unknown are not success.</p>
+      <div class="actions"><button id="refresh-github" type="button" disabled>Refresh GitHub</button></div>
+      <p id="pulse-status" role="status"></p>
+      <details><summary>What is in this checkout?</summary><div id="repository-local"></div></details>
+      <details><summary>Live GitHub state</summary><div id="repository-github"></div></details>
+    </details>
     <div class="sr-only"><label for="presentation">Presentation</label><select id="presentation" tabindex="-1"><option value="guided">Guided</option><option value="engineering">Engineering detail</option></select></div>
     <div id="workspace" class="workspace-shell" hidden>
     <div class="primary">
@@ -206,6 +234,7 @@
       <section id="contract" role="tabpanel" aria-labelledby="tab-contract" tabindex="0">
         <div id="guided-start" class="guided">
           <div class="goal-section">
+            <section id="suggested-brief" class="box" hidden><h3>A starting brief from your conversation</h3><p>Proposed context, not approval. Your local answers are not replaced automatically.</p><pre id="suggested-text"></pre><button id="apply-brief" type="button">Use this draft in Guided</button><p id="brief-status" role="status"></p></section>
             <div class="section-heading"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 5h16v11H9l-5 4zm4 4h8m-8 3h5"/></svg><h2>Let's start with your goal</h2><button id="tips-toggle" class="text-button" type="button" aria-expanded="false" aria-controls="goal-tips">Tips &amp; examples</button></div>
             <p class="hint">Describe the business problem, not the software. We'll turn it into clear examples to review before implementation.</p>
             <p id="goal-tips" class="explanation" hidden>Name who needs help, what should improve, and what success looks like. For example: “Help our team find incorrect invoices before payment.” This is an example, not your recorded intent.</p>
@@ -248,14 +277,14 @@
             <label for="owner-decision">What decision are you making?</label>
             <select id="owner-decision"><option value="review">Request owner review — not approved</option><option value="approve-behavior">I am the owner: approve these behavior examples for acceptance drafting only</option></select>
             <p class="hint">Approving meaning is not approving executable tests. The owner must review those separately before implementation, using the existing request and review process.</p>
-            <button id="prepare-examples" type="button">Review my examples</button>
+            <button id="prepare-examples" class="primary-action" type="button">Review brief for Copilot</button>
             <p id="proposal-error" role="alert" hidden></p>
           </div>
           <div id="example-proposal" class="box" hidden>
             <h3>Review before sharing</h3>
             <p class="hint">Correct your answers and regenerate if needed. No files, approvals or workflow state have changed.</p>
             <label for="proposal-text">Proposed examples and owner message</label><textarea id="proposal-text" rows="7" readonly></textarea>
-            <div class="actions"><button id="select-examples" type="button">Select for chat</button><button id="send-examples" type="button" hidden>Share this message in chat</button></div>
+            <div class="actions"><button id="send-examples" class="primary-action" type="button" hidden>Continue in Copilot chat</button><button id="select-examples" type="button">Select brief to copy</button></div>
             <p id="proposal-status" role="status">Copy into the existing conversation if chat sharing is unavailable. Nothing is sent automatically.</p>
           </div>
         <h2>Acceptance artifacts</h2>
@@ -327,10 +356,10 @@
       <section class="side-card">
         <div class="section-heading"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="m6 3 15 9-15 9z"/></svg><h2>What happens next?</h2></div>
         <ol class="next-steps">
-          <li><strong>Turn answers into examples</strong><small>Prepare clear proposals for you to review and adjust.</small></li>
-          <li><strong>Owner reviews acceptance</strong><small>Agree meaning, then review the executable tests in a separate change.</small></li>
-          <li><strong>Implement and verify</strong><small>Only within the agreed boundary and existing controls.</small></li>
-          <li><strong>You review the result</strong><small>Inspect what changed, what ran, and what is still unproved.</small></li>
+          <li><strong>Review your brief</strong><small>Correct the proposed outcome, examples and boundaries.</small></li>
+          <li><strong>Continue in Copilot chat</strong><small>Send the reviewed message; the App requests closure only after the host accepts it.</small></li>
+          <li><strong>Work in the existing conversation</strong><small>Retain the agreement in your task or PR. Acceptance review and permissions still apply.</small></li>
+          <li><strong>Reopen to review</strong><small>Ask Copilot to open Golden Path again for recorded changes, evidence and decisions.</small></li>
         </ol>
       </section>
       <details id="session-details" class="side-card">

@@ -12,6 +12,13 @@ let changeLimit = 4;
 let activePanel = "contract";
 let exploredFirstRun = false;
 let questionIndex = 0;
+let sending = false;
+let draftEdited = false;
+let pendingBrief;
+let briefKey;
+let briefScope;
+const sentMessages = new Set();
+const briefFields = { outcome: "goal", behavior: "expected", exception: "exception", failure: "failure", boundary: "boundary" };
 const questions = ["exception", "expected", "failure", "boundary"];
 const exampleResponses = {
   review: "Flag it for a person to review. Show a clear explanation and let a human decide.",
@@ -40,9 +47,13 @@ function controls() {
   get("send-examples").hidden = !connected || !app.getHostCapabilities()?.message?.text;
   get("send-welcome").hidden = !connected || !app.getHostCapabilities()?.message?.text;
   get("refresh-welcome").disabled = !connected || busy;
+  for (const id of ["refresh-returning", "refresh-github"]) get(id).disabled = !connected || busy;
+  for (const [id, text] of [["send-examples", "proposal-text"], ["send-welcome", "welcome-prompt"]]) {
+    get(id).disabled = !connected || busy || sending || sentMessages.has(get(text).value);
+  }
 }
 function firstRunPresentation() {
-  const firstRun = !!current && !current.session && current.sessions.length === 0;
+  const firstRun = !!current && !current.session && current.sessions.length === 0 && !Object.keys(current.brief || {}).length;
   get("first-run").hidden = !firstRun || exploredFirstRun;
   get("workspace").hidden = !current || (firstRun && !exploredFirstRun);
   get("back-welcome").hidden = !firstRun || !exploredFirstRun;
@@ -78,6 +89,7 @@ function updateJourney() {
   get("review-position").textContent = `${stage} of 4 stages`;
   get("journey-back").disabled = stage === 1 && questionIndex === 0;
   get("journey-next").disabled = stage === 4;
+  get("journey-next").hidden = stage === 2;
   get("journey-next").textContent = stage === 1 ? "Next →" : stage === 2 ? "Inspect changes →" : stage === 3 ? "Review result →" : "Review position only";
   get("question-position").textContent = `${questionIndex + 1} of ${questions.length}`;
   for (const id of questions) get(`question-${id}`).hidden = id !== questions[questionIndex];
@@ -201,6 +213,68 @@ function renderAcceptance() {
   }
   if (!items.length) list.append(element("p", term ? "No matching artifacts." : "No acceptance artifacts available. Inspect configuration and agree the authoritative examples with the owner.", "notice"));
 }
+function renderCompanion() {
+  const report = current;
+  const scope = `${report.root}\n${report.session?.id || ""}`;
+  if (briefScope && briefScope !== scope) {
+    pendingBrief = undefined;
+    briefKey = undefined;
+    get("suggested-brief").hidden = true;
+  }
+  briefScope = scope;
+  get("returning").hidden = !report.session && !report.sessions.length;
+  get("return-context").textContent = report.session ?
+    `${report.session.task || report.session.id} · HEAD ${report.head.slice(0, 8)} · inspected ${new Date(report.inspectedAt).toLocaleString()}` :
+    `${report.sessions.length} recorded session(s). Select the change you want to inspect; no newest-session assumption is made.`;
+  get("return-changes").textContent = report.session?.base ?
+    `${report.changes.length} changed file(s) against ${report.session.base.slice(0, 8)}. Changes are not proof of completed behavior.` :
+    "No selected, recorded baseline. A missing comparison is not proof nothing changed.";
+  get("return-verified").textContent = plainEvidence(report);
+  const signals = report.agreementDelta.filter(item => item.classification === "agreement-source").length;
+  get("return-decisions").textContent = `${signals} agreement/control change signal(s); ${report.findings.filter(item => item.status !== "passed").length} evidence/review gaps. Human judgment is still required; signals do not establish material impact.`;
+  get("return-next").textContent = !report.session ? "Choose the recorded work to review." :
+    signals ? "Inspect the changed agreement sources before deciding whether affected work can continue." :
+      report.evidence.freshness !== "current" ? "Inspect missing or stale evidence before making a progress claim." :
+        "Review the original results and remaining gaps. Current checks are not owner approval.";
+  get("return-action").textContent = !report.session ? "Choose recorded work" : signals ? "Review agreement changes" : "Inspect evidence";
+  get("session-details").open = !report.session || get("presentation").value === "engineering";
+  get("repository-pulse").hidden = !report.repository;
+  if (report.repository) {
+    const repository = report.repository;
+    get("pulse-summary").textContent = repository.local.find(item => item.name === "Workflow definitions")?.detail.split(".")[0] || "";
+    get("pulse-status").textContent = `Local inspection ${new Date(repository.inspectedAt).toLocaleString()}. ${repository.github.inspectedAt ?
+      `GitHub ${repository.github.repository || "unavailable"} inspected ${new Date(repository.github.inspectedAt).toLocaleString()}. Remote facts are a snapshot, not continuous monitoring.` :
+      "GitHub has not been fetched for this snapshot. Refresh GitHub uses the server's existing CLI credentials; it does not sign in or change settings."}`;
+    for (const [id, facts] of [["repository-local", repository.local], ["repository-github", repository.github.facts]]) {
+      get(id).replaceChildren(...facts.map(item => {
+        const card = element("article");
+        card.append(element("span", item.status, `badge ${item.status === "verified" ? "passed" : item.status === "failed" ? "failed" : "unverified"}`),
+          element("h3", item.name), element("p", item.detail),
+          element("p", item.source, "fact-source"));
+        if (item.url && app.getHostCapabilities()?.openLinks) {
+          const button = element("button", "Open GitHub source");
+          button.type = "button";
+          button.addEventListener("click", async () => {
+            try {
+              const result = await app.openLink({ url: item.url });
+              if (result.isError) throw new Error("The host declined the source link.");
+            } catch (failure) { get("pulse-status").textContent = `Could not open source: ${failure.message}. ${item.url}`; }
+          });
+          card.append(button);
+        } else if (item.url) card.append(element("p", item.url, "fact-source"));
+        return card;
+      }));
+    }
+  }
+  if (report.brief && Object.keys(report.brief).length && JSON.stringify(report.brief) !== briefKey) {
+    briefKey = JSON.stringify(report.brief);
+    pendingBrief = report.brief;
+    get("suggested-text").textContent = Object.entries(pendingBrief).map(([field, value]) => `${field}: ${value}`).join("\n\n");
+    get("suggested-brief").hidden = false;
+    get("brief-status").textContent = draftEdited ? "Your local answers are unchanged. Use this draft only if you want to replace the supplied fields." :
+      "Review this proposed starting point, then choose Use this draft. Unspecified fields remain yours to answer.";
+  }
+}
 function render() {
   const report = current;
   get("session").replaceChildren(new Option("Choose a recorded session", ""));
@@ -218,6 +292,7 @@ function render() {
     report.sessions.length ? "Choose the recorded session you want to inspect. This is not a list of chat transcripts." :
     "Connected. Begin in chat; refresh after real work is recorded.";
   firstRunPresentation();
+  renderCompanion();
   const contract = get("contract-content");
   contract.replaceChildren(element("h2", "What was authorized?"));
   if (report.contract) {
@@ -376,21 +451,53 @@ get("session").addEventListener("change", () => load());
 get("why-file").addEventListener("change", renderRelationships);
 get("refresh").addEventListener("click", () => load());
 get("refresh-welcome").addEventListener("click", () => load());
+get("refresh-returning").addEventListener("click", () => load());
+get("refresh-github").addEventListener("click", () => load({ github: true }));
+get("return-action").addEventListener("click", () => {
+  if (!current.session) { get("session-details").open = true; get("session").focus(); }
+  else showTab(current.agreementDelta.some(item => item.classification === "agreement-source") ? "delta" : "evidence", true);
+});
+get("apply-brief").addEventListener("click", () => {
+  if (!pendingBrief) return;
+  for (const [field, value] of Object.entries(pendingBrief)) get(briefFields[field]).value = value;
+  proposalChanged();
+  get("brief-status").textContent = "Proposed draft applied to the supplied fields. Review and correct it; nothing is approved or sent.";
+  get("goal").focus();
+});
 get("select-welcome").addEventListener("click", () => {
   get("welcome-prompt").focus();
   get("welcome-prompt").select();
-  get("welcome-status").textContent = "Message selected. Copy it into the existing chat and replace the outcome placeholder. It has not been sent.";
+  get("welcome-status").textContent = "Message selected. Copy it into the existing chat and describe your outcome there. It has not been sent.";
 });
-get("send-welcome").addEventListener("click", async () => {
-  get("send-welcome").disabled = true;
+async function continueInChat(textId, statusId) {
+  const text = get(textId).value;
+  if (sending || sentMessages.has(text)) return;
+  if (textId === "welcome-prompt" && Object.values(briefFields).some(id => get(id).value.trim())) {
+    get(statusId).textContent = "You have unshared Guided answers. Return to Guided, review your brief and continue from there so those answers are included. Nothing was sent or closed.";
+    return;
+  }
+  if (!text.trim()) { get(statusId).textContent = "Prepare a non-empty message before continuing. Nothing was sent."; return; }
+  sending = true;
+  controls();
   try {
-    const result = await app.sendMessage({ role: "user", content: [{ type: "text", text: get("welcome-prompt").value }] });
+    const result = await app.sendMessage({ role: "user", content: [{ type: "text", text }] });
     if (result.isError) throw new Error("The host declined the message.");
-    get("welcome-status").textContent = "Shared in the existing chat. Describe your outcome there; no acceptance or session record has been created by this App.";
+    sentMessages.add(text);
   } catch (failure) {
-    get("welcome-status").textContent = `Could not share in chat: ${failure.message}. Select and copy the message instead.`;
-  } finally { get("send-welcome").disabled = false; }
-});
+    get(statusId).textContent = `Could not share in chat: ${failure.message}. Your message is retained; select and copy it instead. The App has not requested closure.`;
+    sending = false;
+    controls();
+    return;
+  }
+  get(statusId).textContent = "Message accepted in the existing chat. Requesting App closure; no repository records or approvals were created. Reopen Golden Path later to inspect recorded work.";
+  try {
+    await app.requestTeardown();
+    get(statusId).textContent = "Message accepted; closure requested. The host decides whether to close this view. If it stays open, you can close it manually without resending.";
+  } catch (failure) {
+    get(statusId).textContent = `Message accepted, but closure could not be requested: ${failure.message}. Close this view manually; do not resend the message.`;
+  } finally { sending = false; controls(); }
+}
+get("send-welcome").addEventListener("click", () => continueInChat("welcome-prompt", "welcome-status"));
 function exploreFirstRun(mode) {
   exploredFirstRun = true;
   get("presentation").value = mode;
@@ -466,10 +573,12 @@ get("tips-toggle").addEventListener("click", () => {
   get("tips-toggle").setAttribute("aria-expanded", String(!get("goal-tips").hidden));
 });
 function proposalChanged() {
+  draftEdited = true;
   get("example-proposal").hidden = true;
   get("proposal-error").hidden = true;
   get("question-error").hidden = true;
   updateProposalSummary();
+  controls();
 }
 for (const id of ["goal", "expected", "exception", "failure", "boundary", "owner-decision"]) {
   get(id).addEventListener(id === "owner-decision" ? "change" : "input", proposalChanged);
@@ -490,22 +599,15 @@ get("prepare-examples").addEventListener("click", () => {
     get("example-proposal").hidden = false;
     get("proposal-status").textContent = "Review this exact message before sharing. It has not been sent or saved as acceptance.";
     get("proposal-text").focus();
+    controls();
   } catch (failure) {
     get("proposal-error").textContent = failure.message;
     get("proposal-error").hidden = false;
   }
 });
 get("select-examples").addEventListener("click", () => { get("proposal-text").focus(); get("proposal-text").select(); });
-get("send-examples").addEventListener("click", async () => {
-  get("send-examples").disabled = true;
-  try {
-    const result = await app.sendMessage({ role: "user", content: [{ type: "text", text: get("proposal-text").value }] });
-    if (result.isError) throw new Error("The host declined the message.");
-    get("proposal-status").textContent = "Message shared in the existing chat. This does not establish approval of executable tests or change repository records.";
-  } catch (failure) {
-    get("proposal-status").textContent = `Could not share in chat: ${failure.message}. Select and copy the message instead; nothing is claimed as approved.`;
-  } finally { get("send-examples").disabled = false; }
-});
+get("send-examples").addEventListener("click", () => continueInChat("proposal-text", "proposal-status"));
+app.onteardown = async () => ({});
 get("close-artifact").addEventListener("click", () => get("artifact-dialog").close());
 get("open-editor").addEventListener("click", async () => {
   try {

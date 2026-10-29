@@ -84,6 +84,10 @@ unverified evidence are never represented as current passes. A separate adoption
 **Guided** starts from a business outcome and helps prepare plain-language examples for the existing
 owner-review process; **Engineering detail** exposes the same contract, tests and original evidence.
 Neither presentation turns a proposal into approved executable acceptance or hides missing evidence.
+Reviewed briefs can be handed back to the existing Copilot chat, with a
+host-controlled close request after message acceptance. Reopening surfaces
+recorded progress; the read-only repository pulse adds local setup facts and
+explicit, credential-dependent GitHub snapshots without applying settings.
 Build the package, then start **golden-path-experience-preview** through
 **Chat: Open Customizations > MCP Servers** and ask Copilot to call
 `inspect_engineering_session`. The portable [`.mcp.json`](.mcp.json) registration

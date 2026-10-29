@@ -293,6 +293,21 @@ test("loopback engineering preview supports first-run inspection without inventi
     assert.equal((await fetch(`${preview.url}/engineering-other?`)).status, 404);
     assert.match(await (await fetch(`${preview.url}/app`)).text(), /Your project is connected/);
     assert.match(await (await fetch(preview.url)).text(), /data-view="engineering"/);
+    const proposed = { outcome: "Proposed outcome from the existing conversation.", behavior: "é".repeat(2000) };
+    const body = JSON.stringify({ brief: proposed });
+    const posted = await fetch(`${preview.url}/engineering`, {
+      method: "POST", headers: { Origin: preview.url, "Content-Type": "application/json" }, body,
+    });
+    assert.equal(posted.status, 200);
+    const postedReport = (await posted.json()).structuredContent.inspection;
+    assert.deepEqual(postedReport.brief, proposed);
+    assert.equal(postedReport.session, null);
+    assert.equal(postedReport.repository.github.inspectedAt, null);
+    assert.match(postedReport.repository.github.facts[0].detail, /Not fetched/);
+    const forbidden = await fetch(`${preview.url}/engineering`, {
+      method: "POST", headers: { Origin: "https://example.invalid", "Content-Type": "application/json" }, body,
+    });
+    assert.equal(forbidden.status, 403);
   } finally {
     await preview.close();
   }

@@ -16,6 +16,7 @@ export function proposalText({ outcome, behavior, exception, failure, boundary, 
       "These are proposals, not approved acceptance. Ask the accountable owner to correct and explicitly approve their meaning.",
     `Existing source: ${report?.contract || "not linked; identify the authoritative request before implementation"}. Inspected HEAD: ${report?.head || "unavailable"}.`,
     "Keep this in the existing request/review record, not a new App contract. Ask focused questions where expected behavior, exceptions, failure conditions or consequential decisions remain unclear. Do not invent missing examples.",
+    "Continue this conversation in Copilot chat. Retain the reviewed brief and links to work and evidence in the existing task or PR so I can reopen Golden Path later to inspect recorded progress. The App does not retain a chat transcript or create an approval record.",
     "Draft executable acceptance only as a separate owner-reviewed change, with an example-to-test explanation. Do not modify owner-approved tests or implement this proposal in the same step. Begin implementation only after the owner approves the executable acceptance and the existing process permits it.",
     "Re-read the repository artifacts and actual verification evidence before claiming any example is implemented or verified. Explain missing evidence in plain language. An owner message is not a verified approval record until the existing review process establishes it.",
   ].join("\n\n");

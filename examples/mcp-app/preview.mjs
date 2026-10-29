@@ -8,6 +8,17 @@ import { StdioClientTransport } from "@modelcontextprotocol/client/stdio";
 import { DIRECTORY, RESOURCE, TOOL, ARCHITECTURE_RESOURCE, READ_MODEL, UPDATE_MODEL, ENGINEERING_RESOURCE, INSPECT_SESSION, optionsFromArgs } from "./server.mjs";
 import { inspectionInput } from "./engineering-schema.mjs";
 
+async function jsonInput(req, label = "Preview request") {
+  const chunks = [];
+  let bytes = 0;
+  for await (const chunk of req) {
+    bytes += chunk.length;
+    if (bytes > 128 * 1024) throw new Error(`${label} exceeds 128 KiB.`);
+    chunks.push(chunk);
+  }
+  return JSON.parse(Buffer.concat(chunks).toString("utf8"));
+}
+
 export async function startPreview(target, port = 4328, state, session, engineering = false) {
   if (engineering && state) throw new Error("Choose either engineering inspection or the isolated architecture example.");
   const engineeringView = engineering || !!session;
@@ -26,7 +37,7 @@ export async function startPreview(target, port = 4328, state, session, engineer
       return;
     }
     try {
-      if (req.method === "GET" && req.url === "/") {
+      if (req.method === "GET" && new URL(req.url, `http://${authority}`).pathname === "/") {
         res.setHeader("Content-Type", "text/html; charset=utf-8");
         res.setHeader("Content-Security-Policy", "default-src 'none'; script-src 'unsafe-inline'; style-src 'unsafe-inline'; frame-src 'self'; connect-src 'self'; frame-ancestors 'none'");
         res.end(fs.readFileSync(path.join(DIRECTORY, "dist", "host.html"), "utf8")
@@ -42,9 +53,23 @@ export async function startPreview(target, port = 4328, state, session, engineer
       } else if (req.method === "POST" && req.url === "/report") {
         res.setHeader("Content-Type", "application/json");
         res.end(JSON.stringify(await client.callTool({ name: TOOL, arguments: {} })));
+      } else if (engineeringView && req.method === "POST" && req.url === "/engineering") {
+        if (req.headers.origin !== `http://${authority}` || req.headers["content-type"] !== "application/json") {
+          res.writeHead(403).end("Same-origin JSON required for inspection.");
+          return;
+        }
+        const args = inspectionInput.parse(await jsonInput(req));
+        res.setHeader("Content-Type", "application/json");
+        res.end(JSON.stringify(await client.callTool({ name: INSPECT_SESSION, arguments: args })));
       } else if (engineeringView && req.method === "GET" && (req.url === "/engineering" || req.url.startsWith("/engineering?"))) {
         const query = new URL(req.url, `http://${authority}`).searchParams;
-        const args = inspectionInput.parse(Object.fromEntries(query));
+        const values = Object.fromEntries(query);
+        if (query.has("github")) {
+          if (!["true", "false"].includes(values.github)) throw new Error("github must be true or false.");
+          values.github = values.github === "true";
+        }
+        if (query.has("brief")) values.brief = JSON.parse(values.brief);
+        const args = inspectionInput.parse(values);
         res.setHeader("Content-Type", "application/json");
         res.end(JSON.stringify(await client.callTool({ name: INSPECT_SESSION, arguments: args })));
       } else if (state && req.method === "GET" && req.url === "/model") {
@@ -55,16 +80,10 @@ export async function startPreview(target, port = 4328, state, session, engineer
           res.writeHead(403).end("Same-origin JSON required for draft updates.");
           return;
         }
-        const chunks = [];
-        let bytes = 0;
-        for await (const chunk of req) {
-          bytes += chunk.length;
-          if (bytes > 128 * 1024) throw new Error("Draft update exceeds 128 KiB.");
-          chunks.push(chunk);
-        }
+        const arguments_ = await jsonInput(req, "Draft update");
         res.setHeader("Content-Type", "application/json");
         res.end(JSON.stringify(await client.callTool({
-          name: UPDATE_MODEL, arguments: JSON.parse(Buffer.concat(chunks).toString("utf8")),
+          name: UPDATE_MODEL, arguments: arguments_,
         })));
       } else {
         res.writeHead(404).end("Not found");
