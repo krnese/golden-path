@@ -211,7 +211,8 @@ function render() {
       element("pre", report.contractText, "excerpt"), sourceButton(report.contract), whyButton(report.contract));
   } else contract.append(element("p", "No intent/context document is linked to this session. Ask the owner for the authoritative request; do not infer authorization from the code.", "notice"));
   contract.append(element("h2", "Who owns acceptance?"),
-    element("p", `${report.config.owner} (configured name; approval unverified).`));
+    element("p", report.config.owner === "Not recorded" ? "Owner not recorded; approval unavailable." :
+      `${report.config.owner} (configured name; approval unverified).`));
   const acceptanceLink = element("button", `Explore acceptance (${report.acceptance.length} artifacts)`);
   acceptanceLink.type = "button";
   acceptanceLink.addEventListener("click", () => showTab("acceptance", true));
@@ -219,7 +220,8 @@ function render() {
     element("p", "The agent may continue only already-authorized work. Owner-approved acceptance is read-only. Editing, merging and deployment are separate permissions."),
     element("p", `Acceptance paths: ${report.config.acceptancePaths.join(", ") || "not configured"}`, "muted"),
     element("p", `Protected developer tests: ${report.config.protected.join(", ") || "not configured"}`, "muted"),
-    sourceButton(".golden-path/config.json"),
+    ...(report.files.includes(".golden-path/config.json") ? [sourceButton(".golden-path/config.json")] :
+      [element("p", "No gate configuration installed. Inspection does not add checks or acceptance.", "notice")]),
     element("h2", "Unresolved assumptions and delegation"),
     element("p", "No semantic delegation or assumption verdict is available. Inspect the request and changes; the existing gate cannot decide whether a changed outcome or tradeoff is acceptable.", "muted"));
   renderAcceptance();

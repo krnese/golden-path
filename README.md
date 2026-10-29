@@ -95,7 +95,11 @@ view remain to be validated; the browser preview is not that proof. There is no 
 detector or automatic approval inference. Production adoption should reuse existing records rather
 than require a parallel architecture store.
 
-The App is not included by the core installer or starter template. Disabling it does not disable
+The App runtime is not bundled by the core installer or starter template. The
+[starter's optional setup](examples/starter/README.md#optional-open-the-golden-path-mcp-app-in-vs-code)
+uses a separate kit checkout and explicitly configures the bound server without overwriting existing
+MCP settings. Method-only applications show missing configuration and evidence as unavailable.
+Disabling it does not disable
 configured acceptance protection, required CI or owner review. No App action can approve real acceptance,
 merge or deploy; those responsibilities remain with existing owners and controls.
 

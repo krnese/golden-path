@@ -1,0 +1,159 @@
+import assert from "node:assert/strict";
+import fs from "node:fs";
+import os from "node:os";
+import path from "node:path";
+import { spawnSync } from "node:child_process";
+import { afterEach, test } from "node:test";
+import { Client } from "@modelcontextprotocol/client";
+import { StdioClientTransport } from "@modelcontextprotocol/client/stdio";
+import { makeStarter } from "../../make-starter.mjs";
+import { configureApp, main, SERVER_NAME } from "../configure.mjs";
+import { inspectEngineering } from "../engineering-report.mjs";
+import { inspectionSchema } from "../engineering-schema.mjs";
+import { DIRECTORY, ENGINEERING_RESOURCE, INSPECT_SESSION } from "../server.mjs";
+
+const roots = [];
+afterEach(() => {
+  for (const root of roots.splice(0)) fs.rmSync(root, { recursive: true, force: true });
+});
+function scratch() {
+  const root = fs.realpathSync.native(fs.mkdtempSync(path.join(os.tmpdir(), "gp-starter-app-")));
+  roots.push(root);
+  return root;
+}
+function git(root, ...args) {
+  const result = spawnSync("git", args, { cwd: root, encoding: "utf8" });
+  assert.equal(result.status, 0, result.stderr);
+  return result.stdout.trim();
+}
+function starter() {
+  const root = makeStarter(path.join(scratch(), "application with spaces"));
+  git(root, "init", "-q");
+  git(root, "config", "core.autocrlf", "false");
+  git(root, "add", "-A");
+  git(root, "-c", "user.name=Test", "-c", "user.email=test@example.invalid", "commit", "-qm", "Generated starter fixture");
+  return root;
+}
+function writeConfig(root, content) {
+  fs.mkdirSync(path.join(root, ".vscode"), { recursive: true });
+  fs.writeFileSync(path.join(root, ".vscode", "mcp.json"), content);
+}
+
+test("generated starter carries optional setup without bundling or activating the App", () => {
+  const root = starter();
+  const readme = fs.readFileSync(path.join(root, "README.md"), "utf8");
+  for (const expected of [/Optional: open the Golden Path MCP App/, /configure\.mjs --target \. --dry-run/,
+    /configure\.mjs --target \.\r?\n/, /restart the MCP/, /lost when the panel reloads/,
+    /does not upgrade the copied Golden Path method/, /remove only its server entry/]) {
+    assert.match(readme, expected);
+  }
+  for (const rel of [".vscode", "node_modules", ".golden-path/config.json", ".golden-path/state"]) {
+    assert.equal(fs.existsSync(path.join(root, rel)), false, rel);
+  }
+});
+
+test("method-only inspection is schema-valid, read-only and honest about absent controls", () => {
+  const root = starter();
+  const before = git(root, "status", "--porcelain");
+  const report = inspectionSchema.parse(inspectEngineering(root));
+  assert.equal(report.session, null);
+  assert.deepEqual(report.sessions, []);
+  assert.equal(report.config.owner, "Not recorded");
+  assert.equal(report.evidence.freshness, "unavailable");
+  assert.ok(report.evidence.checks.every(check => check.status === "unavailable"));
+  assert.ok(report.findings.some(check => check.name === "Golden Path configuration" && check.status === "unavailable"));
+  assert.equal(report.findings.some(check => check.status === "passed"), false);
+  assert.equal(report.files.includes(".golden-path/config.json"), false);
+  assert.ok(report.relationships.every(link => link.to !== ".golden-path/config.json"));
+  assert.equal(git(root, "status", "--porcelain"), before);
+  assert.equal(fs.existsSync(path.join(root, ".golden-path", "state")), false);
+  assert.equal(fs.existsSync(path.join(root, ".golden-path", "config.json")), false);
+});
+
+test("malformed existing gate configuration remains an explicit inspection error", () => {
+  const root = starter();
+  fs.writeFileSync(path.join(root, ".golden-path", "config.json"), "{not JSON");
+  assert.throws(() => inspectEngineering(root), SyntaxError);
+});
+
+test("configuration preview writes nothing; explicit setup binds only the application and is idempotent", () => {
+  const root = starter();
+  const before = git(root, "status", "--porcelain");
+  const preview = configureApp(root, { dryRun: true });
+  assert.equal(preview.changed, false);
+  assert.equal(git(root, "status", "--porcelain"), before);
+  const configured = configureApp(root);
+  const entry = configured.config.servers[SERVER_NAME];
+  assert.deepEqual(entry.args.slice(1), ["--target", "${workspaceFolder}"]);
+  assert.equal(entry.args.includes("--state"), false);
+  assert.equal(path.resolve(entry.args[0].replace("${workspaceFolder}", root)), path.join(DIRECTORY, "server.mjs"));
+  const bytes = fs.readFileSync(configured.file, "utf8");
+  assert.equal(configureApp(root).changed, false);
+  assert.equal(fs.readFileSync(configured.file, "utf8"), bytes);
+  assert.equal(fs.existsSync(path.join(root, ".golden-path", "config.json")), false);
+});
+
+for (const content of ['{"servers":{"other":{"command":"keep"}}}', '{\n// keep my JSONC\n"servers":{}\n}', "{broken"]) {
+  test(`existing MCP configuration is preserved on conflict: ${content.slice(0, 25)}`, () => {
+    const root = scratch();
+    writeConfig(root, content);
+    assert.ok(configureApp(root, { dryRun: true }).config.servers[SERVER_NAME]);
+    assert.throws(() => configureApp(root), /nothing was overwritten/);
+    assert.equal(fs.readFileSync(path.join(root, ".vscode", "mcp.json"), "utf8"), content);
+  });
+}
+
+test("an already matching entry preserves other servers and formatting byte-for-byte", () => {
+  const root = scratch();
+  const config = configureApp(root, { dryRun: true }).config;
+  config.servers.other = { command: "keep" };
+  const content = JSON.stringify(config, null, 4);
+  writeConfig(root, content);
+  assert.equal(configureApp(root).changed, false);
+  assert.equal(fs.readFileSync(path.join(root, ".vscode", "mcp.json"), "utf8"), content);
+});
+
+test("setup refuses linked VS Code directories instead of writing outside the application", () => {
+  const root = scratch(), outside = scratch();
+  fs.symlinkSync(outside, path.join(root, ".vscode"), process.platform === "win32" ? "junction" : "dir");
+  assert.throws(() => configureApp(root), /linked/);
+  assert.deepEqual(fs.readdirSync(outside), []);
+});
+
+test("setup fails explicitly for missing arguments and an unbuilt kit", () => {
+  assert.equal(main([]), 2);
+  assert.equal(main(["--unknown"]), 2);
+  const root = scratch();
+  const helper = path.join(root, "configure.mjs");
+  fs.copyFileSync(path.join(DIRECTORY, "configure.mjs"), helper);
+  const result = spawnSync(process.execPath, [helper, "--target", root], { encoding: "utf8" });
+  assert.equal(result.status, 2);
+  assert.match(result.stderr, /Build the MCP App first/);
+  assert.equal(fs.existsSync(path.join(root, ".vscode")), false);
+});
+
+test("the configured server exposes the current App for a real generated method-only starter", async (t) => {
+  const root = starter();
+  const { config } = configureApp(root);
+  const entry = config.servers[SERVER_NAME];
+  const before = git(root, "status", "--porcelain");
+  const client = new Client({ name: "starter-app-test", version: "0.1.0" });
+  t.after(() => client.close());
+  await client.connect(new StdioClientTransport({
+    command: entry.command,
+    args: entry.args.map(arg => arg.replaceAll("${workspaceFolder}", root)),
+  }));
+  const tools = (await client.listTools()).tools;
+  assert.deepEqual(tools.map(tool => tool.name).sort(), ["inspect_golden_path_adoption", INSPECT_SESSION].sort());
+  assert.ok(tools.every(tool => tool.annotations.readOnlyHint));
+  const response = await client.callTool({ name: INSPECT_SESSION, arguments: {} });
+  assert.notEqual(response.isError, true);
+  const report = inspectionSchema.parse(response.structuredContent.inspection);
+  assert.equal(report.root, fs.realpathSync(root));
+  assert.ok(report.evidence.checks.every(check => check.status === "unavailable"));
+  const resource = await client.readResource({ uri: ENGINEERING_RESOURCE });
+  assert.match(resource.contents[0].text, /Agreement delta/);
+  assert.match(resource.contents[0].text, /Why does this exist/);
+  assert.match(resource.contents[0].text, /No gate configuration installed/);
+  assert.equal(git(root, "status", "--porcelain"), before);
+});
