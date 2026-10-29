@@ -15,7 +15,8 @@ History of the kit. The current way to adopt it is in the [README](README.md); t
   project checks. Projects with no recorded sessions open a connected welcome
   view with an explicit chat/copy path; technical details stay available without
   fabricating acceptance, evidence or approvals. Native host rendering remains
-  a separate verification step.
+  a separate verification step. The no-session loopback preview accepts both
+  queryless and empty-query inspection requests across supported Node versions.
 
 - **Outcome-first starter landing page.** The generated README now leads with
   the value, one first-task prompt and a concise explanation of its limits.

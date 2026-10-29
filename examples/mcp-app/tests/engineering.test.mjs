@@ -281,11 +281,16 @@ test("loopback engineering preview supports first-run inspection without inventi
   fs.rmSync(path.join(root, ".golden-path", "state", "real-session.json"));
   const preview = await startPreview(root, 0, undefined, undefined, true);
   try {
-    const response = await fetch(`${preview.url}/engineering?`);
-    const report = (await response.json()).structuredContent.inspection;
-    assert.equal(report.session, null);
-    assert.deepEqual(report.sessions, []);
-    assert.equal(report.evidence.freshness, "unavailable");
+    for (const endpoint of ["/engineering", "/engineering?"]) {
+      const response = await fetch(`${preview.url}${endpoint}`);
+      assert.equal(response.status, 200);
+      assert.equal(response.headers.get("content-type"), "application/json");
+      const report = (await response.json()).structuredContent.inspection;
+      assert.equal(report.session, null);
+      assert.deepEqual(report.sessions, []);
+      assert.equal(report.evidence.freshness, "unavailable");
+    }
+    assert.equal((await fetch(`${preview.url}/engineering-other?`)).status, 404);
     assert.match(await (await fetch(`${preview.url}/app`)).text(), /Your project is connected/);
     assert.match(await (await fetch(preview.url)).text(), /data-view="engineering"/);
   } finally {

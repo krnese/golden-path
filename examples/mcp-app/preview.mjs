@@ -42,7 +42,7 @@ export async function startPreview(target, port = 4328, state, session, engineer
       } else if (req.method === "POST" && req.url === "/report") {
         res.setHeader("Content-Type", "application/json");
         res.end(JSON.stringify(await client.callTool({ name: TOOL, arguments: {} })));
-      } else if (engineeringView && req.method === "GET" && req.url.startsWith("/engineering?")) {
+      } else if (engineeringView && req.method === "GET" && (req.url === "/engineering" || req.url.startsWith("/engineering?"))) {
         const query = new URL(req.url, `http://${authority}`).searchParams;
         const args = inspectionInput.parse(Object.fromEntries(query));
         res.setHeader("Content-Type", "application/json");
