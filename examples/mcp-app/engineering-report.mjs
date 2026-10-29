@@ -81,7 +81,7 @@ function evidence(root, id, head, hash, base, findings) {
   if (!source || !present(root, source)) return empty;
   try {
     const saved = captureSchema.parse(JSON.parse(read(root, source)));
-    if (saved.sessionId !== id || path.resolve(saved.root) !== root) throw new Error("Evidence belongs to another repository or session.");
+    if (saved.sessionId !== id || path.relative(root, path.resolve(saved.root)) !== "") throw new Error("Evidence belongs to another repository or session.");
     const current = saved.stable && saved.head === head && !!hash && saved.diffHash === hash && !!base && saved.result.base_sha === base;
     for (const result of saved.result.results) {
       const item = { name: result.name, status: checkStatus(result), output: result.output };
@@ -135,7 +135,7 @@ export function handoff(report) {
 }
 export function inspectEngineering(target, { sessionId, file, view = "source" } = {}) {
   const root = fs.realpathSync(target);
-  if (path.resolve(git(root, "rev-parse", "--show-toplevel").trim()) !== root) throw new Error("Select the application repository root.");
+  if (path.relative(root, path.resolve(git(root, "rev-parse", "--show-toplevel").trim())) !== "") throw new Error("Select the application repository root.");
   const head = git(root, "rev-parse", "HEAD").trim();
   const hash = diffHash(root);
   const findings = [];
