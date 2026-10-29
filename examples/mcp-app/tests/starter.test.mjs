@@ -36,8 +36,7 @@ function starter() {
   return root;
 }
 function writeConfig(root, content) {
-  fs.mkdirSync(path.join(root, ".vscode"), { recursive: true });
-  fs.writeFileSync(path.join(root, ".vscode", "mcp.json"), content);
+  fs.writeFileSync(path.join(root, ".mcp.json"), content);
 }
 
 test("generated starter carries optional setup without bundling or activating the App", () => {
@@ -45,10 +44,12 @@ test("generated starter carries optional setup without bundling or activating th
   const readme = fs.readFileSync(path.join(root, "README.md"), "utf8");
   for (const expected of [/Optional: open the Golden Path MCP App/, /configure\.mjs --target \. --dry-run/,
     /configure\.mjs --target \.\r?\n/, /restart the MCP/, /lost when the panel reloads/,
-    /does not upgrade the copied Golden Path method/, /remove only its server entry/]) {
+    /does not upgrade the copied Golden Path method/, /remove only its server entry/,
+    /creates `\.mcp\.json`/, /Chat: Open Customizations/, /### Migrating an older App registration/,
+    /application repository root/, /do not keep both registrations/]) {
     assert.match(readme, expected);
   }
-  for (const rel of [".vscode", "node_modules", ".golden-path/config.json", ".golden-path/state"]) {
+  for (const rel of [".mcp.json", ".vscode", "node_modules", ".golden-path/config.json", ".golden-path/state"]) {
     assert.equal(fs.existsSync(path.join(root, rel)), false, rel);
   }
 });
@@ -113,41 +114,80 @@ test("configuration preview writes nothing; explicit setup binds only the applic
   assert.equal(preview.changed, false);
   assert.equal(git(root, "status", "--porcelain"), before);
   const configured = configureApp(root);
-  const entry = configured.config.servers[SERVER_NAME];
-  assert.deepEqual(entry.args.slice(1), ["--target", "${workspaceFolder}"]);
+  const entry = configured.config.mcpServers[SERVER_NAME];
+  assert.equal(configured.file, path.join(root, ".mcp.json"));
+  assert.equal(fs.existsSync(path.join(root, ".vscode")), false);
+  assert.deepEqual(entry.args.slice(1), ["--target", "."]);
+  assert.deepEqual(entry.tools, ["inspect_golden_path_adoption", INSPECT_SESSION]);
+  assert.equal(JSON.stringify(entry).includes("${"), false);
   assert.equal(entry.args.includes("--state"), false);
-  assert.equal(path.resolve(entry.args[0].replace("${workspaceFolder}", root)), path.join(DIRECTORY, "server.mjs"));
+  assert.equal(path.resolve(root, entry.args[0]), path.join(DIRECTORY, "server.mjs"));
   const bytes = fs.readFileSync(configured.file, "utf8");
   assert.equal(configureApp(root).changed, false);
   assert.equal(fs.readFileSync(configured.file, "utf8"), bytes);
   assert.equal(fs.existsSync(path.join(root, ".golden-path", "config.json")), false);
 });
 
-for (const content of ['{"servers":{"other":{"command":"keep"}}}', '{\n// keep my JSONC\n"servers":{}\n}', "{broken"]) {
+for (const content of ['{"mcpServers":{"other":{"command":"keep"}}}', '{\n// keep my JSONC\n"mcpServers":{}\n}', "{broken", "null"]) {
   test(`existing MCP configuration is preserved on conflict: ${content.slice(0, 25)}`, () => {
     const root = scratch();
     writeConfig(root, content);
-    assert.ok(configureApp(root, { dryRun: true }).config.servers[SERVER_NAME]);
+    assert.ok(configureApp(root, { dryRun: true }).config.mcpServers[SERVER_NAME]);
     assert.throws(() => configureApp(root), /nothing was overwritten/);
-    assert.equal(fs.readFileSync(path.join(root, ".vscode", "mcp.json"), "utf8"), content);
+    assert.equal(fs.readFileSync(path.join(root, ".mcp.json"), "utf8"), content);
   });
 }
 
 test("an already matching entry preserves other servers and formatting byte-for-byte", () => {
   const root = scratch();
   const config = configureApp(root, { dryRun: true }).config;
-  config.servers.other = { command: "keep" };
+  config.mcpServers.other = { command: "keep" };
   const content = JSON.stringify(config, null, 4);
   writeConfig(root, content);
   assert.equal(configureApp(root).changed, false);
-  assert.equal(fs.readFileSync(path.join(root, ".vscode", "mcp.json"), "utf8"), content);
+  assert.equal(fs.readFileSync(path.join(root, ".mcp.json"), "utf8"), content);
 });
 
-test("setup refuses linked VS Code directories instead of writing outside the application", () => {
+test("setup refuses linked portable configurations instead of writing outside the application", () => {
   const root = scratch(), outside = scratch();
-  fs.symlinkSync(outside, path.join(root, ".vscode"), process.platform === "win32" ? "junction" : "dir");
-  assert.throws(() => configureApp(root), /linked/);
+  fs.symlinkSync(outside, path.join(root, ".mcp.json"), process.platform === "win32" ? "junction" : "dir");
+  assert.throws(() => configureApp(root), /nothing was overwritten/);
   assert.deepEqual(fs.readdirSync(outside), []);
+});
+
+for (const content of ['{"servers":{"golden-path-experience":{"command":"node"}}}', '{\n// legacy JSONC\n"servers":{}\n}']) {
+  test("legacy configuration requires explicit migration and is never silently duplicated", () => {
+    const root = scratch();
+    fs.mkdirSync(path.join(root, ".vscode"));
+    const legacy = path.join(root, ".vscode", "mcp.json");
+    fs.writeFileSync(legacy, content);
+    assert.ok(configureApp(root, { dryRun: true }).config.mcpServers[SERVER_NAME]);
+    assert.throws(() => configureApp(root), /Review\/migrate.*avoid duplicate registrations/);
+    assert.equal(fs.readFileSync(legacy, "utf8"), content);
+    assert.equal(fs.existsSync(path.join(root, ".mcp.json")), false);
+  });
+}
+
+test("a relative registration survives moving the application and kit together", () => {
+  const container = scratch();
+  const kit = path.join(container, "kit");
+  fs.mkdirSync(path.join(kit, "dist"), { recursive: true });
+  fs.copyFileSync(path.join(DIRECTORY, "configure.mjs"), path.join(kit, "configure.mjs"));
+  for (const name of ["app", "engineering"]) fs.writeFileSync(path.join(kit, "dist", `${name}.html`), "");
+  const root = path.join(container, "application with spaces");
+  fs.mkdirSync(root);
+  const result = spawnSync(process.execPath, [path.join(kit, "configure.mjs"), "--target", root], { encoding: "utf8" });
+  assert.equal(result.status, 0, result.stderr);
+  const bytes = fs.readFileSync(path.join(root, ".mcp.json"), "utf8");
+  const entry = JSON.parse(bytes).mcpServers[SERVER_NAME];
+  assert.equal(path.isAbsolute(entry.args[0]), false);
+  assert.ok(entry.args[0].startsWith("./"));
+  const moved = path.join(scratch(), "relocated");
+  fs.renameSync(container, moved);
+  const movedRoot = path.join(moved, "application with spaces");
+  assert.equal(fs.readFileSync(path.join(movedRoot, ".mcp.json"), "utf8"), bytes);
+  assert.equal(path.resolve(movedRoot, entry.args[0]), path.join(moved, "kit", "server.mjs"));
+  assert.equal(path.resolve(movedRoot, entry.args[2]), movedRoot);
 });
 
 test("setup fails explicitly for missing arguments and an unbuilt kit", () => {
@@ -160,30 +200,55 @@ test("setup fails explicitly for missing arguments and an unbuilt kit", () => {
   assert.equal(result.status, 2);
   assert.match(result.stderr, /Build the MCP App first/);
   assert.equal(fs.existsSync(path.join(root, ".vscode")), false);
+  assert.equal(fs.existsSync(path.join(root, ".mcp.json")), false);
 });
 
-test("the configured server exposes the current App for a real generated method-only starter", async (t) => {
+test("the configured server exposes the current App for a real generated method-only starter", async () => {
   const root = starter();
   const { config } = configureApp(root);
-  const entry = config.servers[SERVER_NAME];
+  const entry = config.mcpServers[SERVER_NAME];
   const before = git(root, "status", "--porcelain");
   const client = new Client({ name: "starter-app-test", version: "0.1.0" });
+  try {
+    await client.connect(new StdioClientTransport({
+      command: entry.command,
+      args: entry.args,
+      cwd: root,
+    }));
+    const tools = (await client.listTools()).tools;
+    assert.deepEqual(tools.map(tool => tool.name).sort(), ["inspect_golden_path_adoption", INSPECT_SESSION].sort());
+    assert.ok(tools.every(tool => tool.annotations.readOnlyHint));
+    const response = await client.callTool({ name: INSPECT_SESSION, arguments: {} });
+    assert.notEqual(response.isError, true);
+    const report = inspectionSchema.parse(response.structuredContent.inspection);
+    assert.equal(report.root, fs.realpathSync(root));
+    assert.ok(report.evidence.checks.every(check => check.status === "unavailable"));
+    const resource = await client.readResource({ uri: ENGINEERING_RESOURCE });
+    assert.match(resource.contents[0].text, /Agreement delta/);
+    assert.match(resource.contents[0].text, /Why does this exist/);
+    assert.match(resource.contents[0].text, /No gate configuration installed/);
+    assert.equal(git(root, "status", "--porcelain"), before);
+  } finally {
+    await client.close();
+  }
+});
+
+test("the committed native registration starts the read-only server from the kit workspace", async (t) => {
+  const root = path.resolve(DIRECTORY, "..", "..");
+  const config = JSON.parse(fs.readFileSync(path.join(root, ".mcp.json"), "utf8"));
+  assert.equal(fs.existsSync(path.join(root, ".vscode", "mcp.json")), false);
+  const entry = config.mcpServers["golden-path-experience-preview"];
+  assert.deepEqual(entry.tools, ["inspect_golden_path_adoption", INSPECT_SESSION]);
+  assert.equal(JSON.stringify(entry).includes("${"), false);
+  const client = new Client({ name: "native-workspace-test", version: "0.1.0" });
   t.after(() => client.close());
-  await client.connect(new StdioClientTransport({
-    command: entry.command,
-    args: entry.args.map(arg => arg.replaceAll("${workspaceFolder}", root)),
-  }));
+  await client.connect(new StdioClientTransport({ command: entry.command, args: entry.args, cwd: root }));
   const tools = (await client.listTools()).tools;
-  assert.deepEqual(tools.map(tool => tool.name).sort(), ["inspect_golden_path_adoption", INSPECT_SESSION].sort());
+  assert.deepEqual(tools.map(tool => tool.name).sort(), [...entry.tools].sort());
   assert.ok(tools.every(tool => tool.annotations.readOnlyHint));
   const response = await client.callTool({ name: INSPECT_SESSION, arguments: {} });
   assert.notEqual(response.isError, true);
-  const report = inspectionSchema.parse(response.structuredContent.inspection);
-  assert.equal(report.root, fs.realpathSync(root));
-  assert.ok(report.evidence.checks.every(check => check.status === "unavailable"));
+  assert.equal(inspectionSchema.parse(response.structuredContent.inspection).root, fs.realpathSync(root));
   const resource = await client.readResource({ uri: ENGINEERING_RESOURCE });
   assert.match(resource.contents[0].text, /Agreement delta/);
-  assert.match(resource.contents[0].text, /Why does this exist/);
-  assert.match(resource.contents[0].text, /No gate configuration installed/);
-  assert.equal(git(root, "status", "--porcelain"), before);
 });

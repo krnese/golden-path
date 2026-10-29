@@ -1,0 +1,16 @@
+{
+  "mcpServers": {
+    "golden-path-experience-preview": {
+      "command": "node",
+      "args": [
+        "./examples/mcp-app/server.mjs",
+        "--target",
+        "."
+      ],
+      "tools": [
+        "inspect_golden_path_adoption",
+        "inspect_engineering_session"
+      ]
+    }
+  }
+}

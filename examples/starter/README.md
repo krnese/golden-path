@@ -111,15 +111,26 @@ sibling checkout; commands do not install dependencies into your application.
 If `golden-path-kit` already exists, review and update that checkout instead of
 cloning over it. In another shell, use its native path separators.
 
-The final command explicitly creates `.vscode/mcp.json` pointing at the kit
-server, with **your application** as `--target`. It refuses to overwrite an
-existing configuration, including JSON with comments: use `--dry-run` to obtain
-the proposed entry and merge it manually while preserving your other servers.
-The usual sibling layout yields a workspace-relative server path; review any
-machine-specific path if the kit is on a different drive.
+The final command explicitly creates `.mcp.json` at the application repository
+root, using the portable Copilot `mcpServers` format. The Copilot harness reads
+this directly instead of forwarding an older VS Code registration. Only the two
+read-only Golden Path inspection tools are enabled. The server runs from the kit,
+with **your application** as `--target`.
 
-In VS Code, run **MCP: List Servers**, start **golden-path-experience**, and approve
-the host's trust/permission prompts only after reviewing the configuration.
+The host must launch the workspace server from the application repository root:
+`--target .` binds that working directory. The usual sibling layout yields a
+relative server path without editor-specific `${workspaceFolder}` variables;
+moving both repositories together preserves it. A kit on another drive requires
+an absolute, machine-specific server path: review it before sharing.
+
+Existing configuration is never overwritten, including JSON with comments.
+Use `--dry-run` to obtain the proposed `mcpServers` entry and merge it manually
+while preserving other servers. Existing `.vscode/mcp.json` also requires review
+before setup, to avoid registering a second copy of the same server.
+
+In VS Code, use **Chat: Open Customizations > MCP Servers**, start
+**golden-path-experience**, and approve the host's trust/permission prompts only
+after reviewing the configuration.
 Then ask Copilot:
 
 > Call inspect_engineering_session and show the Golden Path MCP App for this
@@ -133,6 +144,23 @@ are lost when the panel reloads; retain agreed intent in your existing task or
 owner-review process. The read-only `inspect_golden_path_adoption` tool can also
 show missing setup. Add real checks separately using the reviewed upgrade below.
 
+### Migrating an older App registration
+
+If VS Code flags `.vscode/mcp.json`, follow its
+[Copilot harness migration guidance](https://code.visualstudio.com/docs/agent-customization/migrate-customizations#_migrate-mcp-servers).
+Preview the updated helper's portable entry first. In the migration UI, select
+only the Golden Path server and review any unsupported properties. Keep other
+servers, environment variables and credentials unchanged.
+
+The built-in migration resolves `${workspaceFolder}` to the current absolute
+path. For the usual sibling layout, review the result against the helper preview
+and use its relative server path and `--target .` before sharing the file. Do not
+copy the old top-level `servers` object into `.mcp.json` or enable additional
+tools. Test the migrated server, then remove only its old entry if it remains;
+do not keep both registrations. Restart the server and reopen the App, or start
+a fresh chat if the current session retains the old registration. Verify the
+migration warning is gone in your host.
+
 ### Keeping the App up to date
 
 Template changes do not update previously generated applications. The App is
@@ -143,7 +171,7 @@ serve a newer UI with an incompatible inspection format.
 
 Updating the App does not upgrade the copied Golden Path method or application
 controls. Review those installation changes separately. To disable the App,
-stop its server and remove only its server entry from `.vscode/mcp.json`; the
+stop its server and remove only its server entry from `.mcp.json`; the
 method and any existing acceptance protections continue working.
 
 ## Add stronger checks when they are useful

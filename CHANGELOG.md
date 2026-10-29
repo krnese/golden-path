@@ -7,6 +7,14 @@ History of the kit. The current way to adopt it is in the [README](README.md); t
 
 ## Unreleased
 
+- **Native Copilot harness MCP configuration.** The checkout and optional setup
+  helper now use workspace-root `.mcp.json` with `mcpServers`, relative server
+  arguments and an explicit allowlist of the two read-only inspection tools.
+  The helper refuses existing native/legacy conflicts rather than overwriting
+  settings or silently registering duplicate servers. Starter instructions cover
+  migration, path portability, restart and removal of the old registration.
+  No MCP App runtime or acceptance-control behavior changed.
+
 - **Change-scoped adoption for new applications, teams and brownfield repositories.**
   The shared skill, task prompt and generated starter now guide outcome-first
   bootstrap with real checks, parallel work against owner-approved acceptance,

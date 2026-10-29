@@ -63,9 +63,14 @@ owner-approved acceptance tests have been authored in this implementation.
 For an application created from the starter, follow the
 [optional setup and update instructions](../starter/README.md#optional-open-the-golden-path-mcp-app-in-vs-code).
 `node examples/mcp-app/configure.mjs --target "<application-repo>" --dry-run`
-previews the VS Code server entry; omit `--dry-run` to create a new
-`.vscode/mcp.json`. Existing configurations are never overwritten: merge the
-preview manually if other servers or JSON-with-comments settings already exist.
+previews the portable Copilot server entry; omit `--dry-run` to create a new
+workspace-root `.mcp.json` with `mcpServers`. Existing configurations are never
+overwritten: merge the preview manually if other servers or JSON-with-comments
+settings already exist. Older `.vscode/mcp.json` requires explicit migration
+review to avoid duplicate registrations; follow the starter's migration section.
+Relative arguments resolve from the application workspace root, with `--target .`;
+no editor-specific variables or workspace `cwd` property are required. The helper
+enables only the two read-only inspection tools, not all future server tools.
 The server runs from this kit checkout but inspects only the bound application.
 Method-only applications need no fabricated gate configuration; missing controls,
 sessions and verification remain unavailable. After updates, rebuild, restart
@@ -79,8 +84,10 @@ npm --prefix examples\mcp-app run build
 npm --prefix examples\mcp-app test
 ```
 
-In VS Code, start/restart **golden-path-experience-preview** using **MCP: List
-Servers**. In an MCP Apps-capable Copilot chat, ask:
+In VS Code, start/restart **golden-path-experience-preview** using **Chat: Open
+Customizations > MCP Servers**. Restart the server and open a fresh chat after
+migrating a registration if the current session still lists the old forwarded
+server. In an MCP Apps-capable Copilot chat, ask:
 
 > Call inspect_engineering_session and show the MCP App. Let me choose a
 > recorded session, inspect its contract, acceptance, changes and evidence, and
@@ -285,14 +292,16 @@ and styles; the Apps request no external network/resource permissions.
 
 ## Try it in VS Code
 
-The default [.vscode/mcp.json](../../.vscode/mcp.json) entry is read-only. For this
+The default [.mcp.json](../../.mcp.json) entry is read-only. For this
 older editor, explicitly add `--state` and the initialized example file to a
-separate server configuration. It does not install Golden Path into another
-project or enable a check/approval policy.
+separate server configuration, and explicitly allow its `inspect_architecture`
+and `update_architecture_draft` tools. The default allowlist intentionally excludes
+them. It does not install Golden Path into another project or enable a
+check/approval policy.
 
 1. Build and initialize the prototype first.
-2. Open **MCP: List Servers**, select **golden-path-experience-preview**, and start
-   it. Review VS Code's trust/permission prompts.
+2. Open **Chat: Open Customizations > MCP Servers**, select the separate editor
+   server, and start it. Review VS Code's trust/permission prompts.
 3. In Copilot's normal agent, ask:
 
    > Inspect the example architecture requirements and assumptions with
