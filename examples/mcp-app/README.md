@@ -101,6 +101,8 @@ Missing fields are not invented. Guided offers an explicit **Use this draft**
 action, preserving existing local answers until chosen; this never sets an
 owner decision or approval. For example, ask Copilot to open the App with a
 proposed brief from the discussion, then correct it before continuing in chat.
+Applying a replacement draft resets any earlier owner expression to review;
+new examples never inherit a decision made for the previous brief.
 
 The reviewed message asks Copilot to retain the brief and evidence links in the
 existing task or PR. Reopening inspects those real records, not a remembered

@@ -405,4 +405,17 @@ test("the actual UI renders all panels, preserves guided notes across inspection
   ids.get("start-brief").listeners.click();
   assert.equal(ids.get("workspace").hidden, false);
   assert.equal(ids.get("goal").value, "A corrected outcome.");
+  assert.equal(ids.get("owner-decision").value, "approve-behavior");
+  app.closeFailure = false;
+  prepare();
+  await ids.get("send-examples").listeners.click();
+  assert.match(ids.get("proposal-status").textContent, /closure requested.*host decides/);
+  report.brief = { ...report.brief, outcome: "A replacement conversation brief.", behavior: "Different examples to review." };
+  app.ontoolresult({ structuredContent: { inspection: report } });
+  assert.equal(ids.get("owner-decision").value, "approve-behavior");
+  assert.equal(ids.get("goal").value, "A corrected outcome.");
+  ids.get("apply-brief").listeners.click();
+  assert.equal(ids.get("owner-decision").value, "review");
+  assert.match(ids.get("proposal-text").value, /A replacement conversation brief/);
+  assert.doesNotMatch(ids.get("proposal-text").value, /My explicit owner decision/);
 });

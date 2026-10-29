@@ -11,6 +11,8 @@ History of the kit. The current way to adopt it is in the [README](README.md); t
   accepted chat delivery when the view remains open, open full setup directly
   from the welcome action, and exclude tracked-but-deleted files from local
   workflow and declaration presence facts. Regression checks cover each case.
+  Applying a supplied replacement brief resets an earlier owner expression to
+  review, including when accepted delivery leaves the App open.
 
 - **Ship the companion journey in both entry points.** The kit and generated
   method-only starter explain Guided briefing, continuing in existing Copilot

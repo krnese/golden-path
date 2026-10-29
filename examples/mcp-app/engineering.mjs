@@ -583,6 +583,7 @@ get("return-action").addEventListener("click", () => {
 get("apply-brief").addEventListener("click", () => {
   if (!pendingBrief) return;
   for (const [field, value] of Object.entries(pendingBrief)) get(briefFields[field]).value = value;
+  get("owner-decision").value = "review";
   proposalChanged();
   get("suggested-brief").hidden = true;
   get("brief-status").textContent = "Proposed draft applied to the supplied fields. Review and correct it; nothing is approved or sent.";
