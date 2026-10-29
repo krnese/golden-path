@@ -9,6 +9,14 @@ enable the older isolated draft editor or require its example model.
 
 **Guided | Engineering** remains visible above the welcome screen and workspace;
 either control opens its presentation directly. Switching preserves local answers.
+Their descriptions explain the jobs: **Shape and review your brief** versus
+**Inspect changes, checks and evidence**. Engineering's **Behind the brief**
+introduction makes clear that switching does not start implementation or run checks.
+A genuinely unrecorded project opens with **No engineering work recorded yet**;
+**Inspect repository setup** reveals all existing technical panels and facts.
+Unexpected inspection problems and recorded failures do not use that empty state.
+Returning Guided work links **Review check results** directly to Evidence and
+**Inspect changes** directly to Changes, preserving the local brief in both cases.
 **Guided** is a single-column briefing, not a smaller engineering dashboard.
 It starts with the outcome, asks one missing detail at a time, then presents
 five readable brief sections with individual Edit actions. Supplied answers

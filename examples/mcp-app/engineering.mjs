@@ -14,6 +14,7 @@ let guidedPanel = "contract";
 let engineeringPanel = "contract";
 let guidedStep = "goal";
 let editingBrief = false;
+let inspectingSetup = false;
 let exploredFirstRun = false;
 let questionIndex = 0;
 let sending = false;
@@ -73,12 +74,17 @@ function unrecordedProject(report) {
     report.evidence.checks.every(check => check.status === "unavailable") &&
     report.findings.every(item => item.status !== "failed" && expectedGaps.includes(item.name));
 }
+function emptyEngineering() {
+  return !!current && get("presentation").value === "engineering" && unrecordedProject(current) && !inspectingSetup;
+}
 function firstRunPresentation() {
   const firstRun = !!current && unrecordedProject(current) && !Object.keys(current.brief || {}).length;
   const recorded = !!current && (!!current.session || current.sessions.length > 0);
   const reviewingWork = get("presentation").value === "guided" && recorded && !editingBrief;
   get("first-run").hidden = !firstRun || exploredFirstRun;
-  get("workspace").hidden = !current || (firstRun && !exploredFirstRun) || reviewingWork;
+  get("engineering-empty").hidden = !emptyEngineering();
+  get("repository-pulse").hidden = !current?.repository || emptyEngineering();
+  get("workspace").hidden = !current || (firstRun && !exploredFirstRun) || reviewingWork || emptyEngineering();
   get("guided-return").hidden = !recorded || editingBrief;
   get("return-to-work").hidden = !recorded || !editingBrief;
   get("back-welcome").hidden = !firstRun || !exploredFirstRun;
@@ -283,9 +289,10 @@ function renderCompanion() {
     signals ? "The recorded agreement or controls changed. Ask the owner to review their meaning before continuing affected work." :
       "Review the results with the owner. This inspection does not establish approval or permission to continue.";
   get("guided-inspect").hidden = !report.session;
+  get("guided-view-changes").hidden = !report.session;
   get("return-action").textContent = !report.session ? "Choose recorded work" : signals ? "Review agreement changes" : "Inspect evidence";
   get("session-details").open = !report.session || get("presentation").value === "engineering";
-  get("repository-pulse").hidden = !report.repository;
+  get("repository-pulse").hidden = !report.repository || emptyEngineering();
   if (report.repository) {
     const repository = report.repository;
     get("pulse-summary").textContent = repository.local.find(item => item.name === "Workflow definitions")?.detail.split(".")[0] || "";
@@ -545,6 +552,16 @@ get("refresh-github").addEventListener("click", () => load({ github: true }));
 get("refresh-guided").addEventListener("click", () => load());
 get("refresh-brief").addEventListener("click", () => load());
 for (const id of ["guided-inspect", "attention-inspect"]) get(id).addEventListener("click", () => showTab("evidence", true));
+get("guided-view-changes").addEventListener("click", () => showTab("changes", true));
+get("inspect-empty-setup").addEventListener("click", () => {
+  inspectingSetup = true;
+  firstRunPresentation();
+  showTab("contract", true);
+});
+get("empty-back-guided").addEventListener("click", () => {
+  get("presentation").value = "guided";
+  presentation();
+});
 get("start-brief").addEventListener("click", () => {
   editingBrief = true;
   firstRunPresentation();
@@ -607,7 +624,7 @@ function exploreFirstRun(mode) {
   presentation();
   firstRunPresentation();
   showTab("contract");
-  get(mode === "guided" ? "goal" : "contract").focus();
+  get(mode === "guided" ? "goal" : emptyEngineering() ? "engineering-empty-title" : "contract").focus();
 }
 get("explore-welcome").addEventListener("click", () => exploreFirstRun("guided"));
 get("details-welcome").addEventListener("click", () => exploreFirstRun("engineering"));

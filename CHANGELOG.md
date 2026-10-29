@@ -7,6 +7,11 @@ History of the kit. The current way to adopt it is in the [README](README.md); t
 
 ## Unreleased
 
+- **A clearer bridge to Engineering.** Explain each presentation's purpose and
+  introduce technical inspection as looking behind the brief, not starting work.
+  Guided links directly to check results and changes. Unrecorded projects get a
+  calm Engineering empty state with an explicit path to full repository setup.
+
 - **Briefing-first Guided iteration.** Replace the Guided dashboard and four-stage
   navigation with one outcome, selective missing-detail questions and an editable
   brief review. Complete conversation briefs go directly to review after explicit

@@ -183,9 +183,18 @@
     <header><div class="row"><h1>Golden Path</h1><span class="badge">PREVIEW</span></div><span class="badge">Read only · Local evidence</span></header>
     <p class="intro muted">Prepare your brief. Build with Copilot. Return to review what changed.</p>
     <div class="mode-cards" role="group" aria-label="Presentation">
-      <button id="mode-guided" class="mode-card" type="button" aria-pressed="true" disabled><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="7" r="3.5"/><path d="M5 21v-3a7 7 0 0 1 14 0v3"/></svg><span><strong>Guided</strong><small>Step by step, plain language</small></span></button>
-      <button id="mode-engineering" class="mode-card" type="button" aria-pressed="false" disabled><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="m8 6-6 6 6 6m8-12 6 6-6 6m-2-15-4 18"/></svg><span><strong>Engineering</strong><small>Technical details and evidence</small></span></button>
+      <button id="mode-guided" class="mode-card" type="button" aria-pressed="true" disabled><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="7" r="3.5"/><path d="M5 21v-3a7 7 0 0 1 14 0v3"/></svg><span><strong>Guided</strong><small>Shape and review your brief</small></span></button>
+      <button id="mode-engineering" class="mode-card" type="button" aria-pressed="false" disabled><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="m8 6-6 6 6 6m8-12 6 6-6 6m-2-15-4 18"/></svg><span><strong>Engineering</strong><small>Inspect changes, checks and evidence</small></span></button>
     </div>
+    <section class="engineering-only" aria-labelledby="engineering-intro-title">
+      <h2 id="engineering-intro-title">Behind the brief</h2>
+      <p class="muted">Inspect recorded work in this repository. Your draft stays unchanged when you switch views; switching doesn't start implementation or run checks.</p>
+    </section>
+    <section id="engineering-empty" class="returning engineering-only" aria-labelledby="engineering-empty-title" hidden>
+      <h2 id="engineering-empty-title" tabindex="-1">No engineering work recorded yet</h2>
+      <p>Continue your brief in Copilot chat. Return here when work and check results have been recorded; missing results are not passing checks.</p>
+      <div class="actions"><button id="empty-back-guided" class="primary-action" type="button">Back to Guided</button><button id="inspect-empty-setup" type="button">Inspect repository setup</button></div>
+    </section>
     <p id="error" class="notice" role="alert" hidden></p>
     <section id="first-run" class="welcome" aria-labelledby="welcome-title" hidden>
       <span class="badge passed">Connected · Read-only inspection</span>
@@ -206,7 +215,7 @@
       <p id="guided-verification"></p>
       <p id="guided-decision"></p>
       <div id="guided-work-picker"></div>
-      <div class="actions"><button id="guided-inspect" class="primary-action" type="button">Review evidence in Engineering</button><button id="start-brief" type="button">Prepare a follow-up brief</button><button id="refresh-guided" type="button" disabled>Refresh</button></div>
+      <div class="actions"><button id="guided-inspect" class="primary-action" type="button">Review check results</button><button id="guided-view-changes" type="button">Inspect changes</button><button id="start-brief" type="button">Prepare a follow-up brief</button><button id="refresh-guided" type="button" disabled>Refresh</button></div>
     </section>
     <details id="guided-attention" class="notice guided" hidden><summary id="attention-title">Something needs review</summary><div id="attention-items"></div><button id="attention-inspect" type="button">Inspect original evidence in Engineering</button></details>
     <section id="returning" class="returning" aria-labelledby="return-title" hidden>
