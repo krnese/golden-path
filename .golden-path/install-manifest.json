@@ -6,9 +6,9 @@
  "files": {
   ".github/hooks/golden-path-loop.json": "30d50c9e1c7c2b741630e3b9edcedac52e893c80aa55b353bbe517ee543b6cd7",
   ".github/hooks/golden-path/gate.mjs": "ede3d191200b4ece8b875418e6f5efac48d74da8485832129537b52c6a24c662",
-  ".github/prompts/golden-path-task.prompt.md": "2af49ee2e3bfb7c8bd1abef564ee5a2dd7d307f94299e23fff872271a2cd5d33",
-  ".github/skills/golden-path/SKILL.md": "4c174d747b1efed0c1550574c4f2b0fc8e091f7c222576f1751337ac2f6b8548",
-  ".github/skills/golden-path/references/ADOPTION.md": "4928ab9ebd545c55c1b40b4b3d49a13d5d933942d807c5d3844c818644f24a79",
+  ".github/prompts/golden-path-task.prompt.md": "b6539e87b670b44d64a6050f9efccadb6f096f78072105448baebb099f26c47b",
+  ".github/skills/golden-path/SKILL.md": "c2c690a91cd1b45d4ad8c52469e77baab98ead380b52024ac91d36fc287d0edb",
+  ".github/skills/golden-path/references/ADOPTION.md": "bbf1d13e1ebe7df1153862c6e58a9fb6c4202ed6c407d5cb51e9068373ad36ed",
   ".github/skills/golden-path/references/METHOD.md": "1fa676c41d619cefe657afd00872eabe6290fa3940d83cdaf3179e423dcd21bf"
  },
  "level": 2,

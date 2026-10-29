@@ -1,12 +1,12 @@
 ---
 name: golden-path
-description: 'Use for Golden Path setup and adoption in new or existing repositories, and delegated engineering work: preserve owner-approved acceptance, implement within the boundary, and return evidence for owner judgment.'
+description: 'Use for Golden Path setup, new-project bootstrap, team and brownfield adoption, and delegated engineering work: preserve owner-approved acceptance, implement within the boundary, and return evidence for owner judgment.'
 ---
 
 # Golden Path
 
 A way of working with the agent you already have. It grants no authority. See [method](references/METHOD.md).
-For first use, setup or adoption, follow [guided adoption](references/ADOPTION.md); reuse existing controls.
+For first use, bootstrap, team or brownfield adoption, follow [guided adoption](references/ADOPTION.md); ground each change's agreement in shared authoritative records and reuse existing controls.
 
 1. **Intent**: restate the outcome the expert wants, in their terms. Ask only questions that change the next step.
 2. **Context**: use the authoritative sources the expert or repo names (issues, docs, policies, existing code). Do not invent requirements.

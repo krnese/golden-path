@@ -44,6 +44,12 @@ Already installed? Say:
 The skill includes guided adoption for both new and existing projects. Its
 [read-only report](ADOPTION.md#read-only-adoption-report) can inspect configuration;
 it cannot approve your examples or prove the client invokes its controls.
+For a fresh application, the [bootstrap path](ADOPTION.md#from-starter-to-a-checked-application)
+helps the agent propose a useful first slice and real checks, not a pretend green
+workflow. For [teams and existing applications](ADOPTION.md#teams-and-brownfield-adoption),
+keep the agreement for each change in shared issues/PRs, reuse working controls and
+pilot one bounded improvement. Repository protection changes need explicit
+maintainer permission and verification; the guidance does not apply settings itself.
 For a new project, work in your application repository or a small application
 template, not this kit's development tree. Existing projects stay where they are;
 there is no migration to a Golden Path template.

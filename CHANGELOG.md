@@ -7,6 +7,14 @@ History of the kit. The current way to adopt it is in the [README](README.md); t
 
 ## Unreleased
 
+- **Change-scoped adoption for new applications, teams and brownfield repositories.**
+  The shared skill, task prompt and generated starter now guide outcome-first
+  bootstrap with real checks, parallel work against owner-approved acceptance,
+  and additive adoption in existing applications. Repository hardening requires
+  explicit maintainer permission and verification of effective settings; the
+  guidance does not add an automatic scaffolder, settings applier or approval
+  service. Local App snapshots and private chats are not shared authority.
+
 - **Optional MCP App setup carried by the starter.** The generated README now
   includes explicit setup, update and disable instructions using a separate kit
   checkout. A conflict-refusing configuration helper binds the server to the

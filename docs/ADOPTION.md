@@ -2,8 +2,8 @@
 
 [Golden Path README](../README.md) | [Level 2 reference](LEVEL-2.md)
 
-For an engineering lead or developer working with a product/domain owner in an existing
-repository. Start with one business rule, not a new platform or a complete acceptance suite.
+For a new application or an existing team repository, working with a product/domain
+owner. Start with one business rule, not a new platform or a complete acceptance suite.
 This checklist uses existing Golden Path behavior; it does not configure GitHub settings for you.
 
 ## One entry point
@@ -44,6 +44,38 @@ locally does not create GitHub settings.
 For brownfield adoption, do not move the application into a template or replace its
 CI. Existing developer tests are not automatically owner-approved acceptance.
 Method-only and check-only use remain valid; describe their limits honestly.
+
+## From starter to a checked application
+
+The installed [guided bootstrap](../plugin/skills/golden-path/references/ADOPTION.md#new-application-guided-bootstrap)
+starts from the business outcome, establishes the relevant decisions and approved
+acceptance baseline, then uses normal ecosystem tools for the first useful slice.
+Propose real build/test commands, checked installation, CI and appropriate ownership
+in a setup PR. Until those checks exist, report **build not configured** rather than
+inventing a pass. Acceptance drafting and approval stay separate from implementation.
+This is guidance for the existing agent, not an automatic stack generator.
+
+After real CI runs, preview repository protection changes for an authorized
+maintainer and verify effective settings after any explicitly permitted changes.
+The [protection procedure](../plugin/skills/golden-path/references/ADOPTION.md#repository-protection-preview-authorize-apply-verify)
+includes actual check names, acceptance and control-source ownership, review,
+stale approvals, bypasses, permissions and solo-maintainer limitations.
+The installer and read-only adoption report do not apply GitHub settings.
+
+## Teams and brownfield adoption
+
+These are independent dimensions: an existing application may have many engineers.
+Use [one agreement per change](../plugin/skills/golden-path/references/ADOPTION.md#multiple-engineers-a-shared-agreement-per-change)
+in shared issues, PRs and reviewed artifacts, with repository-wide controls underneath.
+Separate business judgment from technical review, allow parallel implementation
+against the latest approved acceptance, and tie evidence to the actual PR revision.
+Private chats and local App snapshots are not a shared approval service.
+
+For [brownfield adoption](../plugin/skills/golden-path/references/ADOPTION.md#brownfield-strengthen-one-change-without-replacing-the-process),
+inspect first, pilot one bounded change and add only missing setup. Preserve working
+CI, configuration, ownership and tests; record baseline failures honestly. Do not
+require a whole-system contract retrofit or repository-wide policy changes just to
+start the pilot. Existing mandatory review and consequential-change escalation remain.
 
 ## Maintaining the starter template
 

@@ -7,6 +7,7 @@ import { afterEach, test } from "node:test";
 import { Client } from "@modelcontextprotocol/client";
 import { StdioClientTransport } from "@modelcontextprotocol/client/stdio";
 import { makeStarter } from "../../make-starter.mjs";
+import { plannedFiles } from "../../../plugin/install.mjs";
 import { configureApp, main, SERVER_NAME } from "../configure.mjs";
 import { inspectEngineering } from "../engineering-report.mjs";
 import { inspectionSchema } from "../engineering-schema.mjs";
@@ -50,6 +51,35 @@ test("generated starter carries optional setup without bundling or activating th
   for (const rel of [".vscode", "node_modules", ".golden-path/config.json", ".golden-path/state"]) {
     assert.equal(fs.existsSync(path.join(root, rel)), false, rel);
   }
+});
+
+test("generated skill and task prompt carry shared bootstrap, team and brownfield guidance", () => {
+  const root = starter();
+  const files = plannedFiles({ level: 1 });
+  for (const [rel, expected] of Object.entries(files)) {
+    assert.equal(fs.readFileSync(path.join(root, ...rel.split("/")), "utf8"), expected, rel);
+  }
+  const adoption = files[".github/skills/golden-path/references/ADOPTION.md"];
+  for (const expected of [/self-configuring, not self-authorizing/, /one engineering agreement per\s+change/,
+    /## New application: guided bootstrap/, /build not configured/,
+    /Drafting executable owner acceptance remains a separate reviewed change/,
+    /## Multiple engineers: a shared agreement per change/, /same\s+latest owner-approved acceptance baseline/,
+    /Normal implementation remains autonomous/, /do not automatically synchronize\s+GitHub CI or reviews/,
+    /## Brownfield: strengthen one change without replacing the process/,
+    /Record baseline failures separately/, /Repository-wide settings affect more than\s+the pilot/,
+    /## Repository protection: preview, authorize, apply, verify/,
+    /read the effective settings back/, /solo maintainer\s+cannot approve their own PR/]) {
+    assert.match(adoption, expected);
+  }
+  const prompt = files[".github/prompts/golden-path-task.prompt.md"];
+  assert.match(prompt, /existing issue\/PR and reviewed artifacts, not private chat/);
+  assert.match(prompt, /brownfield work, inspect read-only first/);
+  assert.match(prompt, /apply only with explicit permission/);
+  const readme = fs.readFileSync(path.join(root, "README.md"), "utf8");
+  assert.match(readme, /## Working with a team/);
+  assert.match(readme, /## Already have an application\?/);
+  assert.match(readme, /not an\s+automatic scaffolding or repository-hardening service/);
+  assert.equal(fs.existsSync(path.join(root, ".github", "workflows")), false);
 });
 
 test("method-only inspection is schema-valid, read-only and honest about absent controls", () => {
