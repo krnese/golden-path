@@ -61,13 +61,14 @@ owner-approved acceptance tests have been authored in this implementation.
 ## Engineering review: one connected slice
 
 For an application created from the starter, follow the
-[optional setup and update instructions](../starter/README.md#optional-open-the-golden-path-mcp-app-in-vs-code).
+[optional setup and update instructions](../../docs/MCP-APP-SETUP.md).
 `node examples/mcp-app/configure.mjs --target "<application-repo>" --dry-run`
 previews the portable Copilot server entry; omit `--dry-run` to create a new
 workspace-root `.mcp.json` with `mcpServers`. Existing configurations are never
 overwritten: merge the preview manually if other servers or JSON-with-comments
 settings already exist. Older `.vscode/mcp.json` requires explicit migration
-review to avoid duplicate registrations; follow the starter's migration section.
+review to avoid duplicate registrations; see
+[older App registrations](../../docs/MCP-APP-SETUP.md#migrating-an-older-app-registration).
 Relative arguments resolve from the application workspace root, with `--target .`;
 no editor-specific variables or workspace `cwd` property are required. The helper
 enables only the two read-only inspection tools, not all future server tools.
