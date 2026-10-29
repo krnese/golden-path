@@ -160,6 +160,10 @@ In your application repository, ask **"Help me use Golden Path for this task."**
 journey for new and existing projects: inspect what is there, agree examples, configure only missing
 controls, and return actual results. A [read-only adoption report](docs/ADOPTION.md#read-only-adoption-report)
 distinguishes observed configuration from missing or unverified safeguards.
+The [bootstrap path](docs/ADOPTION.md#from-starter-to-a-checked-application) helps the existing agent
+take a new application toward real build/test/CI setup. [Teams and brownfield adoption](docs/ADOPTION.md#teams-and-brownfield-adoption)
+use a shared agreement per change and additive improvements to existing controls, not a second workflow.
+GitHub hardening remains an explicitly authorized maintainer action with effective settings verified afterward.
 
 For the method-only starting option:
 

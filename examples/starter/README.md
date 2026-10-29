@@ -15,6 +15,9 @@ Replace this README as your project takes shape.
    > First understand what I want to achieve, what must stay unchanged, and who
    > decides whether the result meets the need. Propose a few examples we can
    > agree on. Reuse existing controls and explain what is missing or unverified.
+   > For a new application, propose the smallest useful slice and real build/test
+   > setup. Keep this change's agreement in our shared issue/PR, not private chat.
+   > Preview repository protection changes for an authorized maintainer.
    > Do not change tests or configuration just to make setup look complete.
 
 4. Describe your first useful task. Approve the meaning of its examples before
@@ -26,6 +29,46 @@ Replace this README as your project takes shape.
 
 Do not treat the implementing agent as the owner of the business rule. Passing
 tests is evidence for your decision, not approval to merge or deploy.
+
+## From an empty repository to a checked application
+
+The normal Copilot agent follows the installed
+[guided adoption procedure](.github/skills/golden-path/references/ADOPTION.md).
+It helps establish the outcome and approved acceptance baseline, then scaffolds
+the agreed application slice and proposes real build, test and CI configuration.
+Executable owner acceptance is drafted and approved as a separate change before
+implementation. Until real application checks exist, **build not configured**
+is the honest result; the starter does not supply a placeholder passing workflow.
+
+After actual CI runs, an authorized maintainer can review proposed required
+checks, owner review, stale-approval dismissal and bypass policy. Protect both
+acceptance and the machinery checking it. Applying repository settings requires
+explicit permission and verification of the effective settings afterward.
+Files alone do not harden GitHub; unsupported permissions or plan capabilities
+must remain explicit. This is agent guidance using existing tools, not an
+automatic scaffolding or repository-hardening service.
+
+## Working with a team
+
+Keep one agreement per change in the existing issue/PR and reviewed examples,
+with shared repository controls underneath. Business owners approve intended
+behavior; technical owners review affected design and controls. Engineers can
+work in parallel against the latest owner-approved acceptance baseline, keeping
+evidence tied to the actual PR revision. Do not require a committee for ordinary
+implementation, but surface changes affecting other teams' interfaces or authority.
+
+Private conversations and local App snapshots are not shared approval records.
+A solo maintainer cannot approve their own PR; explain the reviewer or policy
+limitation rather than pretending independent review exists.
+
+## Already have an application?
+
+Adopt into that repository; do not migrate it into this template. Start read-only,
+reuse existing build/test commands, CI and ownership, and pilot one bounded
+feature or fix. Add only missing setup through a reviewed change. Do not retrofit
+the whole legacy application or replace working controls as an adoption prerequisite.
+Record existing failures honestly; never hide them to make adoption green.
+Team collaboration and brownfield adoption use the same agreement and procedure.
 
 ## What is installed
 
