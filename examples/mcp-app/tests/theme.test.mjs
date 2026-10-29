@@ -47,3 +47,16 @@ test("all built views embed the same theme without an external stylesheet depend
     assert.doesNotMatch(html, /<!-- THEME -->|<link\b[^>]*rel=["']stylesheet/);
   }
 });
+
+test("engineering presentations keep a compact type scale and readable supporting text", () => {
+  const html = fs.readFileSync(new URL("../engineering.html", import.meta.url), "utf8");
+  assert.match(html, /:root\s*\{\s*font-size:\s*12px;/);
+  assert.match(html, /h1\s*\{[^}]*font-size:\s*18px;/);
+  assert.match(html, /h2\s*\{[^}]*font-size:\s*14px;/);
+  const sizes = [...html.matchAll(/font-size:\s*(\d+)px/g)].map(match => Number(match[1]));
+  assert.ok(sizes.length > 10);
+  assert.ok(sizes.every(size => size >= 11), "Supporting text must not shrink below 11px.");
+  assert.match(html, /button\s*\{[^}]*min-height:\s*28px;/);
+  assert.match(html, /@media\s*\(pointer:\s*coarse\)\s*\{\s*button,\s*summary\s*\{\s*min-height:\s*40px;/);
+  assert.doesNotMatch(html, /\bzoom\s*:|transform:\s*scale\(/);
+});

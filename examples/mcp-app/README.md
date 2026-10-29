@@ -21,6 +21,9 @@ are unselected until chosen; expand the response editor to adapt them. Back/Next
 stage selection and sidebar edits let you revisit answers. Compact screens stack
 the same content rather than introduce a different workflow. Tips, recorded
 contract details and technical output expand only when needed.
+Both presentations use compact typography and panel spacing without removing
+stages, inspection panels or caveats. Supporting text stays at least 11px;
+touch input keeps larger controls. Browser and host zoom are not overridden.
 Sidebar links keep original evidence and agreement-change review accessible
 in both presentations; keyboard navigation focuses the visible review panel.
 

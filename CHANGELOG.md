@@ -7,6 +7,13 @@ History of the kit. The current way to adopt it is in the [README](README.md); t
 
 ## Unreleased
 
+- **Compact App typography and spacing.** Guided and Engineering remain separate
+  presentations, with their existing stages, inspection tabs and review sidebar.
+  Body text is 12px and the main title 18px; tighter cards, controls and section
+  spacing reduce visual overhead without scaling the page or hiding caveats.
+  Supporting text stays at least 11px and touch controls retain larger targets.
+  The starter's real guided-preview screenshot reflects the compact layout.
+
 - **Starter-to-App first-use journey.** The concise starter landing page now
   includes a real guided-preview screenshot and optional setup prompt. Installed
   guidance covers permission, prerequisite/conflict checks, actual server
