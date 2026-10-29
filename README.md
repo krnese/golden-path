@@ -100,7 +100,7 @@ detector or automatic approval inference. Production adoption should reuse exist
 than require a parallel architecture store.
 
 The App runtime is not bundled by the core installer or starter template. The
-[starter's optional setup](examples/starter/README.md#optional-open-the-golden-path-mcp-app-in-vs-code)
+[optional App setup](docs/MCP-APP-SETUP.md)
 uses a separate kit checkout and explicitly configures the bound server without overwriting existing
 MCP settings. Method-only applications show missing configuration and evidence as unavailable.
 Disabling it does not disable

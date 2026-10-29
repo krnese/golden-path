@@ -7,6 +7,12 @@ History of the kit. The current way to adopt it is in the [README](README.md); t
 
 ## Unreleased
 
+- **Outcome-first starter landing page.** The generated README now leads with
+  the value, one first-task prompt and a concise explanation of its limits.
+  Optional App setup, maintenance and legacy registration migration live in a
+  linked kit guide, not in the first-time starter journey. The method-only
+  footprint and all setup behavior are unchanged.
+
 - **Windows inspection root identity.** Engineering inspection and retained
   evidence compare repository paths using native path equivalence, accepting
   drive-letter case differences from the Copilot host while still rejecting

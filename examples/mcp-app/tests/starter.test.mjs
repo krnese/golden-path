@@ -39,19 +39,37 @@ function writeConfig(root, content) {
   fs.writeFileSync(path.join(root, ".mcp.json"), content);
 }
 
-test("generated starter carries optional setup without bundling or activating the App", () => {
+test("generated starter links optional setup without bundling or activating the App", () => {
   const root = starter();
   const readme = fs.readFileSync(path.join(root, "README.md"), "utf8");
+  assert.match(readme, /\[optional visual App\]\(https:\/\/github\.com\/krnese\/golden-path\/blob\/main\/docs\/MCP-APP-SETUP\.md\)/);
+  const setup = fs.readFileSync(path.resolve(DIRECTORY, "..", "..", "docs", "MCP-APP-SETUP.md"), "utf8");
   for (const expected of [/Optional: open the Golden Path MCP App/, /configure\.mjs --target \. --dry-run/,
     /configure\.mjs --target \.\r?\n/, /restart the MCP/, /lost when the panel reloads/,
     /does not upgrade the copied Golden Path method/, /remove only its server entry/,
-    /creates `\.mcp\.json`/, /Chat: Open Customizations/, /### Migrating an older App registration/,
+    /creates `\.mcp\.json`/, /Chat: Open Customizations/, /## Migrating an older App registration/,
     /application repository root/, /do not keep both registrations/]) {
-    assert.match(readme, expected);
+    assert.match(setup, expected);
   }
+  assert.match(setup, /Not required for a new starter or a first-time setup/);
   for (const rel of [".mcp.json", ".vscode", "node_modules", ".golden-path/config.json", ".golden-path/state"]) {
     assert.equal(fs.existsSync(path.join(root, rel)), false, rel);
   }
+});
+
+test("starter landing page leads with the outcome and first task, not setup or migration", () => {
+  const readme = fs.readFileSync(path.join(starter(), "README.md"), "utf8");
+  assert.ok(readme.split(/\s+/).filter(Boolean).length <= 500, "Keep the landing page within 500 words.");
+  assert.match(readme, /^# Start with an outcome, not just an empty repository\./);
+  assert.match(readme, /Build with AI without handing over the definition of success/);
+  assert.match(readme, /## What you get/);
+  assert.match(readme, /Use this template > Create a new repository/);
+  assert.match(readme, /Help me use Golden Path to build \[outcome\]/);
+  assert.match(readme, /Don't change repository\s+> protections without my approval/);
+  assert.match(readme, /You do not need it to start/);
+  assert.doesNotMatch(readme, /migration|migrating|configure\.mjs|npm ci|```/i);
+  const firstTask = readme.indexOf("## Start building");
+  assert.ok(firstTask > 0 && firstTask < readme.indexOf("[optional visual App]"));
 });
 
 test("generated skill and task prompt carry shared bootstrap, team and brownfield guidance", () => {
