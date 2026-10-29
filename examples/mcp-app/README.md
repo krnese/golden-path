@@ -21,6 +21,9 @@ neither screenshot demonstrates approved acceptance or passing project checks.
 Follow the [setup, handoff and return journey](../../docs/MCP-APP-SETUP.md).
 An initial inspection error keeps **Retry inspection** available outside the
 snapshot-dependent views. Retrying reads artifacts only and preserves local answers.
+After a chat send finishes, retained drafts can be edited and reviewed again
+even if delivery failed or the host left the App open. **Inspect setup details**
+on the welcome screen opens the full technical view directly.
 
 ## Two presentations, the same recorded facts
 
@@ -110,7 +113,9 @@ inspect recorded work; no navigation starts implementation or checks.
 
 Local inspection inventories up to 20 non-ignored workflow definitions and their
 textual Action references, root package scripts, guidance, ownership declarations
-and local acceptance configuration. It does not evaluate arbitrary YAML, execute
+and local acceptance configuration. Only files present in the checkout count;
+tracked deletions are not configured declarations or workflows.
+It does not evaluate arbitrary YAML, execute
 scripts, infer commands for other build systems or establish enforcement.
 
 **Refresh GitHub**, or explicit `github: true` on the inspection tool, uses the

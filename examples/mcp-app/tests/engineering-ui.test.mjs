@@ -158,8 +158,9 @@ test("the actual UI renders all panels, preserves guided notes across inspection
   ids.get("empty-back-guided").listeners.click();
   assert.equal(ids.get("presentation").value, "guided");
   assert.equal(ids.get("goal").value, "Keep my unsaved outcome.");
-  ids.get("mode-engineering").listeners.click();
-  ids.get("inspect-empty-setup").listeners.click();
+  ids.get("back-welcome").listeners.click();
+  ids.get("details-welcome").listeners.click();
+  assert.equal(ids.get("presentation").value, "engineering");
   assert.equal(ids.get("workspace").hidden, false);
   assert.equal(ids.get("engineering-empty").hidden, true);
   assert.equal(ids.get("first-run").hidden, true);
@@ -270,6 +271,17 @@ test("the actual UI renders all panels, preserves guided notes across inspection
   assert.equal(app.sent.role, "user");
   assert.match(ids.get("proposal-status").textContent, /Could not share in chat/);
   assert.equal(ids.get("proposal-text").value, app.sent.content[0].text);
+  assert.equal(ids.get("journey-next").disabled, false);
+  ids.get("brief-review").children[0].children[0].children[1].listeners.click();
+  ids.get("goal").value = "A revised outcome after failed delivery.";
+  ids.get("goal").listeners.input();
+  assert.equal(ids.get("journey-next").disabled, false);
+  prepare();
+  assert.match(ids.get("proposal-text").value, /A revised outcome after failed delivery/);
+  ids.get("brief-review").children[0].children[0].children[1].listeners.click();
+  ids.get("goal").value = "Keep my unsaved outcome.";
+  ids.get("goal").listeners.input();
+  prepare();
   ids.get("more-changes").listeners.click();
   assert.equal(ids.get("change-files").children.length, 9);
   app.ontoolresult({ isError: true, content: [{ type: "text", text: "Source unavailable" }] });
@@ -326,6 +338,7 @@ test("the actual UI renders all panels, preserves guided notes across inspection
   accept({});
   await delivery;
   assert.equal(ids.get("goal").disabled, false);
+  assert.equal(ids.get("journey-next").disabled, false);
   assert.equal(app.closeRequests, 1);
   assert.match(ids.get("proposal-status").textContent, /closure requested.*host decides/);
   await ids.get("send-examples").listeners.click();
@@ -339,6 +352,7 @@ test("the actual UI renders all panels, preserves guided notes across inspection
   app.closeFailure = true;
   await ids.get("send-examples").listeners.click();
   assert.match(ids.get("proposal-status").textContent, /Message accepted, but closure could not be requested/);
+  assert.equal(ids.get("journey-next").disabled, false);
   assert.equal(app.closeRequests, 2);
   await ids.get("send-examples").listeners.click();
   assert.deepEqual(calls, ["send", "send"]);

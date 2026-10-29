@@ -45,6 +45,29 @@ test("repository pulse distinguishes malformed declarations from missing files",
   assert.equal(report.local.find(item => item.name === "Workflow definitions").status, "missing");
 });
 
+test("repository pulse excludes deleted tracked declarations and workflows from checkout presence", async t => {
+  const root = fixture(t);
+  fs.mkdirSync(path.join(root, ".golden-path"));
+  fs.writeFileSync(path.join(root, ".golden-path", "config.json"), "{}");
+  fs.writeFileSync(path.join(root, ".github", "CODEOWNERS"), "* @owner\n");
+  fs.writeFileSync(path.join(root, "AGENTS.md"), "Engineering guidance\n");
+  execFileSync("git", ["add", "."], { cwd: root });
+  for (const file of [".github/workflows/ci.yml", ".github/CODEOWNERS", "AGENTS.md", "package.json", ".golden-path/config.json"]) {
+    fs.rmSync(path.join(root, ...file.split("/")));
+  }
+  fs.writeFileSync(path.join(root, ".github", "workflows", "local.yml"), "jobs: {}\n");
+  const before = execFileSync("git", ["status", "--porcelain"], { cwd: root, encoding: "utf8" });
+  const report = await inspectRepository(root);
+  assert.match(report.local.find(item => item.name === "Workflow definitions").detail, /^1 workflow file/);
+  assert.equal(report.local.some(item => item.name === ".github/workflows/ci.yml"), false);
+  assert.equal(report.local.find(item => item.name === ".github/workflows/local.yml").status, "configured");
+  for (const name of ["Engineering guidance", "Ownership declarations", "Local acceptance configuration"]) {
+    assert.equal(report.local.find(item => item.name === name).status, "missing", name);
+  }
+  assert.match(report.local.find(item => item.name === "Project commands").detail, /No root package.json/);
+  assert.equal(execFileSync("git", ["status", "--porcelain"], { cwd: root, encoding: "utf8" }), before);
+});
+
 test("explicit GitHub inspection is GET-only, bounded, and keeps failures and other revisions distinct", async t => {
   const root = fixture(t);
   const head = execFileSync("git", ["rev-parse", "HEAD"], { cwd: root, encoding: "utf8" }).trim();

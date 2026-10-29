@@ -30,7 +30,8 @@ export async function inspectRepository(root, { github = false, run = execute } 
   const paths = (await command("git", ["ls-files", "--cached", "--others", "--exclude-standard", "-z", "--",
     ".github/workflows", "package.json", "AGENTS.md", ".github/copilot-instructions.md",
     ".github/skills/golden-path/SKILL.md", ".github/CODEOWNERS", "CODEOWNERS", "docs/CODEOWNERS", ".golden-path/config.json",
-  ])).split("\0").filter(Boolean);
+  ])).split("\0").filter(Boolean).filter(file =>
+    fs.statSync(path.join(root, ...file.split("/")), { throwIfNoEntry: false })?.isFile());
   const local = [];
   function read(file) {
     const resolved = boundFile(root, file);

@@ -49,9 +49,9 @@ function controls() {
   for (const mode of ["guided", "engineering"]) get(`mode-${mode}`).disabled = !current || sending;
   for (const id of [...Object.values(briefFields), "owner-decision", "edit-brief-goal", "apply-brief"]) get(id).disabled = sending;
   for (const button of document.querySelectorAll("[data-brief-edit]")) button.disabled = sending;
+  get("journey-next").disabled = sending;
   if (sending) {
     get("journey-back").disabled = true;
-    get("journey-next").disabled = true;
   } else updateJourney();
   get("refresh").disabled = !connected || busy;
   get("retry-inspection").hidden = !connected || get("error").hidden;
@@ -631,7 +631,10 @@ function exploreFirstRun(mode) {
   get(mode === "guided" ? "goal" : emptyEngineering() ? "engineering-empty-title" : "contract").focus();
 }
 get("explore-welcome").addEventListener("click", () => exploreFirstRun("guided"));
-get("details-welcome").addEventListener("click", () => exploreFirstRun("engineering"));
+get("details-welcome").addEventListener("click", () => {
+  inspectingSetup = true;
+  exploreFirstRun("engineering");
+});
 get("back-welcome").addEventListener("click", () => {
   exploredFirstRun = false;
   firstRunPresentation();
