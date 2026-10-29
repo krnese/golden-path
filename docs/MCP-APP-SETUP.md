@@ -1,9 +1,27 @@
 # Optional: open the Golden Path MCP App in VS Code
 
 The App is optional. You can start building with the Golden Path method without
-installing it. Use this guide only when you want visual inspection of contract,
+installing it. Use this guide to prepare a brief or inspect recorded agreement,
 acceptance, evidence, changes and handoff. The App cannot approve acceptance,
 run checks, merge or deploy.
+
+## What you will see
+
+**Guided: shape and review your brief.** Start with your outcome, answer only
+missing details and edit the brief before choosing **Continue in Copilot chat**.
+The conversation and implementation stay in your existing chat.
+
+![Guided brief review with five editable sections and a chat handoff](assets/mcp-app-guided.png)
+
+**Engineering: inspect changes, checks and evidence.** Look behind the brief
+without losing your answers. Switching does not start work or run checks.
+A project with no recorded work shows a calm empty state; **Inspect repository
+setup** opens the full technical view.
+
+![Engineering on a project with no recorded work, offering Guided or repository setup](assets/mcp-app-engineering.png)
+
+These are local browser previews, not native VS Code rendering or proof of
+approved acceptance. The sample Guided brief is unshared.
 
 ## First-time setup
 
@@ -67,10 +85,11 @@ after reviewing the configuration. Then ask Copilot:
 > repository. Let me choose a recorded session if one exists. Show missing
 > configuration and evidence as unavailable; do not create checks or infer approval.
 
-A project with no recorded sessions opens a connected welcome view. Select its
-first-task message to copy into the existing chat, or share it explicitly if the
-host supports messaging. You can explore the guided view or inspect technical
-details without inventing records. Refresh the view after real work is recorded.
+A project with no recorded sessions opens a connected welcome view.
+**Guided** and **Engineering** stay visible and open either presentation directly.
+The welcome message can be copied into the existing chat or shared explicitly
+when the host supports messaging. No sessions or results are invented to
+populate the view.
 
 Guided can review an optional proposed brief supplied from the conversation.
 It asks only for missing details, one at a time, then offers an editable brief
@@ -81,6 +100,21 @@ Engineering, not in the Guided briefing.
 requests closure only after the host accepts it. The host controls closing;
 delivery and closure failures are distinct. Reopen the App to inspect recorded
 work and evidence, not an App-owned conversation or approval database.
+
+### Return after work is recorded
+
+Ask Copilot to open the App again for the same repository and recorded task.
+Choose the relevant session when more than one exists. Guided summarizes
+changes, verification freshness and decisions needing review; **Review check
+results** and **Inspect changes** open the corresponding Engineering tabs.
+Refresh after new work or checks are recorded: this is a snapshot, not live
+monitoring, and an unavailable or stale result is not a current pass.
+
+Keep the reviewed brief and evidence links in the existing task or PR.
+Switching views preserves the current local draft, but closing or reloading
+the App does not retain those unsent answers.
+
+### Optional repository snapshot
 
 The repository pulse is offline by default. **Refresh GitHub** explicitly uses
 the server's existing GitHub CLI credentials for read-only workflow/run, issue,

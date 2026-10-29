@@ -63,6 +63,11 @@ test("the actual UI renders all panels, preserves guided notes across inspection
     async connect() {}
     getHostContext() { return undefined; }
     getHostCapabilities() { return this.capabilities || {}; }
+    async callServerTool(request) {
+      this.request = request;
+      if (this.inspectionFailure) throw this.inspectionFailure;
+      return this.inspectionResult;
+    }
     async sendMessage(message) { this.sent = message; return { isError: true }; }
     async requestTeardown() {
       this.closeRequests = (this.closeRequests || 0) + 1;
@@ -85,6 +90,35 @@ test("the actual UI renders all panels, preserves guided notes across inspection
     relationships: [], agreementDelta: [], handoff: "Actual handoff",
   };
   ids.get("goal").value = "Keep my unsaved outcome.";
+  assert.ok(html.indexOf('id="retry-inspection"') < html.indexOf('id="first-run"'));
+  assert.equal(ids.get("retry-inspection").hidden, true);
+  for (const result of [
+    { isError: true, content: [{ type: "text", text: "Initial inspection unavailable" }] },
+    { structuredContent: { inspection: {} } },
+  ]) {
+    app.ontoolresult(result);
+    assert.equal(ids.get("first-run").hidden, true);
+    assert.equal(ids.get("workspace").hidden, true);
+    assert.equal(ids.get("retry-inspection").hidden, false);
+    assert.equal(ids.get("retry-inspection").disabled, false);
+    app.inspectionResult = result;
+    const retry = ids.get("retry-inspection").listeners.click();
+    assert.equal(ids.get("retry-inspection").disabled, true);
+    await retry;
+    assert.equal(ids.get("retry-inspection").hidden, false);
+    assert.equal(ids.get("retry-inspection").disabled, false);
+    assert.deepEqual(app.request, { name: "inspect_engineering_session", arguments: {} });
+  }
+  app.inspectionFailure = new Error("Inspection transport unavailable");
+  await ids.get("retry-inspection").listeners.click();
+  assert.match(ids.get("error").textContent, /Inspection transport unavailable/);
+  assert.equal(ids.get("retry-inspection").disabled, false);
+  app.inspectionFailure = undefined;
+  app.inspectionResult = { structuredContent: { inspection: report } };
+  await ids.get("retry-inspection").listeners.click();
+  assert.equal(ids.get("retry-inspection").hidden, true);
+  assert.equal(ids.get("error").hidden, true);
+  assert.equal(ids.get("goal").value, "Keep my unsaved outcome.");
   app.ontoolresult({ structuredContent: { inspection: report } });
   assert.match(ids.get("status").textContent, /Connected. Begin in chat/, ids.get("error").textContent);
   assert.equal(ids.get("first-run").hidden, false);

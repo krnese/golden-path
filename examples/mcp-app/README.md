@@ -1,9 +1,26 @@
 # Golden Path MCP Apps engineering inspection
 
-An optional **read-only engineering review in VS Code**, using existing repository
+An optional **briefing and read-only engineering review in VS Code**, using existing repository
 artifacts rather than a parallel contract database. The default workspace server
 now exposes engineering inspection and adoption inspection only. It does not
 enable the older isolated draft editor or require its example model.
+
+## Preview the two views
+
+**Guided** prepares an editable brief for the existing Copilot conversation.
+
+![Guided brief review and explicit handoff to Copilot chat](../../docs/assets/mcp-app-guided.png)
+
+**Engineering** explains what can be inspected without starting work.
+Unrecorded projects have an explicit path to full repository setup.
+
+![Engineering introduction and neutral no-recorded-work view](../../docs/assets/mcp-app-engineering.png)
+
+Local browser previews, not native-host proof. The sample brief is unshared;
+neither screenshot demonstrates approved acceptance or passing project checks.
+Follow the [setup, handoff and return journey](../../docs/MCP-APP-SETUP.md).
+An initial inspection error keeps **Retry inspection** available outside the
+snapshot-dependent views. Retrying reads artifacts only and preserves local answers.
 
 ## Two presentations, the same recorded facts
 

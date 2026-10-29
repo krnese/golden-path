@@ -7,6 +7,15 @@ History of the kit. The current way to adopt it is in the [README](README.md); t
 
 ## Unreleased
 
+- **Ship the companion journey in both entry points.** The kit and generated
+  method-only starter explain Guided briefing, continuing in existing Copilot
+  chat and returning to Engineering evidence. Refresh real Guided and
+  Engineering screenshots and document the empty state, targeted inspection
+  links, snapshot limits and restart/update procedure. The starter still links
+  the separate kit: no runtime or dependency bundle is added.
+  Initial inspection failures also retain an accessible retry action before
+  any valid snapshot has loaded; recovery preserves local drafts.
+
 - **A clearer bridge to Engineering.** Explain each presentation's purpose and
   introduce technical inspection as looking behind the brief, not starting work.
   Guided links directly to check results and changes. Unrecorded projects get a

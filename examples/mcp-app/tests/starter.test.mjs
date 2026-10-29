@@ -73,9 +73,18 @@ test("starter landing page leads with the outcome and first task, not setup or m
   assert.match(readme, /## Open the visual App/);
   assert.match(readme, /enable its visual App/);
   assert.match(readme, /with my permission/);
+  assert.match(readme, /\*\*Guided:\*\* shape your brief and continue in Copilot chat/);
+  assert.match(readme, /\*\*Engineering:\*\* return to inspect changes, checks and evidence/);
   assert.match(readme, /!\[.*\]\(https:\/\/raw\.githubusercontent\.com\/krnese\/golden-path\/main\/docs\/assets\/mcp-app-guided\.png\)/);
   const screenshot = fs.readFileSync(path.resolve(DIRECTORY, "..", "..", "docs", "assets", "mcp-app-guided.png"));
   assert.equal(screenshot.subarray(0, 8).toString("hex"), "89504e470d0a1a0a");
+  const engineering = fs.readFileSync(path.resolve(DIRECTORY, "..", "..", "docs", "assets", "mcp-app-engineering.png"));
+  assert.equal(engineering.subarray(0, 8).toString("hex"), "89504e470d0a1a0a");
+  const setup = fs.readFileSync(path.resolve(DIRECTORY, "..", "..", "docs", "MCP-APP-SETUP.md"), "utf8");
+  assert.match(setup, /!\[.*\]\(assets\/mcp-app-engineering\.png\)/);
+  assert.match(setup, /## What you will see/);
+  assert.match(setup, /### Return after work is recorded/);
+  assert.match(setup, /Switching does not start work or run checks/);
   assert.doesNotMatch(readme, /migration|migrating|configure\.mjs|npm ci|```/i);
   const firstTask = readme.indexOf("## Start building");
   assert.ok(firstTask > 0 && firstTask < readme.indexOf("[optional visual App]"));

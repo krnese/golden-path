@@ -54,6 +54,8 @@ function controls() {
     get("journey-next").disabled = true;
   } else updateJourney();
   get("refresh").disabled = !connected || busy;
+  get("retry-inspection").hidden = !connected || get("error").hidden;
+  get("retry-inspection").disabled = !connected || busy;
   get("session").disabled = busy;
   for (const button of document.querySelectorAll("[data-artifact]")) button.disabled = busy || !connected;
   get("send-examples").hidden = !connected || !app.getHostCapabilities()?.message?.text;
@@ -137,6 +139,7 @@ function updateJourney() {
 function error(message) {
   get("error").textContent = message;
   get("error").hidden = false;
+  controls();
 }
 function showTab(id, focus = false) {
   if (get("presentation").value === "guided" && !["contract", "acceptance"].includes(id)) {
@@ -546,6 +549,7 @@ app.onhostcontextchanged = ({ theme }) => {
 get("session").addEventListener("change", () => load());
 get("why-file").addEventListener("change", renderRelationships);
 get("refresh").addEventListener("click", () => load());
+get("retry-inspection").addEventListener("click", () => load());
 get("refresh-welcome").addEventListener("click", () => load());
 get("refresh-returning").addEventListener("click", () => load());
 get("refresh-github").addEventListener("click", () => load({ github: true }));

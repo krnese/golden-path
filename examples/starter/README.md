@@ -2,8 +2,8 @@
 
 **Build with AI without handing over the definition of success.**
 
-Turn an idea into a useful application with Copilot, while keeping ownership of
-what gets built. You choose the technology; Golden Path supplies the engineering approach.
+Build with Copilot while owning the outcome. You choose the technology;
+Golden Path supplies the engineering approach.
 
 ## What you get
 
@@ -37,8 +37,9 @@ merge or deploy.
 
 ![Golden Path guided App preview](https://raw.githubusercontent.com/krnese/golden-path/main/docs/assets/mcp-app-guided.png)
 
-Inspect the agreement, progress and evidence together. To enable the
-[optional visual App](https://github.com/krnese/golden-path/blob/main/docs/MCP-APP-SETUP.md),
+**Guided:** shape your brief and continue in Copilot chat.
+**Engineering:** return to inspect changes, checks and evidence.
+To enable the [optional visual App](https://github.com/krnese/golden-path/blob/main/docs/MCP-APP-SETUP.md),
 ask the same agent:
 
 > Help me start this project with Golden Path and enable its visual App. Check
