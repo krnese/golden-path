@@ -7,6 +7,14 @@ enable the older isolated draft editor or require its example model.
 
 ## One contract, two levels of explanation
 
+**Guided | Engineering** remains visible above the welcome screen and workspace;
+either control opens its presentation directly. Switching preserves local answers.
+For a project with no recorded work or verification and only expected setup gaps,
+Guided says **No work recorded yet**, rather than presenting missing setup as
+failed work. Unexpected inspection findings, recorded failures and stale results
+remain visible. Engineering retains the full gap counts and technical detail.
+Guided describes the same agreement and boundaries in plain language.
+
 The default **Guided** presentation starts with the desired business outcome.
 Focused questions cover normal behavior, exceptions, failure and what must not
 change. Answers become readable proposed examples that the person can correct

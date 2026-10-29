@@ -7,6 +7,12 @@ History of the kit. The current way to adopt it is in the [README](README.md); t
 
 ## Unreleased
 
+- **Clearer first-use App.** Guided and Engineering controls stay visible above
+  the welcome screen and open either presentation directly. Guided uses plain
+  language for the recorded agreement and a neutral no-work-yet summary for
+  expected setup gaps, without suppressing actual inspection problems or
+  recorded failures. Engineering retains technical detail and gap counts.
+
 - **Brief, continue, return.** Guided can review a proposed brief from the
   existing conversation, send the reviewed message to Copilot and request App
   closure only after host acceptance. Failed sends preserve the view; failed

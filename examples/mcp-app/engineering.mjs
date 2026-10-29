@@ -41,6 +41,7 @@ function element(tag, text, className) {
   return node;
 }
 function controls() {
+  for (const mode of ["guided", "engineering"]) get(`mode-${mode}`).disabled = !current;
   get("refresh").disabled = !connected || busy;
   get("session").disabled = busy;
   for (const button of document.querySelectorAll("[data-artifact]")) button.disabled = busy || !connected;
@@ -52,8 +53,17 @@ function controls() {
     get(id).disabled = !connected || busy || sending || sentMessages.has(get(text).value);
   }
 }
+function unrecordedProject(report) {
+  const expectedGaps = ["Golden Path configuration", "Comparison baseline", "Engineering contract",
+    "Owner-approved acceptance", "Acceptance configuration", "Delegation and unresolved assumptions",
+    "GitHub and deployment authority", "Verification freshness"];
+  return !report.session && !report.sessions.length && !report.contract && !report.acceptance.length &&
+    !report.events.length && !report.evidence.source && report.evidence.freshness === "unavailable" &&
+    report.evidence.checks.every(check => check.status === "unavailable") &&
+    report.findings.every(item => item.status !== "failed" && expectedGaps.includes(item.name));
+}
 function firstRunPresentation() {
-  const firstRun = !!current && !current.session && current.sessions.length === 0 && !Object.keys(current.brief || {}).length;
+  const firstRun = !!current && unrecordedProject(current) && !Object.keys(current.brief || {}).length;
   get("first-run").hidden = !firstRun || exploredFirstRun;
   get("workspace").hidden = !current || (firstRun && !exploredFirstRun);
   get("back-welcome").hidden = !firstRun || !exploredFirstRun;
@@ -69,6 +79,10 @@ function presentation() {
   get("mode-guided").setAttribute("aria-pressed", String(guided));
   get("mode-engineering").setAttribute("aria-pressed", String(!guided));
   (guided ? get("guided-contract-placeholder") : get("contract")).append(get("contract-content"));
+  if (current) {
+    renderContract();
+    renderEvidenceSummary();
+  }
   updateJourney();
 }
 function updateProposalSummary() {
@@ -275,6 +289,66 @@ function renderCompanion() {
       "Review this proposed starting point, then choose Use this draft. Unspecified fields remain yours to answer.";
   }
 }
+function renderContract() {
+  const report = current;
+  const guided = get("presentation").value === "guided";
+  const gapClass = unrecordedProject(report) ? "muted" : "notice";
+  const contract = get("contract-content");
+  contract.replaceChildren(element("h2", guided ? "What have we agreed?" : "What was authorized?"));
+  if (report.contract) {
+    contract.append(element("p", `Recorded task source: ${report.contract}. Source content is not proof of approval.`),
+      element("p", guided ? "Read the recorded brief below, then open the full source for the agreed outcome and limits." :
+        "Source excerpt (up to 3,000 characters); inspect the full source for context, boundaries and unresolved assumptions.", "muted"),
+      element("pre", report.contractText, "excerpt"), sourceButton(report.contract), whyButton(report.contract));
+  } else contract.append(element("p", guided ?
+    "We haven't linked the agreed outcome and boundaries yet. Keep them in the existing task or PR before implementation." :
+    "No intent/context document is linked to this session. Ask the owner for the authoritative request; do not infer authorization from the code.", guided ? gapClass : "notice"));
+  contract.append(element("h2", guided ? "Who reviews the examples?" : "Who owns acceptance?"),
+    element("p", report.config.owner === "Not recorded" ? guided ?
+      "No owner is recorded. Identify who can review and approve the examples." : "Owner not recorded; approval unavailable." :
+      `${report.config.owner} (configured name; approval unverified).`));
+  const acceptanceLink = element("button", `Explore acceptance (${report.acceptance.length} artifacts)`);
+  acceptanceLink.type = "button";
+  acceptanceLink.addEventListener("click", () => showTab("acceptance", true));
+  contract.append(acceptanceLink, element("h2", guided ? "Limits to preserve" : "Implementation boundary"),
+    element("p", guided ?
+      "Only continue work the owner has already authorized. Keep approved tests unchanged. Permission to edit is not permission to merge or deploy." :
+      "The agent may continue only already-authorized work. Owner-approved acceptance is read-only. Editing, merging and deployment are separate permissions."),
+    element("p", `${guided ? "Where the agreed examples live" : "Acceptance paths"}: ${report.config.acceptancePaths.join(", ") || "not configured"}`, "muted"),
+    element("p", `${guided ? "Developer tests that must stay unchanged" : "Protected developer tests"}: ${report.config.protected.join(", ") || "not configured"}`, "muted"),
+    ...(report.files.includes(".golden-path/config.json") ? [sourceButton(".golden-path/config.json")] :
+      [element("p", guided ? "Project checks haven't been set up here. Opening the App doesn't install or run them." :
+        "No gate configuration installed. Inspection does not add checks or acceptance.", guided ? gapClass : "notice")]),
+    element("h2", guided ? "What needs a decision?" : "Unresolved assumptions and delegation"),
+    element("p", guided ?
+      "If the outcome, limits, permissions or examples need to change, pause that part and ask the owner. This view cannot decide whether a change is acceptable." :
+      "No semantic delegation or assumption verdict is available. Inspect the request and changes; the existing gate cannot decide whether a changed outcome or tradeoff is acceptable.", "muted"));
+}
+function renderEvidenceSummary() {
+  const report = current;
+  const unrecorded = get("presentation").value === "guided" && unrecordedProject(report);
+  const gaps = report.findings.filter(item => item.status !== "passed").length;
+  get("summary-gaps").textContent = unrecorded ? "No work recorded yet" : `${gaps} review gaps`;
+  get("unrecorded-evidence").hidden = !unrecorded;
+  get("summary-evidence").hidden = unrecorded;
+  const counts = { passed: 0, failed: 0, skipped: 0, unknown: 0 };
+  for (const check of report.evidence.checks) {
+    if (check.status === "failed") counts.failed++;
+    if (check.status === "skipped") counts.skipped++;
+    if (report.evidence.freshness !== "current" || ["unverified", "unavailable"].includes(check.status)) counts.unknown++;
+    if (report.evidence.freshness === "current" && check.status === "passed") counts.passed++;
+  }
+  get("summary-evidence").replaceChildren();
+  for (const [label, count] of [
+    ["Current passed checks", counts.passed], ["Recorded failed checks", counts.failed],
+    ["Recorded skipped checks", counts.skipped], ["Need current verification", counts.unknown],
+  ]) {
+    const row = element("div", undefined, "evidence-count");
+    row.append(element("span", label), element("span", String(count)));
+    get("summary-evidence").append(row);
+  }
+  get("summary-evidence").append(element("p", plainEvidence(report), "quiet"));
+}
 function render() {
   const report = current;
   get("session").replaceChildren(new Option("Choose a recorded session", ""));
@@ -293,27 +367,7 @@ function render() {
     "Connected. Begin in chat; refresh after real work is recorded.";
   firstRunPresentation();
   renderCompanion();
-  const contract = get("contract-content");
-  contract.replaceChildren(element("h2", "What was authorized?"));
-  if (report.contract) {
-    contract.append(element("p", `Recorded task source: ${report.contract}. Source content is not proof of approval.`),
-      element("p", "Source excerpt (up to 3,000 characters); inspect the full source for context, boundaries and unresolved assumptions.", "muted"),
-      element("pre", report.contractText, "excerpt"), sourceButton(report.contract), whyButton(report.contract));
-  } else contract.append(element("p", "No intent/context document is linked to this session. Ask the owner for the authoritative request; do not infer authorization from the code.", "notice"));
-  contract.append(element("h2", "Who owns acceptance?"),
-    element("p", report.config.owner === "Not recorded" ? "Owner not recorded; approval unavailable." :
-      `${report.config.owner} (configured name; approval unverified).`));
-  const acceptanceLink = element("button", `Explore acceptance (${report.acceptance.length} artifacts)`);
-  acceptanceLink.type = "button";
-  acceptanceLink.addEventListener("click", () => showTab("acceptance", true));
-  contract.append(acceptanceLink, element("h2", "Implementation boundary"),
-    element("p", "The agent may continue only already-authorized work. Owner-approved acceptance is read-only. Editing, merging and deployment are separate permissions."),
-    element("p", `Acceptance paths: ${report.config.acceptancePaths.join(", ") || "not configured"}`, "muted"),
-    element("p", `Protected developer tests: ${report.config.protected.join(", ") || "not configured"}`, "muted"),
-    ...(report.files.includes(".golden-path/config.json") ? [sourceButton(".golden-path/config.json")] :
-      [element("p", "No gate configuration installed. Inspection does not add checks or acceptance.", "notice")]),
-    element("h2", "Unresolved assumptions and delegation"),
-    element("p", "No semantic delegation or assumption verdict is available. Inspect the request and changes; the existing gate cannot decide whether a changed outcome or tradeoff is acceptable.", "muted"));
+  renderContract();
   renderAcceptance();
   const evidence = report.evidence;
   get("freshness").textContent = `${evidence.outcome} · ${evidence.freshness === "current" ? "Matches the inspected local snapshot" : evidence.freshness === "stale" ? "Historical / stale — not evidence for the current work" : "Per-check evidence unavailable"}. ${evidence.recordedAt ? `Recorded ${evidence.recordedAt}.` : ""}`;
@@ -346,24 +400,7 @@ function render() {
   if (implementation.childElementCount > 1) get("agreement-delta").append(implementation);
   if (!report.agreementDelta.length) get("agreement-delta").append(element("p", "No change signals displayed. An absent baseline or missing semantic evidence is not proof the agreement is unchanged.", "muted"));
   get("handoff-text").value = report.handoff;
-  get("summary-gaps").textContent = `${gaps} review gaps`;
-  const counts = { passed: 0, failed: 0, skipped: 0, unknown: 0 };
-  for (const check of report.evidence.checks) {
-    if (check.status === "failed") counts.failed++;
-    if (check.status === "skipped") counts.skipped++;
-    if (report.evidence.freshness !== "current" || ["unverified", "unavailable"].includes(check.status)) counts.unknown++;
-    if (report.evidence.freshness === "current" && check.status === "passed") counts.passed++;
-  }
-  get("summary-evidence").replaceChildren();
-  for (const [label, count] of [
-    ["Current passed checks", counts.passed], ["Recorded failed checks", counts.failed],
-    ["Recorded skipped checks", counts.skipped], ["Need current verification", counts.unknown],
-  ]) {
-    const row = element("div", undefined, "evidence-count");
-    row.append(element("span", label), element("span", String(count)));
-    get("summary-evidence").append(row);
-  }
-  get("summary-evidence").append(element("p", plainEvidence(report), "quiet"));
+  renderEvidenceSummary();
   const state = get("guided-state");
   state.replaceChildren(element("h2", "What can we honestly say?"));
   const table = element("table");
@@ -524,6 +561,7 @@ get("acceptance-evidence").addEventListener("click", () => {
 get("select-handoff").addEventListener("click", () => { get("handoff-text").focus(); get("handoff-text").select(); });
 get("presentation").addEventListener("change", presentation);
 for (const mode of ["guided", "engineering"]) get(`mode-${mode}`).addEventListener("click", () => {
+  if (!get("first-run").hidden) { exploreFirstRun(mode); return; }
   get("presentation").value = mode;
   presentation();
 });

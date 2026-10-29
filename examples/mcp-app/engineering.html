@@ -174,6 +174,10 @@
   <div class="page">
     <header><div class="row"><h1>Engineering with Golden Path</h1><span class="badge">PREVIEW</span></div><span class="badge">Read only · Local evidence</span></header>
     <p class="intro muted">Turn your idea into working software with guardrails, checks and clear evidence.</p>
+    <div class="mode-cards" role="group" aria-label="Presentation">
+      <button id="mode-guided" class="mode-card" type="button" aria-pressed="true" disabled><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="7" r="3.5"/><path d="M5 21v-3a7 7 0 0 1 14 0v3"/></svg><span><strong>Guided</strong><small>Step by step, plain language</small></span></button>
+      <button id="mode-engineering" class="mode-card" type="button" aria-pressed="false" disabled><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="m8 6-6 6 6 6m8-12 6 6-6 6m-2-15-4 18"/></svg><span><strong>Engineering</strong><small>Technical details and evidence</small></span></button>
+    </div>
     <p id="error" class="notice" role="alert" hidden></p>
     <section id="first-run" class="welcome" aria-labelledby="welcome-title" hidden>
       <span class="badge passed">Connected · Read-only inspection</span>
@@ -210,10 +214,6 @@
     <div id="workspace" class="workspace-shell" hidden>
     <div class="primary">
     <button id="back-welcome" class="text-button" type="button" hidden>Back to getting started</button>
-    <div class="mode-cards" role="group" aria-label="Level of explanation">
-      <button id="mode-guided" class="mode-card" type="button" aria-pressed="true"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="7" r="3.5"/><path d="M5 21v-3a7 7 0 0 1 14 0v3"/></svg><span><strong>Guided</strong><small>Step by step, plain language</small></span></button>
-      <button id="mode-engineering" class="mode-card" type="button" aria-pressed="false"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="m8 6-6 6 6 6m8-12 6 6-6 6m-2-15-4 18"/></svg><span><strong>Engineering</strong><small>Technical details and evidence</small></span></button>
-    </div>
     <div class="work-card">
     <div class="journey guided" role="group" aria-label="Review stages, not completion status">
       <button id="stage-1" type="button" aria-current="step"><span class="step-number">1</span>Describe<br>your goal</button>
@@ -265,7 +265,7 @@
             <div class="explanation"><strong>ⓘ Why this matters</strong><p id="question-consequence">A person reviewing a problem needs to know what was flagged and why. These are suggested responses, not decisions made for you.</p></div>
             <p id="question-error" class="field-error" role="alert" hidden></p>
           </div>
-          <details><summary>Inspect the recorded contract</summary><div id="guided-contract-placeholder"></div></details>
+          <details><summary>Review the recorded agreement</summary><div id="guided-contract-placeholder"></div></details>
         </div>
         <div id="contract-content"></div>
       </section>
@@ -348,6 +348,7 @@
       </section>
       <section class="side-card">
         <div class="section-heading"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 3h9l4 4v14H6zm9 0v5h4M9 12h7m-7 4h7"/></svg><h2>Evidence and review</h2><span id="summary-gaps" class="badge">Not loaded</span></div>
+        <p id="unrecorded-evidence" class="quiet" hidden>Start with your brief. Results will appear after real work and verification are recorded. Opening this view does not run checks.</p>
         <div id="summary-evidence"></div>
         <button id="review-evidence" class="text-button" type="button">Inspect original evidence →</button>
         <button id="review-agreement" class="text-button" type="button">Review agreement changes →</button>

@@ -30,6 +30,9 @@ test("the actual UI renders all panels, preserves guided notes across inspection
     close() { this.open = false; }
   }
   const html = fs.readFileSync(new URL("../engineering.html", import.meta.url), "utf8");
+  for (const mode of ["guided", "engineering"]) {
+    assert.ok(html.indexOf(`id="mode-${mode}"`) < html.indexOf('id="first-run"'), "Both mode controls must precede the welcome and workspace.");
+  }
   const ids = new Map([...html.matchAll(/<[^>]*\bid="([^"]+)"[^>]*>/g)].map((x) => {
     const node = new Node();
     node.hidden = /\shidden(?:\s|>)/.test(x[0]);
@@ -84,6 +87,42 @@ test("the actual UI renders all panels, preserves guided notes across inspection
   assert.match(ids.get("status").textContent, /Connected. Begin in chat/);
   assert.equal(ids.get("first-run").hidden, false);
   assert.equal(ids.get("workspace").hidden, true);
+  assert.equal(ids.get("mode-guided").disabled, false);
+  assert.equal(ids.get("mode-engineering").disabled, false);
+  assert.equal(ids.get("summary-gaps").textContent, "No work recorded yet");
+  assert.equal(ids.get("summary-evidence").hidden, true);
+  assert.equal(ids.get("unrecorded-evidence").hidden, false);
+  const contractText = () => ids.get("contract-content").children.map(node => node.textContent).join("\n");
+  assert.match(contractText(), /We haven't linked the agreed outcome and boundaries/);
+  assert.doesNotMatch(contractText(), /semantic delegation/);
+  for (const finding of [
+    { name: "Golden Path configuration", status: "failed", output: "A real failure." },
+    { name: "Session unreadable", status: "unavailable", output: "A recorded session could not be read." },
+    { name: "Repository changed during inspection", status: "unverified", output: "Inconsistent snapshot." },
+  ]) {
+    report.findings = [finding];
+    app.ontoolresult({ structuredContent: { inspection: report } });
+    assert.equal(ids.get("first-run").hidden, true);
+    assert.equal(ids.get("summary-evidence").hidden, false);
+    assert.equal(ids.get("summary-gaps").textContent, "1 review gaps");
+  }
+  report.findings = [{ name: "Engineering contract", status: "unavailable", output: "No linked agreement yet." }];
+  app.ontoolresult({ structuredContent: { inspection: report } });
+  assert.equal(ids.get("summary-gaps").textContent, "No work recorded yet");
+  ids.get("mode-engineering").listeners.click();
+  assert.equal(ids.get("workspace").hidden, false);
+  assert.equal(ids.get("first-run").hidden, true);
+  assert.equal(ids.get("summary-gaps").textContent, "1 review gaps");
+  assert.equal(ids.get("summary-evidence").hidden, false);
+  assert.match(contractText(), /No semantic delegation or assumption verdict/);
+  ids.get("back-welcome").listeners.click();
+  ids.get("mode-guided").listeners.click();
+  assert.equal(ids.get("workspace").hidden, false);
+  assert.equal(ids.get("summary-gaps").textContent, "No work recorded yet");
+  assert.doesNotMatch(contractText(), /semantic delegation/);
+  assert.equal(ids.get("goal").value, "Keep my unsaved outcome.");
+  ids.get("back-welcome").listeners.click();
+  report.findings = [];
   assert.equal(ids.get("send-welcome").hidden, true);
   assert.equal(app.sent, undefined);
   ids.get("select-welcome").listeners.click();
@@ -140,6 +179,8 @@ test("the actual UI renders all panels, preserves guided notes across inspection
     { name: "acceptance", status: "failed", output: "Old failure" },
   ];
   app.ontoolresult({ structuredContent: { inspection: report } });
+  assert.equal(ids.get("summary-evidence").hidden, false);
+  assert.equal(ids.get("unrecorded-evidence").hidden, true);
   assert.equal(ids.get("summary-evidence").children[0].children[1].textContent, "0");
   assert.equal(ids.get("summary-evidence").children[1].children[1].textContent, "1");
   assert.equal(ids.get("summary-evidence").children[3].children[1].textContent, "2");
@@ -171,8 +212,8 @@ test("the actual UI renders all panels, preserves guided notes across inspection
   app.ontoolresult({ structuredContent: { inspection: {} } });
   assert.match(ids.get("error").textContent, /invalid inspection/);
   assert.equal(ids.get("handoff-text").value, "Actual handoff");
-  ids.get("back-welcome").listeners.click();
-  assert.equal(ids.get("first-run").hidden, false);
+  assert.equal(ids.get("back-welcome").hidden, true);
+  assert.equal(ids.get("first-run").hidden, true);
   report.sessions = [{ id: "recorded-work", task: "task.md", started: null }];
   app.ontoolresult({ structuredContent: { inspection: report } });
   assert.equal(ids.get("first-run").hidden, true);
@@ -181,6 +222,7 @@ test("the actual UI renders all panels, preserves guided notes across inspection
   assert.match(ids.get("status").textContent, /Choose the recorded session/);
   assert.equal(ids.get("goal").value, "Keep my unsaved outcome.");
   assert.equal(ids.get("returning").hidden, false);
+  assert.notEqual(ids.get("summary-gaps").textContent, "No work recorded yet");
   assert.match(ids.get("return-next").textContent, /Choose the recorded work/);
   report.brief = { outcome: "A proposed starting point from the conversation.", behavior: "An observable result." };
   app.ontoolresult({ structuredContent: { inspection: report } });
