@@ -7,6 +7,11 @@ History of the kit. The current way to adopt it is in the [README](README.md); t
 
 ## Unreleased
 
+- **Windows inspection root identity.** Engineering inspection and retained
+  evidence compare repository paths using native path equivalence, accepting
+  drive-letter case differences from the Copilot host while still rejecting
+  nested repository directories and evidence from another repository.
+
 - **Native Copilot harness MCP configuration.** The checkout and optional setup
   helper now use workspace-root `.mcp.json` with `mcpServers`, relative server
   arguments and an explicit allowlist of the two read-only inspection tools.

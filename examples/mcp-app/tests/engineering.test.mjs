@@ -58,6 +58,26 @@ function retained({ root, base }, results = []) {
 }
 const inspect = (root, extra = {}) => inspectEngineering(root, { sessionId: "real-session", ...extra });
 
+test("repository and evidence identity use native path equivalence without accepting other roots", () => {
+  const f = fixture();
+  retained(f, [{ name: "check", ok: true, output: "passed" }]);
+  const equivalent = process.platform === "win32"
+    ? f.root[0].toLowerCase() + f.root.slice(1)
+    : path.join(f.root, ".");
+  const report = inspect(equivalent);
+  assert.equal(report.session.base, f.base);
+  assert.equal(report.evidence.freshness, "current");
+  assert.equal(report.evidence.checks[0].status, "passed");
+  fs.mkdirSync(path.join(f.root, "nested"));
+  assert.throws(() => inspect(path.join(f.root, "nested")), /Select the application repository root/);
+  const other = fixture();
+  retained(other);
+  fs.copyFileSync(path.join(f.root, evidencePath("real-session")), path.join(other.root, evidencePath("real-session")));
+  const foreign = inspect(other.root);
+  assert.notEqual(foreign.evidence.freshness, "current");
+  assert.ok(foreign.findings.some(finding => /another repository or session/.test(finding.output)));
+});
+
 test("engineering inspection uses actual task, acceptance and changes without executing commands or writing files", () => {
   const { root, base } = fixture();
   write(root, "implementation.mjs", "// E1 invoice change\nexport const value = 2;\n");
