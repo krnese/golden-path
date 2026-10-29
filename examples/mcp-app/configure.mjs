@@ -16,15 +16,18 @@ export function configureApp(target, { dryRun = false } = {}) {
     }
   }
   const relative = path.relative(root, path.join(HERE, "server.mjs"));
-  const serverPath = path.isAbsolute(relative) ? relative : `\${workspaceFolder}/${relative.split(path.sep).join("/")}`;
-  const entry = { type: "stdio", command: "node", args: [serverPath, "--target", "${workspaceFolder}"] };
-  const config = { servers: { [SERVER_NAME]: entry } };
-  const directory = path.join(root, ".vscode");
-  const file = path.join(directory, "mcp.json");
+  const serverPath = path.isAbsolute(relative) ? relative : `./${relative.split(path.sep).join("/")}`;
+  const entry = {
+    command: "node",
+    args: [serverPath, "--target", "."],
+    tools: ["inspect_golden_path_adoption", "inspect_engineering_session"],
+  };
+  const config = { mcpServers: { [SERVER_NAME]: entry } };
+  const file = path.join(root, ".mcp.json");
   if (dryRun) return { file, config, changed: false };
-  const directoryStat = fs.lstatSync(directory, { throwIfNoEntry: false });
-  if (directoryStat && (directoryStat.isSymbolicLink() || !directoryStat.isDirectory())) {
-    throw new Error("Refusing to write through a linked or non-directory .vscode path.");
+  const legacy = path.join(root, ".vscode", "mcp.json");
+  if (fs.lstatSync(legacy, { throwIfNoEntry: false })) {
+    throw new Error(`Legacy MCP configuration exists at ${legacy}. Review/migrate its servers before configuring .mcp.json to avoid duplicate registrations. Use --dry-run for the portable entry; nothing was overwritten.`);
   }
   const fileStat = fs.lstatSync(file, { throwIfNoEntry: false });
   if (fileStat) {
@@ -34,11 +37,10 @@ export function configureApp(target, { dryRun = false } = {}) {
       catch (error) {
         throw new Error(`Existing MCP configuration cannot be read as JSON: ${error.message}. Use --dry-run and merge the entry manually; nothing was overwritten.`);
       }
-      if (isDeepStrictEqual(existing?.servers?.[SERVER_NAME], entry)) return { file, config, changed: false };
+      if (isDeepStrictEqual(existing?.mcpServers?.[SERVER_NAME], entry)) return { file, config, changed: false };
     }
     throw new Error(`MCP configuration already exists at ${file}. Use --dry-run and merge the server entry manually; nothing was overwritten.`);
   }
-  fs.mkdirSync(directory, { recursive: true });
   fs.writeFileSync(file, `${JSON.stringify(config, null, 2)}\n`, { flag: "wx" });
   return { file, config, changed: true };
 }
@@ -51,7 +53,8 @@ export function main(args) {
     if (values["dry-run"]) console.log(JSON.stringify(result.config, null, 2));
     else {
       console.log(`${result.changed ? "Created" : "Already configured:"} ${result.file}`);
-      console.log(`In VS Code, start/restart ${SERVER_NAME} with MCP: List Servers, then reopen the App.`);
+      console.log(`In VS Code, open Chat: Open Customizations > MCP Servers, start/restart ${SERVER_NAME}, then reopen the App.`);
+      console.log("The host must launch this workspace server from the application repository root. Review cross-drive absolute paths before sharing.");
       console.log("No checks, acceptance, session records or approvals were created. Review the configuration before committing it.");
     }
     return 0;

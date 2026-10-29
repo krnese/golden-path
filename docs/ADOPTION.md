@@ -98,7 +98,11 @@ The generated README also carries the optional MCP App setup and update path.
 It uses a separate kit checkout and an explicit, conflict-refusing
 `examples/mcp-app/configure.mjs --target "<application-repo>"` invocation; it
 does not bundle App code, dependencies or an automatically started server into
-the starter. A fresh method-only application is inspectable with configuration,
+the starter. Explicit setup creates a portable workspace-root `.mcp.json`
+(`mcpServers`), with relative paths resolved from the application root and only
+the two inspection tools enabled. Existing native or legacy VS Code configuration
+is never overwritten; the starter README includes migration and duplicate-server
+checks. A fresh method-only application is inspectable with configuration,
 sessions and verification reported as unavailable. No gate or acceptance is
 created just to populate the App. Keep this guidance in the README source so
 regeneration carries it into the published template.

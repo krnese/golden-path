@@ -84,8 +84,12 @@ unverified evidence are never represented as current passes. A separate adoption
 **Guided** starts from a business outcome and helps prepare plain-language examples for the existing
 owner-review process; **Engineering detail** exposes the same contract, tests and original evidence.
 Neither presentation turns a proposal into approved executable acceptance or hides missing evidence.
-Build the package, then start **golden-path-experience-preview** through **MCP: List Servers** and ask
-Copilot to call `inspect_engineering_session`. No example-model initialization is needed.
+Build the package, then start **golden-path-experience-preview** through
+**Chat: Open Customizations > MCP Servers** and ask Copilot to call
+`inspect_engineering_session`. The portable [`.mcp.json`](.mcp.json) registration
+is read directly by the Copilot harness; restart the server and use a fresh chat
+if an existing session retains the older forwarded registration.
+No example-model initialization is needed.
 The earlier editable architecture example remains explicitly opt-in, not the engineering contract.
 
 **Not yet shipped:** one-click customer enablement, automatic visual-review guidance in the installed
