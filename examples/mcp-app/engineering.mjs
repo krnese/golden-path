@@ -10,6 +10,10 @@ let connected = false;
 let requestNumber = 0;
 let changeLimit = 4;
 let activePanel = "contract";
+let guidedPanel = "contract";
+let engineeringPanel = "contract";
+let guidedStep = "goal";
+let editingBrief = false;
 let exploredFirstRun = false;
 let questionIndex = 0;
 let sending = false;
@@ -41,14 +45,21 @@ function element(tag, text, className) {
   return node;
 }
 function controls() {
-  for (const mode of ["guided", "engineering"]) get(`mode-${mode}`).disabled = !current;
+  for (const mode of ["guided", "engineering"]) get(`mode-${mode}`).disabled = !current || sending;
+  for (const id of [...Object.values(briefFields), "owner-decision", "edit-brief-goal", "apply-brief"]) get(id).disabled = sending;
+  for (const button of document.querySelectorAll("[data-brief-edit]")) button.disabled = sending;
+  if (sending) {
+    get("journey-back").disabled = true;
+    get("journey-next").disabled = true;
+  } else updateJourney();
   get("refresh").disabled = !connected || busy;
   get("session").disabled = busy;
   for (const button of document.querySelectorAll("[data-artifact]")) button.disabled = busy || !connected;
   get("send-examples").hidden = !connected || !app.getHostCapabilities()?.message?.text;
   get("send-welcome").hidden = !connected || !app.getHostCapabilities()?.message?.text;
   get("refresh-welcome").disabled = !connected || busy;
-  for (const id of ["refresh-returning", "refresh-github"]) get(id).disabled = !connected || busy;
+  for (const id of ["refresh-returning", "refresh-github", "refresh-guided", "refresh-brief"]) get(id).disabled = !connected || busy;
+  get("select-examples").className = app.getHostCapabilities()?.message?.text ? "" : "primary-action";
   for (const [id, text] of [["send-examples", "proposal-text"], ["send-welcome", "welcome-prompt"]]) {
     get(id).disabled = !connected || busy || sending || sentMessages.has(get(text).value);
   }
@@ -64,8 +75,12 @@ function unrecordedProject(report) {
 }
 function firstRunPresentation() {
   const firstRun = !!current && unrecordedProject(current) && !Object.keys(current.brief || {}).length;
+  const recorded = !!current && (!!current.session || current.sessions.length > 0);
+  const reviewingWork = get("presentation").value === "guided" && recorded && !editingBrief;
   get("first-run").hidden = !firstRun || exploredFirstRun;
-  get("workspace").hidden = !current || (firstRun && !exploredFirstRun);
+  get("workspace").hidden = !current || (firstRun && !exploredFirstRun) || reviewingWork;
+  get("guided-return").hidden = !recorded || editingBrief;
+  get("return-to-work").hidden = !recorded || !editingBrief;
   get("back-welcome").hidden = !firstRun || !exploredFirstRun;
   if (firstRun) {
     get("welcome-project").textContent = `Repository: ${current.root.split(/[\\/]/).filter(Boolean).at(-1)}`;
@@ -79,11 +94,13 @@ function presentation() {
   get("mode-guided").setAttribute("aria-pressed", String(guided));
   get("mode-engineering").setAttribute("aria-pressed", String(!guided));
   (guided ? get("guided-contract-placeholder") : get("contract")).append(get("contract-content"));
+  (guided ? get("guided-work-picker") : get("engineering-sidebar")).append(get("session-details"));
+  showTab(guided ? guidedPanel : engineeringPanel);
   if (current) {
     renderContract();
     renderEvidenceSummary();
+    firstRunPresentation();
   }
-  updateJourney();
 }
 function updateProposalSummary() {
   const goal = get("goal").value;
@@ -99,22 +116,30 @@ function updateProposalSummary() {
 function updateJourney() {
   const stage = activePanel === "contract" ? 1 : activePanel === "acceptance" ? 2 :
     ["changes", "evidence"].includes(activePanel) ? 3 : 4;
-  for (let i = 1; i <= 4; i++) get(`stage-${i}`).setAttribute("aria-current", stage === i ? "step" : "false");
   get("review-position").textContent = `${stage} of 4 stages`;
-  get("journey-back").disabled = stage === 1 && questionIndex === 0;
-  get("journey-next").disabled = stage === 4;
-  get("journey-next").hidden = stage === 2;
-  get("journey-next").textContent = stage === 1 ? "Next →" : stage === 2 ? "Inspect changes →" : stage === 3 ? "Review result →" : "Review position only";
-  get("question-position").textContent = `${questionIndex + 1} of ${questions.length}`;
+  get("journey-back").disabled = activePanel === "contract" && guidedStep === "goal";
+  get("journey-next").hidden = activePanel === "acceptance";
+  get("journey-next").textContent = nextMissingQuestion() < 0 && get("goal").value.trim() ? "Review brief" : "Continue";
+  get("goal-section").hidden = guidedStep !== "goal";
+  get("brief-goal-context").hidden = guidedStep === "goal";
+  get("brief-goal-text").textContent = get("goal").value;
+  get("example-questions").hidden = guidedStep !== "question";
+  get("question-position").textContent = "Only missing details";
   for (const id of questions) get(`question-${id}`).hidden = id !== questions[questionIndex];
-  get("question-consequence").textContent = consequences[questions[questionIndex]];
+  get("question-consequence").textContent = consequences[questions[questionIndex]] || "";
 }
 function error(message) {
   get("error").textContent = message;
   get("error").hidden = false;
 }
 function showTab(id, focus = false) {
+  if (get("presentation").value === "guided" && !["contract", "acceptance"].includes(id)) {
+    get("presentation").value = "engineering";
+    presentation();
+  }
   activePanel = id;
+  if (get("presentation").value === "guided") guidedPanel = id;
+  else engineeringPanel = id;
   for (const tab of tabs) {
     const selected = tab.getAttribute("aria-controls") === id;
     tab.setAttribute("aria-selected", String(selected));
@@ -244,12 +269,20 @@ function renderCompanion() {
     `${report.changes.length} changed file(s) against ${report.session.base.slice(0, 8)}. Changes are not proof of completed behavior.` :
     "No selected, recorded baseline. A missing comparison is not proof nothing changed.";
   get("return-verified").textContent = plainEvidence(report);
+  get("guided-changes").textContent = report.session?.base ?
+    `${report.changes.length} file(s) changed against the recorded baseline. That doesn't yet tell us which requested behavior works.` :
+    "Choose the recorded work you want to review. A missing comparison doesn't mean nothing changed.";
+  get("guided-verification").textContent = plainEvidence(report);
   const signals = report.agreementDelta.filter(item => item.classification === "agreement-source").length;
   get("return-decisions").textContent = `${signals} agreement/control change signal(s); ${report.findings.filter(item => item.status !== "passed").length} evidence/review gaps. Human judgment is still required; signals do not establish material impact.`;
   get("return-next").textContent = !report.session ? "Choose the recorded work to review." :
     signals ? "Inspect the changed agreement sources before deciding whether affected work can continue." :
       report.evidence.freshness !== "current" ? "Inspect missing or stale evidence before making a progress claim." :
         "Review the original results and remaining gaps. Current checks are not owner approval.";
+  get("guided-decision").textContent = !report.session ? "No work has been selected automatically." :
+    signals ? "The recorded agreement or controls changed. Ask the owner to review their meaning before continuing affected work." :
+      "Review the results with the owner. This inspection does not establish approval or permission to continue.";
+  get("guided-inspect").hidden = !report.session;
   get("return-action").textContent = !report.session ? "Choose recorded work" : signals ? "Review agreement changes" : "Inspect evidence";
   get("session-details").open = !report.session || get("presentation").value === "engineering";
   get("repository-pulse").hidden = !report.repository;
@@ -283,11 +316,29 @@ function renderCompanion() {
   if (report.brief && Object.keys(report.brief).length && JSON.stringify(report.brief) !== briefKey) {
     briefKey = JSON.stringify(report.brief);
     pendingBrief = report.brief;
+    editingBrief = true;
+    guidedStep = "goal";
+    guidedPanel = "contract";
+    if (get("presentation").value === "guided") showTab("contract");
     get("suggested-text").textContent = Object.entries(pendingBrief).map(([field, value]) => `${field}: ${value}`).join("\n\n");
     get("suggested-brief").hidden = false;
     get("brief-status").textContent = draftEdited ? "Your local answers are unchanged. Use this draft only if you want to replace the supplied fields." :
       "Review this proposed starting point, then choose Use this draft. Unspecified fields remain yours to answer.";
+    firstRunPresentation();
   }
+}
+function renderGuidedAttention() {
+  const failures = current.evidence.checks.filter(item => item.status === "failed");
+  const findings = current.findings.filter(item => item.status === "failed" ||
+    /^(Session |Session listing|Gate history|Retained verification|Repository changed during inspection|Intent and context)/.test(item.name));
+  get("guided-attention").hidden = !failures.length && !findings.length;
+  get("attention-title").textContent = failures.length ?
+    `A recorded check failed${current.evidence.freshness === "current" ? "" : " (older or unverified snapshot)"}. Review it before relying on this work.` :
+    "Some recorded information could not be verified. Review the details before relying on this work.";
+  get("attention-items").replaceChildren(...[
+    ...failures.map(item => `${item.name}: ${item.output}`),
+    ...findings.map(item => `${item.name}: ${item.output}`),
+  ].map(text => element("p", text)));
 }
 function renderContract() {
   const report = current;
@@ -367,6 +418,7 @@ function render() {
     "Connected. Begin in chat; refresh after real work is recorded.";
   firstRunPresentation();
   renderCompanion();
+  renderGuidedAttention();
   renderContract();
   renderAcceptance();
   const evidence = report.evidence;
@@ -490,6 +542,19 @@ get("refresh").addEventListener("click", () => load());
 get("refresh-welcome").addEventListener("click", () => load());
 get("refresh-returning").addEventListener("click", () => load());
 get("refresh-github").addEventListener("click", () => load({ github: true }));
+get("refresh-guided").addEventListener("click", () => load());
+get("refresh-brief").addEventListener("click", () => load());
+for (const id of ["guided-inspect", "attention-inspect"]) get(id).addEventListener("click", () => showTab("evidence", true));
+get("start-brief").addEventListener("click", () => {
+  editingBrief = true;
+  firstRunPresentation();
+  showTab(guidedPanel);
+});
+get("return-to-work").addEventListener("click", () => {
+  editingBrief = false;
+  firstRunPresentation();
+  get("guided-return-title").focus();
+});
 get("return-action").addEventListener("click", () => {
   if (!current.session) { get("session-details").open = true; get("session").focus(); }
   else showTab(current.agreementDelta.some(item => item.classification === "agreement-source") ? "delta" : "evidence", true);
@@ -498,8 +563,9 @@ get("apply-brief").addEventListener("click", () => {
   if (!pendingBrief) return;
   for (const [field, value] of Object.entries(pendingBrief)) get(briefFields[field]).value = value;
   proposalChanged();
+  get("suggested-brief").hidden = true;
   get("brief-status").textContent = "Proposed draft applied to the supplied fields. Review and correct it; nothing is approved or sent.";
-  get("goal").focus();
+  advanceBrief();
 });
 get("select-welcome").addEventListener("click", () => {
   get("welcome-prompt").focus();
@@ -565,44 +631,54 @@ for (const mode of ["guided", "engineering"]) get(`mode-${mode}`).addEventListen
   get("presentation").value = mode;
   presentation();
 });
-for (const [index, panel] of ["contract", "acceptance", "changes", "handoff"].entries()) {
-  get(`stage-${index + 1}`).addEventListener("click", () => showTab(panel));
+function nextMissingQuestion() {
+  return questions.findIndex(id => !get(id).value.trim());
+}
+function focusQuestion() {
+  const id = questions[questionIndex];
+  get(id === "exception" && !get("exception-custom").open ? "choice-review" : id).focus();
+}
+function advanceBrief() {
+  if (!get("goal").value.trim()) {
+    guidedStep = "goal";
+    showTab("contract");
+    get("goal").focus();
+    return;
+  }
+  questionIndex = nextMissingQuestion();
+  if (questionIndex < 0) { reviewBrief(); return; }
+  guidedStep = "question";
+  showTab("contract");
+  focusQuestion();
 }
 get("journey-next").addEventListener("click", () => {
-  if (activePanel === "contract") {
-    const id = !get("goal").value.trim() ? "goal" : questions[questionIndex];
-    if (!get(id).value.trim()) {
-      get("question-error").textContent = "Describe what you expect, or say what is still unknown. No answer will be invented for you.";
-      get("question-error").hidden = false;
-      if (id === "exception") get("exception-custom").open = true;
-      get(id).focus();
-      return;
-    }
-    get("question-error").hidden = true;
-    if (questionIndex < questions.length - 1) { questionIndex++; updateJourney(); get(questions[questionIndex]).focus(); }
-    else showTab("acceptance");
-  } else if (activePanel === "acceptance") showTab("changes");
-  else if (["changes", "evidence"].includes(activePanel)) showTab("handoff");
+  const id = guidedStep === "goal" ? "goal" : questions[questionIndex];
+  if (!get(id).value.trim()) {
+    get("question-error").textContent = "Describe what you expect, or say what is still unknown. No answer will be invented for you.";
+    get("question-error").hidden = false;
+    if (id === "exception") get("exception-custom").open = true;
+    get(id).focus();
+    return;
+  }
+  get("question-error").hidden = true;
+  advanceBrief();
 });
 get("journey-back").addEventListener("click", () => {
-  if (activePanel === "contract" && questionIndex > 0) {
-    questionIndex--;
-    updateJourney();
-    get(questionIndex === 0 && !get("exception-custom").open ? "choice-review" : questions[questionIndex]).focus();
-  }
-  else showTab(activePanel === "acceptance" ? "contract" : ["changes", "evidence"].includes(activePanel) ? "acceptance" : "changes");
+  editProposal("goal");
 });
 function editProposal(id) {
   get("presentation").value = "guided";
   presentation();
-  showTab("contract");
+  editingBrief = true;
+  firstRunPresentation();
+  guidedStep = id === "goal" ? "goal" : "question";
   if (questions.includes(id)) questionIndex = questions.indexOf(id);
-  updateJourney();
+  showTab("contract");
   if (id === "exception") get("exception-custom").open = true;
   get(id).focus();
 }
 get("edit-goal").addEventListener("click", () => editProposal("goal"));
-get("edit-answers").addEventListener("click", () => editProposal(questions[questionIndex]));
+get("edit-brief-goal").addEventListener("click", () => editProposal("goal"));
 for (const id of ["exception", "failure", "boundary"]) get(`decision-${id}`).addEventListener("click", () => editProposal(id));
 get("review-evidence").addEventListener("click", () => showTab("evidence"));
 get("review-agreement").addEventListener("click", () => showTab("delta", true));
@@ -616,10 +692,14 @@ function proposalChanged() {
   get("proposal-error").hidden = true;
   get("question-error").hidden = true;
   updateProposalSummary();
+  updateJourney();
   controls();
 }
 for (const id of ["goal", "expected", "exception", "failure", "boundary", "owner-decision"]) {
-  get(id).addEventListener(id === "owner-decision" ? "change" : "input", proposalChanged);
+  get(id).addEventListener(id === "owner-decision" ? "change" : "input", () => {
+    proposalChanged();
+    if (id === "owner-decision" && activePanel === "acceptance") reviewBrief();
+  });
 }
 for (const [id, response] of Object.entries(exampleResponses)) get(`choice-${id}`).addEventListener("change", () => {
   if (get(`choice-${id}`).checked) {
@@ -627,7 +707,7 @@ for (const [id, response] of Object.entries(exampleResponses)) get(`choice-${id}
     proposalChanged();
   }
 });
-get("prepare-examples").addEventListener("click", () => {
+function reviewBrief() {
   try {
     get("proposal-text").value = proposalText({
       outcome: get("goal").value, behavior: get("expected").value, exception: get("exception").value,
@@ -635,15 +715,32 @@ get("prepare-examples").addEventListener("click", () => {
     }, current);
     get("proposal-error").hidden = true;
     get("example-proposal").hidden = false;
+    const labels = { outcome: "Outcome", behavior: "What success looks like", exception: "When a problem is found",
+      failure: "When it cannot complete", boundary: "What must not change" };
+    get("brief-review").replaceChildren(...Object.entries(briefFields).map(([field, id]) => {
+      const row = element("div");
+      const heading = element("div", undefined, "row");
+      const edit = element("button", "Edit", "text-button");
+      edit.type = "button";
+      edit.dataset.briefEdit = id;
+      edit.setAttribute("aria-label", `Edit ${labels[field].toLowerCase()}`);
+      edit.addEventListener("click", () => editProposal(id));
+      heading.append(element("h3", labels[field]), edit);
+      row.append(heading, element("p", get(id).value));
+      return row;
+    }));
+    guidedStep = "review";
+    showTab("acceptance");
     get("proposal-status").textContent = "Review this exact message before sharing. It has not been sent or saved as acceptance.";
-    get("proposal-text").focus();
     controls();
   } catch (failure) {
     get("proposal-error").textContent = failure.message;
     get("proposal-error").hidden = false;
+    get("question-error").textContent = failure.message;
+    get("question-error").hidden = false;
   }
-});
-get("select-examples").addEventListener("click", () => { get("proposal-text").focus(); get("proposal-text").select(); });
+}
+get("select-examples").addEventListener("click", () => { get("message-details").open = true; get("proposal-text").focus(); get("proposal-text").select(); });
 get("send-examples").addEventListener("click", () => continueInChat("proposal-text", "proposal-status"));
 app.onteardown = async () => ({});
 get("close-artifact").addEventListener("click", () => get("artifact-dialog").close());

@@ -7,6 +7,12 @@ History of the kit. The current way to adopt it is in the [README](README.md); t
 
 ## Unreleased
 
+- **Briefing-first Guided iteration.** Replace the Guided dashboard and four-stage
+  navigation with one outcome, selective missing-detail questions and an editable
+  brief review. Complete conversation briefs go directly to review after explicit
+  application. Returning work gets a compact changes/evidence/decision summary;
+  failures remain prominent and full technical inspection stays in Engineering.
+
 - **Clearer first-use App.** Guided and Engineering controls stay visible above
   the welcome screen and open either presentation directly. Guided uses plain
   language for the recorded agreement and a neutral no-work-yet summary for

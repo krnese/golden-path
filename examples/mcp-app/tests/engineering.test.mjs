@@ -271,7 +271,7 @@ test("loopback engineering host serves actual read-only reports and refuses fore
   t.after(() => preview.close());
   const result = await fetch(`${preview.url}/engineering?sessionId=real-session`);
   assert.equal((await result.json()).structuredContent.inspection.contract, "task.md");
-  assert.match(await (await fetch(`${preview.url}/app`)).text(), /Engineering with Golden Path/);
+  assert.match(await (await fetch(`${preview.url}/app`)).text(), /<h1>Golden Path<\/h1>/);
   const rejected = await fetch(`${preview.url}/engineering?`, { headers: { Origin: "https://example.invalid" } });
   assert.equal(rejected.status, 403);
 });

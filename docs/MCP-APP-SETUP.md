@@ -73,6 +73,10 @@ host supports messaging. You can explore the guided view or inspect technical
 details without inventing records. Refresh the view after real work is recorded.
 
 Guided can review an optional proposed brief supplied from the conversation.
+It asks only for missing details, one at a time, then offers an editable brief
+with one handoff action. Complete supplied briefs go straight to review after
+explicit application. Repository inventory and detailed check counts remain in
+Engineering, not in the Guided briefing.
 **Continue in Copilot chat** sends the reviewed message when supported, then
 requests closure only after the host accepts it. The host controls closing;
 delivery and closure failures are distinct. Reopen the App to inspect recorded

@@ -5,35 +5,33 @@ artifacts rather than a parallel contract database. The default workspace server
 now exposes engineering inspection and adoption inspection only. It does not
 enable the older isolated draft editor or require its example model.
 
-## One contract, two levels of explanation
+## Two presentations, the same recorded facts
 
 **Guided | Engineering** remains visible above the welcome screen and workspace;
 either control opens its presentation directly. Switching preserves local answers.
-For a project with no recorded work or verification and only expected setup gaps,
-Guided says **No work recorded yet**, rather than presenting missing setup as
-failed work. Unexpected inspection findings, recorded failures and stale results
-remain visible. Engineering retains the full gap counts and technical detail.
-Guided describes the same agreement and boundaries in plain language.
+**Guided** is a single-column briefing, not a smaller engineering dashboard.
+It starts with the outcome, asks one missing detail at a time, then presents
+five readable brief sections with individual Edit actions. Supplied answers
+are not asked again. Explicitly using a complete conversation brief goes directly
+to review; using a partial one asks only for the remaining fields.
+Suggested exception responses are unselected until chosen. Unknowns can be
+stated explicitly rather than invented. Returning from an edit preserves all
+other answers and skips their questions.
 
-The default **Guided** presentation starts with the desired business outcome.
-Focused questions cover normal behavior, exceptions, failure and what must not
-change. Answers become readable proposed examples that the person can correct
-and review. Four navigation stages organize the experience: **Describe your
-goal → Agree on expected behavior → Build and verify → Review the result**.
-They show review position, not automatic completion, approval or permission to
-build. Advancing never runs a check, modifies a file or approves acceptance.
+The review has one primary handoff: **Continue in Copilot chat**, or select/copy
+when messaging is unsupported. The exact outgoing text is available on demand.
+An optional owner expression stays separate from approval of executable tests.
+There is no implementation progress stepper, evidence-count sidebar or repository
+inventory in Guided. Advancing never runs checks or implements the brief.
 
-The two-column layout pairs one focused question with live understanding,
-locally proposed decisions and actual evidence. Suggested exception responses
-are unselected until chosen; expand the response editor to adapt them. Back/Next,
-stage selection and sidebar edits let you revisit answers. Compact screens stack
-the same content rather than introduce a different workflow. Tips, recorded
-contract details and technical output expand only when needed.
-Both presentations use compact typography and panel spacing without removing
-stages, inspection panels or caveats. Supporting text stays at least 11px;
-touch input keeps larger controls. Browser and host zoom are not overridden.
-Sidebar links keep original evidence and agreement-change review accessible
-in both presentations; keyboard navigation focuses the visible review panel.
+Reopening with recorded work starts with what changed, verification freshness
+and decisions needing review, rather than reopening the questionnaire. Multiple
+records require explicit selection. A follow-up brief is optional and its draft
+survives switching between this summary and the form. Recorded check failures,
+including stale failures, and unreadable inspection records remain prominent.
+Technical evidence is one explicit action away in **Engineering**.
+Both presentations retain compact type, readable supporting text and larger
+touch controls. Browser and host zoom are not overridden.
 
 The same inspected artifacts distinguish **proposed**, **approved**,
 **implemented** and **verified** behavior. Changed files are not completed
@@ -41,12 +39,12 @@ behavior, developer checks are not business acceptance, and unavailable approval
 is never hidden behind encouraging language. **Engineering detail** exposes
 the exact same records, original check output and source/diff navigation.
 Switching presentations does not copy the contract or reset the entered answers.
-Sidebar counts distinguish current passed checks, recorded failures/skips and
+Engineering sidebar counts distinguish current passed checks, recorded failures/skips and
 checks needing current verification. A stale failure remains visible; an older
 pass does not become a current success. Counts can overlap when a recorded
 failure or skip also needs current verification.
 
-**Review brief for Copilot** produces a message, not acceptance files. The default is
+**Review brief** produces a message, not acceptance files. The default is
 to request owner review. A person may explicitly express an owner decision on
 the meaning of the displayed behavior examples; the message makes clear this
 is only for separately drafting and reviewing executable acceptance, not approval
@@ -80,8 +78,8 @@ The reviewed message asks Copilot to retain the brief and evidence links in the
 existing task or PR. Reopening inspects those real records, not a remembered
 conversation. A returning summary surfaces baseline changes, evidence freshness,
 review gaps and a useful next action. When several sessions exist, choose the
-relevant work; the App does not silently select the newest. The later navigation
-stages inspect recorded work; advancing does not start implementation or checks.
+relevant work; the App does not silently select the newest. Engineering tabs
+inspect recorded work; no navigation starts implementation or checks.
 
 ### Read-only repository pulse
 

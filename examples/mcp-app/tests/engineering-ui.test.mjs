@@ -45,6 +45,7 @@ test("the actual UI renders all panels, preserves guided notes across inspection
     return node;
   });
   ids.get("presentation").value = "guided";
+  ids.get("owner-decision").value = "review";
   const document = {
     body: new Node(), documentElement: { style: {} },
     getElementById: (id) => {
@@ -53,7 +54,8 @@ test("the actual UI renders all panels, preserves guided notes across inspection
     },
     createElement: (tag) => new Node(tag),
     createTextNode: (text) => new Node("text", text),
-    querySelectorAll: (selector) => selector === "[role=tab]" ? tabs : nodes.filter((x) => x.dataset.artifact),
+    querySelectorAll: (selector) => selector === "[role=tab]" ? tabs :
+      nodes.filter(node => selector === "[data-brief-edit]" ? node.dataset.briefEdit : node.dataset.artifact),
   };
   let app;
   class App {
@@ -84,7 +86,7 @@ test("the actual UI renders all panels, preserves guided notes across inspection
   };
   ids.get("goal").value = "Keep my unsaved outcome.";
   app.ontoolresult({ structuredContent: { inspection: report } });
-  assert.match(ids.get("status").textContent, /Connected. Begin in chat/);
+  assert.match(ids.get("status").textContent, /Connected. Begin in chat/, ids.get("error").textContent);
   assert.equal(ids.get("first-run").hidden, false);
   assert.equal(ids.get("workspace").hidden, true);
   assert.equal(ids.get("mode-guided").disabled, false);
@@ -145,7 +147,11 @@ test("the actual UI renders all panels, preserves guided notes across inspection
   assert.ok(ids.get("guided-state").childElementCount > 0);
   assert.equal(ids.get("goal").value, "Keep my unsaved outcome.");
   assert.equal(ids.get("send-examples").hidden, true);
-  assert.equal(ids.get("stage-1").getAttribute("aria-current"), "step");
+  assert.equal(ids.get("goal-section").hidden, false);
+  assert.equal(ids.get("example-questions").hidden, true);
+  ids.get("journey-next").listeners.click();
+  assert.equal(ids.get("goal-section").hidden, true);
+  assert.equal(ids.get("question-exception").hidden, false);
   ids.get("journey-next").listeners.click();
   assert.equal(ids.get("question-error").hidden, false);
   ids.get("choice-review").checked = true;
@@ -153,25 +159,30 @@ test("the actual UI renders all panels, preserves guided notes across inspection
   assert.match(ids.get("summary-exception").textContent, /Flag it for a person/);
   ids.get("journey-next").listeners.click();
   assert.equal(ids.get("question-expected").hidden, false);
-  assert.equal(ids.get("question-position").textContent, "2 of 4");
+  assert.equal(ids.get("question-position").textContent, "Only missing details");
   ids.get("journey-back").listeners.click();
-  assert.equal(ids.get("question-exception").hidden, false);
+  assert.equal(ids.get("goal-section").hidden, false);
   ids.get("journey-next").listeners.click();
   assert.equal(ids.get("question-expected").hidden, false);
   ids.get("tips-toggle").listeners.click();
   assert.equal(ids.get("tips-toggle").getAttribute("aria-expanded"), "true");
   ids.get("tips-toggle").listeners.click();
   assert.equal(ids.get("tips-toggle").getAttribute("aria-expanded"), "false");
-  ids.get("stage-2").listeners.click();
-  assert.equal(ids.get("stage-2").getAttribute("aria-current"), "step");
-  assert.equal(ids.get("review-position").textContent, "2 of 4 stages");
-  ids.get("review-agreement").listeners.click();
-  assert.equal(ids.get("delta").hidden, false);
-  assert.equal(ids.get("delta").focused, true);
-  ids.get("stage-2").listeners.click();
+  for (const [id, value] of [["expected", "Normal behavior."], ["failure", "Explicit failure."], ["boundary", "No payments."]]) {
+    assert.equal(ids.get(`question-${id}`).hidden, false);
+    ids.get(id).value = value;
+    ids.get("journey-next").listeners.click();
+  }
+  assert.equal(ids.get("acceptance").hidden, false);
+  assert.equal(ids.get("brief-review").children.length, 5);
+  assert.equal(ids.get("journey-next").hidden, true);
+  assert.equal(ids.get("example-proposal").hidden, false);
   ids.get("mode-engineering").listeners.click();
+  ids.get("tab-delta").listeners.click();
+  assert.equal(ids.get("delta").hidden, false);
   assert.equal(ids.get("mode-engineering").getAttribute("aria-pressed"), "true");
   ids.get("mode-guided").listeners.click();
+  assert.equal(ids.get("acceptance").hidden, false);
   assert.equal(ids.get("goal").value, "Keep my unsaved outcome.");
   report.evidence.freshness = "stale";
   report.evidence.checks = [
@@ -184,6 +195,12 @@ test("the actual UI renders all panels, preserves guided notes across inspection
   assert.equal(ids.get("summary-evidence").children[0].children[1].textContent, "0");
   assert.equal(ids.get("summary-evidence").children[1].children[1].textContent, "1");
   assert.equal(ids.get("summary-evidence").children[3].children[1].textContent, "2");
+  assert.equal(ids.get("guided-attention").hidden, false);
+  assert.match(ids.get("attention-title").textContent, /recorded check failed.*older or unverified/);
+  const prepare = () => {
+    if (!ids.get("acceptance").hidden) ids.get("journey-back").listeners.click();
+    ids.get("journey-next").listeners.click();
+  };
   for (const [id, value] of Object.entries({
     goal: "Keep my unsaved outcome.", expected: "Normal behavior.", exception: "Edge case.",
     failure: "Explicit failure.", boundary: "No payments.", "owner-decision": "review",
@@ -197,7 +214,7 @@ test("the actual UI renders all panels, preserves guided notes across inspection
   assert.equal(app.closeRequests, undefined);
   app.sent = undefined;
   assert.equal(ids.get("send-examples").hidden, false);
-  ids.get("prepare-examples").listeners.click();
+  prepare();
   assert.equal(app.sent, undefined);
   await ids.get("send-examples").listeners.click();
   assert.equal(app.sent.role, "user");
@@ -218,6 +235,10 @@ test("the actual UI renders all panels, preserves guided notes across inspection
   app.ontoolresult({ structuredContent: { inspection: report } });
   assert.equal(ids.get("first-run").hidden, true);
   assert.equal(ids.get("workspace").hidden, false);
+  assert.equal(ids.get("guided-return").hidden, true);
+  ids.get("return-to-work").listeners.click();
+  assert.equal(ids.get("workspace").hidden, true);
+  assert.equal(ids.get("guided-return").hidden, false);
   assert.equal(ids.get("back-welcome").hidden, true);
   assert.match(ids.get("status").textContent, /Choose the recorded session/);
   assert.equal(ids.get("goal").value, "Keep my unsaved outcome.");
@@ -233,7 +254,10 @@ test("the actual UI renders all panels, preserves guided notes across inspection
   assert.equal(ids.get("expected").value, report.brief.behavior);
   assert.equal(ids.get("boundary").value, "No payments.");
   assert.equal(ids.get("owner-decision").value, "review");
-  ids.get("prepare-examples").listeners.click();
+  assert.equal(ids.get("workspace").hidden, false);
+  assert.equal(ids.get("acceptance").hidden, false);
+  assert.equal(ids.get("example-questions").hidden, true);
+  prepare();
   const calls = [];
   let accept;
   app.sendMessage = message => {
@@ -243,11 +267,15 @@ test("the actual UI renders all panels, preserves guided notes across inspection
   };
   const delivery = ids.get("send-examples").listeners.click();
   assert.equal(ids.get("send-examples").disabled, true);
+  assert.equal(ids.get("goal").disabled, true);
+  assert.equal(ids.get("owner-decision").disabled, true);
+  assert.equal(ids.get("brief-review").children[0].children[0].children[1].disabled, true);
   await ids.get("send-examples").listeners.click();
   assert.deepEqual(calls, ["send"]);
   assert.equal(app.closeRequests, undefined);
   accept({});
   await delivery;
+  assert.equal(ids.get("goal").disabled, false);
   assert.equal(app.closeRequests, 1);
   assert.match(ids.get("proposal-status").textContent, /closure requested.*host decides/);
   await ids.get("send-examples").listeners.click();
@@ -255,7 +283,7 @@ test("the actual UI renders all panels, preserves guided notes across inspection
   assert.equal(app.closeRequests, 1);
   ids.get("goal").value = "A corrected outcome after successful delivery.";
   ids.get("goal").listeners.input();
-  ids.get("prepare-examples").listeners.click();
+  prepare();
   assert.equal(ids.get("send-examples").disabled, false);
   app.sendMessage = async () => { calls.push("send"); return {}; };
   app.closeFailure = true;
@@ -264,4 +292,36 @@ test("the actual UI renders all panels, preserves guided notes across inspection
   assert.equal(app.closeRequests, 2);
   await ids.get("send-examples").listeners.click();
   assert.deepEqual(calls, ["send", "send"]);
+  report.brief = { outcome: "Complete context from chat.", behavior: "Expected result.", exception: "An exception response.",
+    failure: "A visible failure.", boundary: "No unauthorized actions." };
+  app.ontoolresult({ structuredContent: { inspection: report } });
+  assert.equal(ids.get("contract").hidden, false);
+  assert.equal(ids.get("goal-section").hidden, false);
+  const before = ids.get("goal").value;
+  assert.notEqual(before, report.brief.outcome);
+  ids.get("apply-brief").listeners.click();
+  assert.equal(ids.get("acceptance").hidden, false);
+  assert.equal(ids.get("brief-review").children.length, 5);
+  assert.equal(ids.get("example-questions").hidden, true);
+  assert.equal(ids.get("owner-decision").value, "review");
+  assert.match(ids.get("proposal-text").value, /Complete context from chat/);
+  const outcomeEdit = ids.get("brief-review").children[0].children[0].children[1];
+  outcomeEdit.listeners.click();
+  assert.equal(ids.get("goal-section").hidden, false);
+  ids.get("goal").value = "A corrected outcome.";
+  ids.get("goal").listeners.input();
+  ids.get("journey-next").listeners.click();
+  assert.equal(ids.get("acceptance").hidden, false);
+  assert.equal(ids.get("example-questions").hidden, true);
+  assert.match(ids.get("proposal-text").value, /A corrected outcome/);
+  ids.get("owner-decision").value = "approve-behavior";
+  ids.get("owner-decision").listeners.change();
+  assert.match(ids.get("proposal-text").value, /My explicit owner decision/);
+  assert.equal(ids.get("owner-decision").value, "approve-behavior");
+  ids.get("return-to-work").listeners.click();
+  assert.equal(ids.get("guided-return").hidden, false);
+  assert.equal(ids.get("workspace").hidden, true);
+  ids.get("start-brief").listeners.click();
+  assert.equal(ids.get("workspace").hidden, false);
+  assert.equal(ids.get("goal").value, "A corrected outcome.");
 });
