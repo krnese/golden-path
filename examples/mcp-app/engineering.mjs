@@ -22,7 +22,7 @@ let draftEdited = false;
 let pendingBrief;
 let briefKey;
 let briefScope;
-const sentMessages = new Set();
+const messageDeliveries = new Map();
 const briefFields = { outcome: "goal", behavior: "expected", exception: "exception", failure: "failure", boundary: "boundary" };
 const questions = ["exception", "expected", "failure", "boundary"];
 const exampleResponses = {
@@ -49,6 +49,7 @@ function controls() {
   for (const mode of ["guided", "engineering"]) get(`mode-${mode}`).disabled = !current || sending;
   for (const id of [...Object.values(briefFields), "owner-decision", "edit-brief-goal", "apply-brief"]) get(id).disabled = sending;
   for (const button of document.querySelectorAll("[data-brief-edit]")) button.disabled = sending;
+  for (const id of ["select-examples", "select-welcome"]) get(id).disabled = sending;
   get("journey-next").disabled = sending;
   if (sending) {
     get("journey-back").disabled = true;
@@ -64,7 +65,7 @@ function controls() {
   for (const id of ["refresh-returning", "refresh-github", "refresh-guided", "refresh-brief"]) get(id).disabled = !connected || busy;
   get("select-examples").className = app.getHostCapabilities()?.message?.text ? "" : "primary-action";
   for (const [id, text] of [["send-examples", "proposal-text"], ["send-welcome", "welcome-prompt"]]) {
-    get(id).disabled = !connected || busy || sending || sentMessages.has(get(text).value);
+    get(id).disabled = !connected || busy || sending || messageDeliveries.has(get(text).value);
   }
 }
 function unrecordedProject(report) {
@@ -410,8 +411,30 @@ function renderEvidenceSummary() {
   }
   get("summary-evidence").append(element("p", plainEvidence(report), "quiet"));
 }
+function renderRuntime() {
+  const runtime = current.runtime;
+  const uiSource = document.documentElement.dataset?.runtimeSource;
+  const differentPanel = !!runtime && !!uiSource && uiSource !== runtime.runningSource;
+  const warning = !runtime ? "Version diagnostics are unavailable from this server. Review/update the kit, rebuild, restart the MCP server and reopen the App." :
+    differentPanel ? "This App panel belongs to a different server build. Close and reopen it to load the server's pinned UI. If the warning persists, rebuild and restart the MCP server." :
+      !uiSource ? "This App panel has no build identity. Rebuild the kit, restart the MCP server and close/reopen the App." :
+      runtime.status !== "current" ? `${runtime.detail} ${runtime.next}` : "";
+  get("runtime-warning").textContent = warning;
+  get("runtime-warning").hidden = !warning;
+  if (warning) get("runtime-details").open = true;
+  get("runtime-versions").textContent = runtime ?
+    `Kit ${runtime.kitVersion} · App ${runtime.appVersion} · Node ${runtime.nodeVersion} · Compatibility: ${runtime.status}. ${runtime.detail}` :
+    "Running version and compatibility are unknown.";
+  get("runtime-installation").textContent = runtime ?
+    `Copy-in method: ${runtime.installation.version || runtime.installation.status}${runtime.installation.level ? `, level ${runtime.installation.level}` : ""}. ${runtime.installation.detail}` :
+    "Installed guidance was not verified.";
+  get("runtime-sources").textContent = runtime ?
+    `Running: ${runtime.runningSource}\nCheckout: ${runtime.checkoutSource || "unknown"}\nBuilt: ${runtime.builtSource || "unknown"}\nPanel: ${uiSource || "unknown"}` : "";
+  get("runtime-next").textContent = runtime?.next || warning;
+}
 function render() {
   const report = current;
+  renderRuntime();
   get("session").replaceChildren(new Option("Choose a recorded session", ""));
   for (const session of report.sessions) {
     const when = session.started ? new Date(session.started * 1000).toLocaleString() : "No start time";
@@ -500,7 +523,12 @@ function receive(result) {
     get("status").textContent = "Refresh failed. Any displayed snapshot is unchanged and may be stale.";
     return;
   }
-  const parsed = inspectionSchema.safeParse(result.structuredContent?.inspection);
+  const incoming = result.structuredContent?.inspection;
+  if (incoming?.runtime && incoming.runtime.protocolVersion !== 1) {
+    error("This App cannot interpret the server's diagnostic protocol. Review/update the kit, rebuild, restart the server and reopen the App. The previous snapshot is unchanged.");
+    return;
+  }
+  const parsed = inspectionSchema.safeParse(incoming);
   if (!parsed.success) { error("The server returned an invalid inspection. The previous snapshot is unchanged."); return; }
   current = parsed.data;
   if (!current.artifact && get("artifact-dialog").open) get("artifact-dialog").close();
@@ -590,36 +618,56 @@ get("apply-brief").addEventListener("click", () => {
   advanceBrief();
 });
 get("select-welcome").addEventListener("click", () => {
+  if (sending) return;
   get("welcome-prompt").focus();
   get("welcome-prompt").select();
-  get("welcome-status").textContent = "Message selected. Copy it into the existing chat and describe your outcome there. It has not been sent.";
+  get("welcome-status").textContent = deliveryStatus(get("welcome-prompt").value,
+    "Message selected. Copy it into the existing chat and describe your outcome there. It has not been sent.");
 });
+function deliveryStatus(text, fallback) {
+  const delivery = messageDeliveries.get(text);
+  if (delivery?.status === "accepted") {
+    return "This exact message was already accepted in chat. Do not resend it. If this view stays open, close it manually; reopen Golden Path later to inspect recorded work.";
+  }
+  if (delivery?.status === "unconfirmed") {
+    return `Delivery was not confirmed: ${delivery.detail}. The message may already be in chat. Check there before copying or sharing anything again. Your draft is retained; this exact message will not be resent from this panel, and no closure was requested.`;
+  }
+  return fallback;
+}
 async function continueInChat(textId, statusId) {
   const text = get(textId).value;
-  if (sending || sentMessages.has(text)) return;
+  if (sending) return;
+  if (messageDeliveries.has(text)) {
+    get(statusId).textContent = deliveryStatus(text);
+    return;
+  }
   if (textId === "welcome-prompt" && Object.values(briefFields).some(id => get(id).value.trim())) {
     get(statusId).textContent = "You have unshared Guided answers. Return to Guided, review your brief and continue from there so those answers are included. Nothing was sent or closed.";
     return;
   }
   if (!text.trim()) { get(statusId).textContent = "Prepare a non-empty message before continuing. Nothing was sent."; return; }
   sending = true;
+  get(statusId).textContent = "Sending to the existing chat. Waiting up to 60 seconds for host confirmation; do not copy or resend while waiting.";
   controls();
+  let accepted = false;
   try {
-    const result = await app.sendMessage({ role: "user", content: [{ type: "text", text }] });
-    if (result.isError) throw new Error("The host declined the message.");
-    sentMessages.add(text);
-  } catch (failure) {
-    get(statusId).textContent = `Could not share in chat: ${failure.message}. Your message is retained; select and copy it instead. The App has not requested closure.`;
-    sending = false;
-    controls();
-    return;
-  }
-  get(statusId).textContent = "Message accepted in the existing chat. Requesting App closure; no repository records or approvals were created. Reopen Golden Path later to inspect recorded work.";
-  try {
+    const result = await app.sendMessage({ role: "user", content: [{ type: "text", text }] }, { timeout: 60_000 });
+    if (result.isError) {
+      get(statusId).textContent = "Could not share in chat: the host declined the message. Your draft is retained; retry explicitly or select and copy it instead. No closure was requested.";
+      return;
+    }
+    accepted = true;
+    messageDeliveries.set(text, { status: "accepted" });
+    get(statusId).textContent = "Message accepted in the existing chat. Requesting App closure; no repository records or approvals were created. Reopen Golden Path later to inspect recorded work.";
     await app.requestTeardown();
     get(statusId).textContent = "Message accepted; closure requested. The host decides whether to close this view. If it stays open, you can close it manually without resending.";
   } catch (failure) {
-    get(statusId).textContent = `Message accepted, but closure could not be requested: ${failure.message}. Close this view manually; do not resend the message.`;
+    if (accepted) {
+      get(statusId).textContent = `Message accepted, but closure could not be requested: ${failure.message}. Close this view manually; do not resend the message.`;
+    } else {
+      messageDeliveries.set(text, { status: "unconfirmed", detail: failure.message });
+      get(statusId).textContent = deliveryStatus(text);
+    }
   } finally { sending = false; controls(); }
 }
 get("send-welcome").addEventListener("click", () => continueInChat("welcome-prompt", "welcome-status"));
@@ -756,7 +804,8 @@ function reviewBrief() {
     }));
     guidedStep = "review";
     showTab("acceptance", true);
-    get("proposal-status").textContent = "Review this exact message before sharing. It has not been sent or saved as acceptance.";
+    get("proposal-status").textContent = deliveryStatus(get("proposal-text").value,
+      "Review this exact message before sharing. It has not been sent or saved as acceptance.");
     controls();
   } catch (failure) {
     get("proposal-error").textContent = failure.message;
@@ -765,7 +814,12 @@ function reviewBrief() {
     get("question-error").hidden = false;
   }
 }
-get("select-examples").addEventListener("click", () => { get("message-details").open = true; get("proposal-text").focus(); get("proposal-text").select(); });
+get("select-examples").addEventListener("click", () => {
+  if (sending) return;
+  get("message-details").open = true;
+  get("proposal-text").focus();
+  get("proposal-text").select();
+});
 get("send-examples").addEventListener("click", () => continueInChat("proposal-text", "proposal-status"));
 app.onteardown = async () => ({});
 get("close-artifact").addEventListener("click", () => get("artifact-dialog").close());

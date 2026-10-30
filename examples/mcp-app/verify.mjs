@@ -31,11 +31,18 @@ export async function verifyApp(target) {
     if (response.isError) throw new Error(response.content?.filter(item => item.type === "text").map(item => item.text).join("\n") || "Engineering inspection failed.");
     const inspection = inspectionSchema.parse(response.structuredContent?.inspection);
     if (path.relative(root, inspection.root) !== "") throw new Error("The server inspected a different repository.");
+    const runtime = inspection.runtime;
+    if (!runtime) throw new Error("This server has no version diagnostics. Review/update the kit, rebuild and restart the MCP server.");
+    if (runtime.status !== "current") throw new Error(`${runtime.detail} ${runtime.next}`);
+    if (runtime.installation.status === "unknown") throw new Error(runtime.installation.detail);
+    if (client.getServerVersion()?.version !== runtime.appVersion) throw new Error("Server handshake and inspection versions differ. Restart the MCP server.");
     const resource = await client.readResource({ uri: ENGINEERING_RESOURCE });
-    if (!resource.contents.some(item => item.uri === ENGINEERING_RESOURCE && typeof item.text === "string" && item.text.includes("Your project is connected"))) {
+    if (!resource.contents.some(item => item.uri === ENGINEERING_RESOURCE && typeof item.text === "string" &&
+      item.text.includes("Your project is connected") && item.text.includes(`data-runtime-source="${runtime.runningSource}"`))) {
       throw new Error("The server did not return the current first-run App resource. Rebuild the kit before retrying.");
     }
-    return { root: inspection.root, sessions: inspection.sessions.length, evidence: inspection.evidence.freshness };
+    return { root: inspection.root, sessions: inspection.sessions.length, evidence: inspection.evidence.freshness,
+      runtime, hostVerification: "not-performed" };
   } finally {
     await client.close();
   }
@@ -43,10 +50,13 @@ export async function verifyApp(target) {
 
 export async function main(args) {
   try {
-    const { values } = parseArgs({ args, options: { target: { type: "string" } } });
-    if (!values.target) throw new Error("Usage: node verify.mjs --target <application-repository>");
+    const { values } = parseArgs({ args, options: { target: { type: "string" }, json: { type: "boolean" } } });
+    if (!values.target) throw new Error("Usage: node verify.mjs --target <application-repository> [--json]");
     const result = await verifyApp(values.target);
+    if (values.json) { console.log(JSON.stringify(result, null, 2)); return 0; }
     console.log(`Verified configured server, repository binding and App resource: ${result.root}`);
+    console.log(`Kit ${result.runtime.kitVersion}; App ${result.runtime.appVersion}; Node ${result.runtime.nodeVersion}. Source/build ${result.runtime.runningSource}.`);
+    console.log(`Copy-in method: ${result.runtime.installation.status}${result.runtime.installation.version ? ` (${result.runtime.installation.version}, level ${result.runtime.installation.level})` : ""}. ${result.runtime.installation.detail}`);
     console.log(`${result.sessions} recorded sessions; evidence ${result.evidence}. No checks or acceptance were created.`);
     console.log("Host discovery, trust and native rendering still require opening the App in VS Code. Configuration alone is not setup complete.");
     return 0;

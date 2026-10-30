@@ -11,7 +11,8 @@ import { readArchitecture, updateDraft } from "./architecture-state.mjs";
 import { modelSchema, updateSchema } from "./architecture-model.mjs";
 import { inspectEngineering } from "./engineering-report.mjs";
 import { inspectRepository } from "./repository-context.mjs";
-import { inspectionInput, inspectionSchema, sessionIdSchema } from "./engineering-schema.mjs";
+import { inspectionInput, inspectionSchema, sessionIdSchema, runtimeSchema } from "./engineering-schema.mjs";
+import { createRuntimeInspector } from "./runtime-info.mjs";
 
 export const TOOL = "inspect_golden_path_adoption";
 export const RESOURCE = "ui://golden-path/adoption.html";
@@ -21,6 +22,7 @@ export const READ_MODEL = "inspect_architecture";
 export const UPDATE_MODEL = "update_architecture_draft";
 export const ENGINEERING_RESOURCE = "ui://golden-path/engineering.html";
 export const INSPECT_SESSION = "inspect_engineering_session";
+const runtime = createRuntimeInspector();
 
 export function optionsFromArgs(args) {
   const { values } = parseArgs({ args, options: { target: { type: "string" }, state: { type: "string" }, session: { type: "string" } }, allowPositionals: false });
@@ -34,7 +36,7 @@ export function optionsFromArgs(args) {
 }
 
 export function createServer(target, { state, session } = {}) {
-  const server = new McpServer({ name: "golden-path-adoption-prototype", version: "0.1.0" });
+  const server = new McpServer({ name: "golden-path-adoption-prototype", version: runtime.appVersion });
   registerAppTool(server, TOOL, {
     title: "Inspect Golden Path adoption",
     description: "Read local adoption configuration for the repository selected when this server started. Returns individual verified, missing and unverified findings, not an overall protection verdict. Does not run project checks, query GitHub, write files or approve acceptance.",
@@ -49,20 +51,24 @@ export function createServer(target, { state, session } = {}) {
         })),
       }),
       inspectedAt: z.string(),
+      runtime: runtimeSchema,
     }),
     annotations: { readOnlyHint: true, destructiveHint: false, idempotentHint: true, openWorldHint: false },
     _meta: { ui: { resourceUri: RESOURCE, visibility: ["model", "app"] } },
   }, async () => {
     try {
       const report = adoptionReport(target);
+      const compatibility = runtime.inspect(report.root);
       return {
         content: [{ type: "text", text: [
           `Golden Path adoption: ${report.root}`,
           `Revision: ${report.head || "unverified"}`,
           "Configuration evidence only. No project checks run; business approval is not established.",
+          `Kit ${compatibility.kitVersion}; App ${compatibility.appVersion}; Node ${compatibility.nodeVersion}. Compatibility: ${compatibility.status}. ${compatibility.detail}\nNext: ${compatibility.next}`,
+          `Copy-in installation: ${compatibility.installation.status}. ${compatibility.installation.detail}`,
           ...report.checks.map((c) => `[${c.status.toUpperCase()}] ${c.id}: ${c.evidence}\nNext: ${c.next}`),
         ].join("\n\n") }],
-        structuredContent: { report, inspectedAt: new Date().toISOString() },
+        structuredContent: { report, inspectedAt: new Date().toISOString(), runtime: compatibility },
       };
     } catch (error) {
       return { isError: true, content: [{ type: "text", text: `Inspection failed: ${error.message}` }] };
@@ -71,7 +77,7 @@ export function createServer(target, { state, session } = {}) {
   registerAppResource(server, RESOURCE, RESOURCE, { mimeType: RESOURCE_MIME_TYPE }, async () => ({
     contents: [{
       uri: RESOURCE, mimeType: RESOURCE_MIME_TYPE,
-      text: fs.readFileSync(path.join(DIRECTORY, "dist", "app.html"), "utf8"),
+      text: runtime.resource("app"),
       _meta: { ui: { csp: { connectDomains: [], resourceDomains: [] }, prefersBorder: true } },
     }],
   }));
@@ -85,10 +91,13 @@ export function createServer(target, { state, session } = {}) {
   }, async (input) => {
     try {
       const inspection = inspectEngineering(target, { ...input, sessionId: input.sessionId || session });
+      inspection.runtime = runtime.inspect(inspection.root);
       inspection.repository = await inspectRepository(inspection.root, { github: input.github === true });
       if (input.brief) inspection.brief = input.brief;
       return { content: [{ type: "text", text: [
         inspection.handoff,
+        `Kit ${inspection.runtime.kitVersion}; App ${inspection.runtime.appVersion}; Node ${inspection.runtime.nodeVersion}. Compatibility: ${inspection.runtime.status}. ${inspection.runtime.detail}\nNext: ${inspection.runtime.next}`,
+        `Copy-in installation: ${inspection.runtime.installation.status}. ${inspection.runtime.installation.detail}`,
         `Repository pulse observed ${inspection.repository.inspectedAt}; local definitions are not execution or enforcement.`,
         ...inspection.repository.local.map(item => `${item.name}: ${item.status.toUpperCase()}. ${item.detail}`),
         `GitHub snapshot: ${inspection.repository.github.inspectedAt || "not requested"}.`,
@@ -102,7 +111,7 @@ export function createServer(target, { state, session } = {}) {
   registerAppResource(server, ENGINEERING_RESOURCE, ENGINEERING_RESOURCE, { mimeType: RESOURCE_MIME_TYPE }, async () => ({
     contents: [{
       uri: ENGINEERING_RESOURCE, mimeType: RESOURCE_MIME_TYPE,
-      text: fs.readFileSync(path.join(DIRECTORY, "dist", "engineering.html"), "utf8"),
+      text: runtime.resource("engineering"),
       _meta: { ui: { csp: { connectDomains: [], resourceDomains: [] }, prefersBorder: true } },
     }],
   }));
@@ -141,7 +150,7 @@ export function createServer(target, { state, session } = {}) {
     registerAppResource(server, ARCHITECTURE_RESOURCE, ARCHITECTURE_RESOURCE, { mimeType: RESOURCE_MIME_TYPE }, async () => ({
       contents: [{
         uri: ARCHITECTURE_RESOURCE, mimeType: RESOURCE_MIME_TYPE,
-        text: fs.readFileSync(path.join(DIRECTORY, "dist", "architecture.html"), "utf8"),
+        text: runtime.resource("architecture"),
         _meta: { ui: { csp: { connectDomains: [], resourceDomains: [] }, prefersBorder: true } },
       }],
     }));

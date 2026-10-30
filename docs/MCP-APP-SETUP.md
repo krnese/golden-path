@@ -101,6 +101,53 @@ requests closure only after the host accepts it. The host controls closing;
 delivery and closure failures are distinct. Reopen the App to inspect recorded
 work and evidence, not an App-owned conversation or approval database.
 
+### If continuing in chat does not complete
+
+The App waits up to 60 seconds for the host's message acknowledgement.
+Brief editing, sending and its copy-selection actions are disabled while waiting;
+the draft is retained.
+
+| What happened | What the App does | What to do |
+|---|---|---|
+| Host explicitly declined | Keeps the draft; does not request closure. | Retry deliberately, or select/copy the message. |
+| Timeout, disconnect or other missing acknowledgement | Marks delivery **unconfirmed**; does not request closure or resend the same text. | Check chat first: the message may already be there. Copy only after checking. |
+| Message accepted; closure notification failed | Keeps acceptance distinct from closure failure; does not resend. | Close the panel manually. |
+| Message accepted; view stays open | Reports that the host controls closure. | Close manually; do not resend. |
+
+Reviewing a draft again does not erase its accepted/unconfirmed delivery state.
+Duplicate prevention is for the exact message in the current panel, not a
+durable or cross-panel guarantee. Closing/reloading loses local drafts and this
+delivery memory; check the existing chat before sending from a reopened panel.
+No automatic retry, clipboard write or message delivery occurs.
+
+### Native-host verification
+
+A browser preview or fresh stdio process does not establish native integration.
+After rebuilding, restart the **existing** registered MCP server (do not add
+a duplicate registration), then close/reopen the App:
+
+1. Call `inspect_engineering_session`. Confirm that the current version
+   diagnostics are present and that the repository binding is correct.
+   Missing diagnostics indicate an older server; a newer HTML panel alone
+   does not establish that the registered server restarted.
+2. Confirm Guided and Engineering render, and that switching preserves a local
+   draft. If text messaging is not advertised, use the explicit copy fallback.
+3. Only with a user-approved brief, choose **Continue in Copilot chat**.
+   Confirm the exact message appears once in that conversation. Do not send
+   diagnostic messages into a real work conversation automatically.
+4. Observe closure separately from delivery. If the panel remains open, check
+   its status before closing it manually; do not resend an accepted message.
+5. Reopen for the same repository to inspect actual recorded work. An unsent
+   local draft or simulated handoff is not a recorded task or passing evidence.
+
+If an older native server says **Select the application repository root**
+despite the correct bound root, compare with a fresh inspection and restart
+the registered server before diagnosing current code. If it persists after
+restart, verify the host working directory, selected Git root and paths.
+Do not silently rebind the server, weaken root validation or change protections.
+Native delivery/closure and a real independent owner/engineer pilot require
+observations in those environments; SDK tests are not substitutes.
+
 ### Return after work is recorded
 
 Ask Copilot to open the App again for the same repository and recorded task.
@@ -132,13 +179,62 @@ show missing setup. Add real checks separately through the
 ## Keeping the App up to date
 
 Template changes do not update previously generated applications. The App is
-loaded from the separate kit checkout, so review its changes, fast-forward that
-checkout, rerun the `npm ci` and build commands above, then **restart the MCP
-server and close/reopen the App panel**. Otherwise an old running server may
-serve a newer UI with an incompatible inspection format.
+loaded from the separate kit checkout. Review a proposed revision before
+switching to it; nothing checks for, downloads or installs a newer release
+automatically. To pin it, use a reviewed tag or full commit SHA with
+`git -C ..\golden-path-kit checkout --detach <reviewed-tag-or-commit>`
+(replace the placeholder before running). Start from a clean kit worktree;
+do not discard local changes.
+
+Restore dependencies with the setup `npm ci` command if the dependency
+manifest/lock changed or dependencies are missing, rebuild, then
+**restart the MCP server and close/reopen the App panel**. Each server process keeps
+its startup UI; a later build cannot silently replace that running resource.
+The local preview host is pinned too. An existing panel may still contain
+an older build, so reopening matters.
 
 Updating the App does not upgrade the copied Golden Path method or application
 controls. Review those installation changes separately.
+
+### Version and compatibility diagnostics
+
+Open **Engineering > Version and compatibility**, or ask for either existing
+inspection tool. The report separates kit, App and Node versions, declared
+copy-in method version/level, and running/checkout/build source identities.
+Healthy details stay collapsed and out of Guided; an actual mismatch or missing
+diagnostic/panel identity produces a visible recovery warning.
+
+| Status | Meaning | Next action |
+|---|---|---|
+| `current` | Running source and startup UI match the local checkout/build. | Verify native host discovery/rendering separately. |
+| `rebuild-required` | Source changed, or build metadata/resources are missing, invalid or inconsistent. | Rebuild, restart the server and reopen the panel. |
+| `restart-required` | A valid current build exists, but this process loaded different source or no usable startup build. | Restart the server and reopen the panel. |
+| `unknown` | Source identity could not be established. | Review the explicit error and repair the kit before retrying. |
+
+`current` is **not** a latest-release, dependency-integrity, acceptance or
+repository-protection verdict. Source/resource hashes detect local drift;
+they are not signed attestations. A copy-in manifest declares a version, not
+proof that its files are unchanged or active. A missing manifest is a valid
+plugin/manual-installation case, not proof that Golden Path is absent.
+An unreadable or malformed manifest remains explicitly unknown.
+
+For machine-readable setup verification:
+
+```powershell
+node ..\golden-path-kit\examples\mcp-app\verify.mjs --target . --json
+```
+
+Verification requires matching runtime/resource identities and rejects unknown
+copy-in manifest state. It starts a **fresh** configured process; it cannot
+prove that an already running host process restarted or that native rendering,
+chat delivery or panel closure works. JSON reports `hostVerification:
+"not-performed"` explicitly.
+
+To roll back, select the previous reviewed kit tag/SHA in the same clean
+checkout, restore its dependencies if needed, rebuild, restart, reopen and run
+verification again. Keep the existing application registration if the kit path
+is unchanged. This does not roll back copied method files or application controls;
+review those separately. Older revisions may lack these diagnostics.
 
 ## Disabling the App
 

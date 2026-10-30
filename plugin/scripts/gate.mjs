@@ -322,7 +322,30 @@ export function runChecks(root, cfg, base = "HEAD", started = Date.now(), opts =
     deadline_ms: deadline - started };
 }
 
+function taskContext(root, task, base) {
+  if (!task) return { text: "", evidence: { status: "not-configured" } };
+  const unavailable = (reason) => ({
+    text: `Task context UNVERIFIED for ${JSON.stringify(task)}: ${reason} ` +
+      "Read the authoritative source at its accepted revision before affected consequential work; do not substitute a rewritten working copy.",
+    evidence: { status: "unverified", reason },
+  });
+  if (typeof task !== "string" || !base) return unavailable("no task-file reference or fixed baseline is available.");
+  const rel = path.relative(root, path.resolve(root, task)).split(path.sep).join("/");
+  if (!rel || rel === ".." || rel.startsWith("../") || path.isAbsolute(rel))
+    return unavailable("only committed repository-local task files can be replayed automatically; external references must be read explicitly.");
+  const [code, source, error] = git(root, "cat-file", "blob", `${base}:${rel}`);
+  if (code !== 0) return unavailable(`no readable task file at the fixed baseline (${String(error).trim().slice(0, 300)}).`);
+  const limit = 12000, excerpted = source.length > limit;
+  return {
+    text: `Task file ${JSON.stringify(rel)} from fixed session baseline ${base} (context, not proof of owner approval).\n` +
+      (excerpted ? `EXCERPT: first ${limit} characters only; read the full file at this revision before affected work.\n` : "") +
+      source.slice(0, limit),
+    evidence: { status: "offered", path: rel, base_sha: base, content_sha256: createHash("sha256").update(source).digest("hex"), excerpted },
+  };
+}
+
 export function onStart(payload) {
+  setDeadline(Date.now() + 10000); // sessionStart has a 15-second host timeout
   const root = repoRoot(field(payload, "cwd"));
   const cfg = loadConfig(root), sid = sessionId(payload);
   const skill = [...SKILL_CANDIDATES.map((s) => path.join(root, s)),
@@ -332,14 +355,23 @@ export function onStart(payload) {
   st.base_sha = st.base_sha || headSha(root); // fixed comparison commit for the whole session
   st.base_source = st.base_source || "session-start";
   st.started = st.started || Date.now() / 1000;
-  st.task = process.env.GOLDEN_PATH_TASK || st.task || null;
+  const requestedTask = process.env.GOLDEN_PATH_TASK || null;
+  st.task = st.task || requestedTask;
+  const task = taskContext(root, st.task, st.base_sha);
   state(root, sid, st);
   ledger(root, "method_files_present", { session: sid, source: field(payload, "source") ?? null, skill_found: !!skill,
-    skill_hash: skill && fileHash(skill), method_hash: method && fileHash(method), base_sha: st.base_sha, task: st.task,
+    skill_hash: skill && fileHash(skill), method_hash: method && fileHash(method), base_sha: st.base_sha, task: st.task, task_context: task.evidence,
     note: "files existed and context was offered; does not show the agent read or followed them" });
   const ctx = ["Golden Path is active. Follow the golden-path skill (Intent -> Context -> Boundary -> Acceptance -> Report).",
     "A stop gate runs the configured checks when you finish; you cannot stop while they are red.",
-    "Do not delete, skip or weaken existing tests; add new tests instead."];
+    "Do not delete, skip or weaken existing tests; add new tests instead.",
+    'Before consequential changes, compare proposed effects with the accepted "must stay true" statements, owner and revision: preserves, modifies, contradicts or uncertain. ' +
+      "Re-read accepted sources after resume/context loss and include them in delegation. Reconcile the cumulative diff before reporting.",
+    "A material conflict or unresolved uncertainty is a DELEGATION CHANGE: pause affected work and its dependents, explain the impact and seek the owner's decision; " +
+      "continue only separable permitted work. Rewriting documents or tests does not authorize a changed architecture."];
+  if (requestedTask && requestedTask !== st.task)
+    ctx.push("The requested task differs from this session's pinned task reference. Resolve the change with the owner before affected work; the original context is retained.");
+  if (task.text) ctx.push(task.text);
   if ((cfg.acceptance.paths || []).length)
     ctx.push(`Protected acceptance tests owned by ${cfg.acceptance.owner}: ${cfg.acceptance.paths.join(", ")}. Read and run them; ` +
       "never change them. If one seems wrong, stop and report a DELEGATION CHANGE to the owner.");
