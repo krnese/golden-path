@@ -148,6 +148,51 @@ test("boundary context: filesystem aliases resolve to the original repository ta
   assert.ok(resumed.additionalContext.includes(ORIGINAL), resumed.additionalContext);
 });
 
+test("boundary context: a committed symlink is unverified, not offered as document text", t => {
+  const { root } = scratch(t);
+  const blob = run("git", ["hash-object", "-w", "--stdin"], root, { input: "target.md" });
+  assert.equal(blob.status, 0, blob.stderr);
+  git(root, "update-index", "--add", "--cacheinfo", `120000,${blob.stdout.trim()},${TASK}`);
+  git(root, "commit", "-qm", "Fixture task is a symlink at the baseline");
+  const started = hook(root, "start", {}, TASK);
+  assert.match(started.additionalContext, /Task context UNVERIFIED.*not a regular committed file/);
+  assert.equal(records(root).at(-1).task_context.status, "unverified");
+  assert.ok(!started.additionalContext.includes(ORIGINAL));
+});
+
+test("boundary context: retargeted working-tree aliases cannot replace the pinned repository path", t => {
+  const { root } = scratch(t);
+  write(root, "approved/design.md", ORIGINAL);
+  write(root, "alternate/design.md", "A different agreement that must not replace the original.\n");
+  git(root, "add", "approved/design.md", "alternate/design.md");
+  git(root, "commit", "-qm", "Fixture agreements");
+  const alias = path.join(root, "task-alias");
+  const link = target => fs.symlinkSync(path.join(root, target), alias, process.platform === "win32" ? "junction" : "dir");
+  link("approved");
+  const started = hook(root, "start", {}, path.join(alias, "design.md"));
+  assert.ok(started.additionalContext.includes(ORIGINAL));
+  if (process.platform === "win32") fs.rmdirSync(alias);
+  else fs.unlinkSync(alias);
+  link("alternate");
+  const resumed = hook(root, "start", { source: "resume" });
+  assert.ok(resumed.additionalContext.includes(ORIGINAL), resumed.additionalContext);
+  assert.ok(!resumed.additionalContext.includes("A different agreement"));
+  assert.equal(records(root).at(-1).task_context.path, "approved/design.md");
+});
+
+test("boundary context: a first-stop fallback never claims to recover original session context", t => {
+  const { root } = scratch(t);
+  const rewritten = "The implementer has rewritten the original agreement before the first stop.\n";
+  write(root, TASK, rewritten);
+  git(root, "add", TASK);
+  git(root, "commit", "-qm", "Fixture work before a missed start hook");
+  hook(root, "stop");
+  const resumed = hook(root, "start", { source: "resume" }, TASK);
+  assert.match(resumed.additionalContext, /Task context UNVERIFIED.*not captured at session start/);
+  assert.ok(!resumed.additionalContext.includes(rewritten));
+  assert.equal(records(root).at(-1).task_context.status, "unverified");
+});
+
 test("boundary context: replay project-defined constraints without assuming a UI architecture", async (t) => {
   const cases = [
     ["state ownership", "The order service owns order status; other services must not write it directly."],

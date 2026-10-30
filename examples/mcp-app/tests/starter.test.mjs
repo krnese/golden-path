@@ -170,6 +170,10 @@ test("setup verification checks the configured server and real App without writi
   assert.equal(fs.existsSync(path.join(root, ".golden-path", "config.json")), false);
   const manifest = path.join(root, ".golden-path", "install-manifest.json");
   const installed = fs.readFileSync(manifest, "utf8");
+  const legacy = JSON.stringify({ ...JSON.parse(installed), level: 3 });
+  fs.writeFileSync(manifest, legacy);
+  assert.equal((await verifyApp(root)).runtime.installation.level, 3);
+  assert.equal(fs.readFileSync(manifest, "utf8"), legacy);
   fs.writeFileSync(manifest, "{broken");
   await assert.rejects(verifyApp(root), /Installation manifest unavailable/);
   assert.equal(fs.readFileSync(manifest, "utf8"), "{broken");

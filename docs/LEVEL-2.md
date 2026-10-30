@@ -90,7 +90,8 @@ route. Ordinary preserving implementation needs no additional approval.
 The existing `GOLDEN_PATH_TASK` environment variable can name that committed repository-local task file
 (relative to the repository root, or an absolute path within it). On session start/resume, the start hook
 offers its text from the **fixed session baseline**, not a subsequently rewritten working copy or HEAD.
-The first non-empty task reference is retained for that session; a different requested reference produces
+The first non-empty task reference and resolved repository path are retained for that session;
+retargeting a working-tree alias cannot change the baseline file. A different requested reference produces
 a warning rather than silently replacing it. The baseline must already contain the owner's latest accepted
 record. A Git revision identifies content, not approval.
 
@@ -100,6 +101,8 @@ schema or architecture registry is required. Issue URLs and other references rem
 but automatic replay is **UNVERIFIED** when they do not resolve to a committed local file: read those
 authoritative records explicitly. Missing/uncommitted/outside-repository files are not silently replaced
 with current disk content. Files over 12,000 characters are explicitly excerpted; read the full pinned source.
+Historical symlinks are unverified rather than mistaken for document text. If session start was missed,
+the first-stop fallback is also unverified: it may already contain agent commits, not the original agreement.
 
 The existing `method_files_present` entry records the offered file's path, baseline, SHA-256 and whether it
 was excerpted. This is context evidence/cache, not authorization or proof of understanding. State and ledger

@@ -10,7 +10,7 @@ export const APP_RESOURCES = ["app", "architecture", "engineering", "host"];
 const digest = value => createHash("sha256").update(value).digest("hex");
 const hashSchema = z.string().regex(/^[a-f0-9]{64}$/);
 const buildSchema = z.object({
-  format: z.literal(1), source: hashSchema,
+  format: z.literal(1), source: hashSchema, build: hashSchema,
   resources: z.object(Object.fromEntries(APP_RESOURCES.map(name => [name, hashSchema]))).strict(),
 }).strict();
 const versionSchema = z.object({ version: z.string().min(1).max(100) });
@@ -40,9 +40,12 @@ function buildSnapshot(directory) {
     if (text.match(/<html\b[^>]*\bdata-runtime-source="([a-f0-9]{64})"/)?.[1] !== metadata.source) {
       throw new Error(`Built ${name} panel identity does not match build-info.json.`);
     }
+    if (text.match(/<html\b[^>]*\bdata-runtime-build="([a-f0-9]{64})"/)?.[1] !== metadata.build) {
+      throw new Error(`Built ${name} output identity does not match build-info.json.`);
+    }
     resources[name] = text;
   }
-  return { source: metadata.source, resources };
+  return { source: metadata.source, build: metadata.build, hashes: metadata.resources, resources };
 }
 
 function installation(root) {
@@ -52,7 +55,7 @@ function installation(root) {
       return { status: "missing", version: null, level: null,
         detail: "No copy-in installation manifest. Plugin discovery and manually copied guidance are not inspected." };
     }
-    const data = versionSchema.extend({ level: z.union([z.literal(1), z.literal(2)]) })
+    const data = versionSchema.extend({ level: z.union([z.literal(1), z.literal(2), z.literal(3)]) })
       .parse(JSON.parse(read(boundFile(root, file), 256 * 1024)));
     return { status: "present", version: data.version, level: data.level,
       detail: "Declared copy-in version and level only; not proof of file integrity, discovery, approval or enforcement." };
@@ -63,9 +66,13 @@ function installation(root) {
 }
 
 export function createRuntimeInspector(directory = HERE) {
-  const runningSource = sourceIdentity(directory);
-  const kitVersion = versionSchema.parse(JSON.parse(read(path.resolve(directory, "../../plugin/plugin.json"), 64 * 1024))).version;
-  const appVersion = versionSchema.parse(JSON.parse(read(path.join(directory, "package.json"), 64 * 1024))).version;
+  let runningSource = null, kitVersion = "unknown", appVersion = "unknown";
+  let sourceError;
+  try {
+    kitVersion = versionSchema.parse(JSON.parse(read(path.resolve(directory, "../../plugin/plugin.json"), 64 * 1024))).version;
+    appVersion = versionSchema.parse(JSON.parse(read(path.join(directory, "package.json"), 64 * 1024))).version;
+    runningSource = sourceIdentity(directory);
+  } catch (error) { sourceError = error.message; }
   let pinned;
   let startupError;
   try { pinned = buildSnapshot(directory); }
@@ -74,14 +81,15 @@ export function createRuntimeInspector(directory = HERE) {
     appVersion,
     resource(name) {
       if (!APP_RESOURCES.includes(name)) throw new Error("Unknown App resource.");
-      if (!pinned || pinned.source !== runningSource) {
-        throw new Error(`Build the MCP App, restart its server and reopen the panel before reading resources. ${startupError || "The startup build belongs to different source."}`);
+      if (!runningSource || !pinned || pinned.source !== runningSource) {
+        throw new Error(`Build the MCP App, restart its server and reopen the panel before reading resources. ${sourceError || startupError || "The startup build belongs to different source."}`);
       }
       return pinned.resources[name];
     },
     inspect(root) {
       let checkoutSource = null;
       let builtSource = null;
+      let builtBuild = null;
       let status = "unknown";
       let detail;
       const next = "Review the kit checkout, run npm --prefix <kit>/examples/mcp-app run build, restart the MCP server and close/reopen the App. No upgrade or configuration change is automatic.";
@@ -89,12 +97,14 @@ export function createRuntimeInspector(directory = HERE) {
         checkoutSource = sourceIdentity(directory);
         const built = buildSnapshot(directory);
         builtSource = built.source;
+        builtBuild = built.build;
         if (builtSource !== checkoutSource) {
           status = "rebuild-required";
           detail = "The built App does not match the current kit source.";
-        } else if (runningSource !== checkoutSource || !pinned || pinned.source !== runningSource) {
+        } else if (runningSource !== checkoutSource || !pinned || pinned.source !== runningSource ||
+          pinned.build !== built.build || APP_RESOURCES.some(name => pinned.hashes[name] !== built.hashes[name])) {
           status = "restart-required";
-          detail = "The checkout/build changed after this process loaded, or its startup build was unavailable. The server still serves only its pinned startup UI.";
+          detail = "The checkout/build changed after this process loaded, or its startup identity/build was unavailable. The server serves only valid pinned startup UI.";
         } else {
           status = "current";
           detail = "Running source and pinned UI match this checkout and build. This is not a latest-release, dependency-integrity, host-rendering or protection verdict.";
@@ -103,8 +113,9 @@ export function createRuntimeInspector(directory = HERE) {
         if (checkoutSource) status = "rebuild-required";
         detail = `Version compatibility could not be verified: ${error.message}`;
       }
+      if (sourceError) detail += ` Startup identity unavailable: ${sourceError}`;
       return { kitVersion, appVersion, nodeVersion: process.version, protocolVersion: 1,
-        runningSource, checkoutSource, builtSource, status, detail,
+        runningSource, checkoutSource, builtSource, runningBuild: pinned?.build || null, builtBuild, status, detail,
         next: status === "current" ? "No rebuild or restart indicated. Verify host discovery and rendering separately." : next,
         installation: installation(root) };
     },

@@ -127,11 +127,12 @@ test("the actual UI renders all panels, preserves guided notes across inspection
   const runtime = {
     kitVersion: "3.1.0-preview.1", appVersion: "0.1.0", nodeVersion: process.version, protocolVersion: 1,
     runningSource: "a".repeat(64), checkoutSource: "a".repeat(64), builtSource: "a".repeat(64),
+    runningBuild: "c".repeat(64), builtBuild: "c".repeat(64),
     status: "current", detail: "This checkout and build match. Not a protection verdict.",
     next: "Verify host discovery separately.",
     installation: { status: "missing", version: null, level: null, detail: "No copy-in installation manifest." },
   };
-  document.documentElement.dataset = { runtimeSource: runtime.runningSource };
+  document.documentElement.dataset = { runtimeSource: runtime.runningSource, runtimeBuild: runtime.runningBuild };
   report.runtime = runtime;
   ids.get("runtime-details").open = false;
   app.ontoolresult({ structuredContent: { inspection: report } });
@@ -156,6 +157,15 @@ test("the actual UI renders all panels, preserves guided notes across inspection
   app.ontoolresult({ structuredContent: { inspection: report } });
   assert.match(ids.get("runtime-warning").textContent, /no build identity/);
   document.documentElement.dataset.runtimeSource = runtime.runningSource;
+  document.documentElement.dataset.runtimeBuild = "d".repeat(64);
+  app.ontoolresult({ structuredContent: { inspection: report } });
+  assert.match(ids.get("runtime-warning").textContent, /different server build/);
+  assert.equal(ids.get("goal").value, "Keep my unsaved outcome.");
+  document.documentElement.dataset.runtimeBuild = runtime.runningBuild;
+  app.ontoolresult({ structuredContent: { inspection: { ...report, runtime: {
+    ...runtime, runningBuild: undefined, builtBuild: undefined,
+  } } } });
+  assert.match(ids.get("runtime-warning").textContent, /no build identity/);
   app.ontoolresult({ structuredContent: { inspection: report } });
   app.ontoolresult({ structuredContent: { inspection: { ...report, runtime: { ...runtime, protocolVersion: 2 } } } });
   assert.match(ids.get("error").textContent, /cannot interpret.*protocol/);
@@ -379,6 +389,11 @@ test("the actual UI renders all panels, preserves guided notes across inspection
   assert.equal(ids.get("send-examples").disabled, true);
   assert.equal(ids.get("goal").disabled, true);
   assert.equal(ids.get("owner-decision").disabled, true);
+  for (const id of ["review", "block", "warn"]) assert.equal(ids.get(`choice-${id}`).disabled, true);
+  const pendingException = ids.get("exception").value;
+  ids.get("choice-block").checked = true;
+  ids.get("choice-block").listeners.change();
+  assert.equal(ids.get("exception").value, pendingException);
   assert.equal(ids.get("brief-review").children[0].children[0].children[1].disabled, true);
   assert.equal(ids.get("select-examples").disabled, true);
   assert.equal(ids.get("select-welcome").disabled, true);
@@ -389,6 +404,7 @@ test("the actual UI renders all panels, preserves guided notes across inspection
   accept({});
   await delivery;
   assert.equal(ids.get("goal").disabled, false);
+  for (const id of ["review", "block", "warn"]) assert.equal(ids.get(`choice-${id}`).disabled, false);
   assert.equal(ids.get("journey-next").disabled, false);
   assert.equal(app.closeRequests, 1);
   assert.match(ids.get("proposal-status").textContent, /closure requested.*host decides/);

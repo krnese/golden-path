@@ -49,6 +49,7 @@ function controls() {
   for (const mode of ["guided", "engineering"]) get(`mode-${mode}`).disabled = !current || sending;
   for (const id of [...Object.values(briefFields), "owner-decision", "edit-brief-goal", "apply-brief"]) get(id).disabled = sending;
   for (const button of document.querySelectorAll("[data-brief-edit]")) button.disabled = sending;
+  for (const id of Object.keys(exampleResponses)) get(`choice-${id}`).disabled = sending;
   for (const id of ["select-examples", "select-welcome"]) get(id).disabled = sending;
   get("journey-next").disabled = sending;
   if (sending) {
@@ -414,11 +415,13 @@ function renderEvidenceSummary() {
 function renderRuntime() {
   const runtime = current.runtime;
   const uiSource = document.documentElement.dataset?.runtimeSource;
-  const differentPanel = !!runtime && !!uiSource && uiSource !== runtime.runningSource;
+  const uiBuild = document.documentElement.dataset?.runtimeBuild;
+  const differentPanel = !!runtime && ((!!uiSource && !!runtime.runningSource && uiSource !== runtime.runningSource) ||
+    (!!uiBuild && !!runtime.runningBuild && uiBuild !== runtime.runningBuild));
   const warning = !runtime ? "Version diagnostics are unavailable from this server. Review/update the kit, rebuild, restart the MCP server and reopen the App." :
     differentPanel ? "This App panel belongs to a different server build. Close and reopen it to load the server's pinned UI. If the warning persists, rebuild and restart the MCP server." :
-      !uiSource ? "This App panel has no build identity. Rebuild the kit, restart the MCP server and close/reopen the App." :
-      runtime.status !== "current" ? `${runtime.detail} ${runtime.next}` : "";
+      runtime.status !== "current" ? `${runtime.detail} ${runtime.next}` :
+      !uiSource || !uiBuild || !runtime.runningBuild ? "This App panel or server has no build identity. Rebuild the kit, restart the MCP server and close/reopen the App." : "";
   get("runtime-warning").textContent = warning;
   get("runtime-warning").hidden = !warning;
   if (warning) get("runtime-details").open = true;
@@ -429,7 +432,7 @@ function renderRuntime() {
     `Copy-in method: ${runtime.installation.version || runtime.installation.status}${runtime.installation.level ? `, level ${runtime.installation.level}` : ""}. ${runtime.installation.detail}` :
     "Installed guidance was not verified.";
   get("runtime-sources").textContent = runtime ?
-    `Running: ${runtime.runningSource}\nCheckout: ${runtime.checkoutSource || "unknown"}\nBuilt: ${runtime.builtSource || "unknown"}\nPanel: ${uiSource || "unknown"}` : "";
+    `Running: ${runtime.runningSource || "unknown"}\nCheckout: ${runtime.checkoutSource || "unknown"}\nBuilt: ${runtime.builtSource || "unknown"}\nPanel: ${uiSource || "unknown"}\nRunning output: ${runtime.runningBuild || "unknown"}\nBuilt output: ${runtime.builtBuild || "unknown"}\nPanel output: ${uiBuild || "unknown"}` : "";
   get("runtime-next").textContent = runtime?.next || warning;
 }
 function render() {
@@ -775,6 +778,7 @@ for (const id of ["goal", "expected", "exception", "failure", "boundary", "owner
   });
 }
 for (const [id, response] of Object.entries(exampleResponses)) get(`choice-${id}`).addEventListener("change", () => {
+  if (sending) return;
   if (get(`choice-${id}`).checked) {
     get("exception").value = response;
     proposalChanged();

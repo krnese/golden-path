@@ -22,15 +22,16 @@ function fixture(t) {
   fs.mkdirSync(path.join(target, ".golden-path"), { recursive: true });
   const manifest = path.join(target, ".golden-path", "install-manifest.json");
   fs.writeFileSync(manifest, '{"version":"3.0.0","level":1}');
-  function build() {
+  function build(variant = "") {
     const source = sourceIdentity(directory);
+    const build = digest(source + variant);
     const resources = {};
     for (const name of APP_RESOURCES) {
-      const text = `<html data-runtime-source="${source}">${name}</html>`;
+      const text = `<html data-runtime-source="${source}" data-runtime-build="${build}">${name}${variant}</html>`;
       fs.writeFileSync(path.join(directory, "dist", `${name}.html`), text);
       resources[name] = digest(text);
     }
-    fs.writeFileSync(path.join(directory, "dist", "build-info.json"), JSON.stringify({ format: 1, source, resources }));
+    fs.writeFileSync(path.join(directory, "dist", "build-info.json"), JSON.stringify({ format: 1, source, build, resources }));
   }
   build();
   return { root, directory, target, manifest, build };
@@ -51,10 +52,62 @@ test("runtime diagnostics distinguish declared method, kit and App versions with
   assert.match(result.detail, /not a latest-release/);
   assert.equal(result.runningSource, result.checkoutSource);
   assert.equal(result.runningSource, result.builtSource);
+  assert.equal(result.runningBuild, result.builtBuild);
   assert.equal(fs.readFileSync(f.manifest, "utf8"), before);
   assert.deepEqual(fs.readdirSync(f.target).sort(), [".golden-path"]);
   assert.deepEqual(fs.readdirSync(path.join(f.target, ".golden-path")), ["install-manifest.json"]);
   assert.match(inspector.resource("engineering"), new RegExp(result.runningSource));
+});
+
+test("changed output with unchanged source requires restart and a different panel identity", t => {
+  const f = fixture(t);
+  const old = createRuntimeInspector(f.directory);
+  const before = old.inspect(f.target);
+  const html = old.resource("engineering");
+  f.build("changed dependency output");
+  const changed = old.inspect(f.target);
+  assert.equal(changed.runningSource, changed.checkoutSource);
+  assert.equal(changed.runningSource, before.runningSource);
+  assert.notEqual(changed.runningBuild, changed.builtBuild);
+  assert.equal(changed.status, "restart-required");
+  assert.equal(old.resource("engineering"), html);
+  const restarted = createRuntimeInspector(f.directory);
+  assert.equal(restarted.inspect(f.target).status, "current");
+  assert.match(restarted.resource("engineering"), new RegExp(`data-runtime-build="${changed.builtBuild}"`));
+  assert.notEqual(restarted.resource("engineering"), html);
+});
+
+for (const damage of ["oversized source", "missing source", "malformed version"]) {
+  test(`unavailable startup identity preserves diagnostics and withholds resources: ${damage}`, t => {
+    const f = fixture(t);
+    const file = path.join(f.directory, damage === "malformed version" ? "package.json" : "extra.json");
+    if (damage === "oversized source") fs.writeFileSync(file, "x".repeat(2 * 1024 * 1024 + 1));
+    if (damage === "missing source") fs.unlinkSync(path.join(f.root, "plugin", "scripts", "gate.mjs"));
+    if (damage === "malformed version") fs.writeFileSync(file, "{broken");
+    const inspector = createRuntimeInspector(f.directory);
+    const result = runtimeSchema.parse(inspector.inspect(f.target));
+    assert.equal(result.runningSource, null);
+    assert.notEqual(result.status, "current");
+    assert.match(result.detail, /could not be verified|unavailable/);
+    assert.throws(() => inspector.resource("engineering"), /Build.*restart/);
+    if (damage === "missing source") fs.writeFileSync(path.join(f.root, "plugin", "scripts", "gate.mjs"), "// gate\n");
+    else if (damage === "malformed version") fs.writeFileSync(file, '{"version":"0.1.0"}');
+    else fs.unlinkSync(file);
+    f.build();
+    assert.equal(inspector.inspect(f.target).status, "restart-required");
+    assert.throws(() => inspector.resource("engineering"), /Build.*restart/);
+    assert.equal(createRuntimeInspector(f.directory).inspect(f.target).status, "current");
+  });
+}
+
+test("legacy copy-in level 3 is reported without upgrading the installation", t => {
+  const f = fixture(t);
+  const manifest = '{"version":"2.0.0","level":3}';
+  fs.writeFileSync(f.manifest, manifest);
+  const result = runtimeSchema.parse(createRuntimeInspector(f.directory).inspect(f.target));
+  assert.equal(result.installation.status, "present");
+  assert.equal(result.installation.level, 3);
+  assert.equal(fs.readFileSync(f.manifest, "utf8"), manifest);
 });
 
 test("a running inspector keeps its startup UI while changed source requires rebuild then restart", t => {
@@ -74,7 +127,7 @@ test("a running inspector keeps its startup UI while changed source requires reb
   assert.notEqual(restarted.resource("engineering"), html);
 });
 
-for (const damage of ["missing metadata", "malformed metadata", "future format", "tampered resource", "missing resource", "foreign panel identity"]) {
+for (const damage of ["missing metadata", "malformed metadata", "future format", "tampered resource", "missing resource", "foreign panel identity", "foreign output identity"]) {
   test(`invalid builds remain explicit and require repair: ${damage}`, t => {
     const f = fixture(t);
     const file = path.join(f.directory, "dist", "build-info.json");
@@ -86,10 +139,10 @@ for (const damage of ["missing metadata", "malformed metadata", "future format",
     }
     if (damage === "tampered resource") fs.appendFileSync(path.join(f.directory, "dist", "engineering.html"), "changed");
     if (damage === "missing resource") fs.unlinkSync(path.join(f.directory, "dist", "engineering.html"));
-    if (damage === "foreign panel identity") {
-      const text = `<html data-runtime-source="${"0".repeat(64)}"></html>`;
-      fs.writeFileSync(path.join(f.directory, "dist", "engineering.html"), text);
+    if (damage === "foreign panel identity" || damage === "foreign output identity") {
       const data = JSON.parse(fs.readFileSync(file, "utf8"));
+      const text = `<html data-runtime-source="${damage === "foreign panel identity" ? "0".repeat(64) : data.source}" data-runtime-build="${damage === "foreign output identity" ? "0".repeat(64) : data.build}"></html>`;
+      fs.writeFileSync(path.join(f.directory, "dist", "engineering.html"), text);
       data.resources.engineering = digest(text);
       fs.writeFileSync(file, JSON.stringify(data));
     }

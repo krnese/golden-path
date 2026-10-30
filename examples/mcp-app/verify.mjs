@@ -38,7 +38,8 @@ export async function verifyApp(target) {
     if (client.getServerVersion()?.version !== runtime.appVersion) throw new Error("Server handshake and inspection versions differ. Restart the MCP server.");
     const resource = await client.readResource({ uri: ENGINEERING_RESOURCE });
     if (!resource.contents.some(item => item.uri === ENGINEERING_RESOURCE && typeof item.text === "string" &&
-      item.text.includes("Your project is connected") && item.text.includes(`data-runtime-source="${runtime.runningSource}"`))) {
+      item.text.includes("Your project is connected") && runtime.runningBuild &&
+      item.text.includes(`data-runtime-source="${runtime.runningSource}"`) && item.text.includes(`data-runtime-build="${runtime.runningBuild}"`))) {
       throw new Error("The server did not return the current first-run App resource. Rebuild the kit before retrying.");
     }
     return { root: inspection.root, sessions: inspection.sessions.length, evidence: inspection.evidence.freshness,

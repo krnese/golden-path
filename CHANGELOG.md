@@ -16,6 +16,7 @@ History of the kit. The current way to adopt it is in the [README](README.md); t
   of reliable semantic detection. Existing acceptance ownership remains unchanged.
   Refresh the method-only starter's guidance and App recovery/update notes;
   no runtime, automatic upgrade or new enforcement is bundled into the template.
+  Symlink task entries and missed-start fallback baselines remain explicitly unverified.
 
 - **Safer chat-handoff recovery.** Distinguish an explicit host rejection from
   an unconfirmed delivery after timeout/disconnection: the latter may already
@@ -33,6 +34,8 @@ History of the kit. The current way to adopt it is in the [README](README.md); t
   keeps details collapsed, with explicit mismatch/recovery warnings. Add JSON
   verification and reviewed pin/update/rollback guidance. No automatic upgrades,
   credential changes, integrity attestation or native-host proof is implied.
+  Recognize legacy level-3 manifests, retain diagnostics through startup identity
+  failures and compare output-specific stamps even when source is unchanged.
 
 - **Companion release review fixes.** Re-enable brief review after failed or
   accepted chat delivery when the view remains open, open full setup directly

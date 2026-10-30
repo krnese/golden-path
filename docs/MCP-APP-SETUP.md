@@ -200,7 +200,8 @@ controls. Review those installation changes separately.
 
 Open **Engineering > Version and compatibility**, or ask for either existing
 inspection tool. The report separates kit, App and Node versions, declared
-copy-in method version/level, and running/checkout/build source identities.
+copy-in method version/level, and running/checkout/build source and output identities.
+Output stamps also detect rebuilt dependencies producing different HTML with unchanged source.
 Healthy details stay collapsed and out of Guided; an actual mismatch or missing
 diagnostic/panel identity produces a visible recovery warning.
 
@@ -217,6 +218,8 @@ they are not signed attestations. A copy-in manifest declares a version, not
 proof that its files are unchanged or active. A missing manifest is a valid
 plugin/manual-installation case, not proof that Golden Path is absent.
 An unreadable or malformed manifest remains explicitly unknown.
+Legacy copy-in level 3 is recognized and reported as declared, without upgrading it.
+Unavailable startup source identity leaves inspection/recovery diagnostics available but withholds UI resources.
 
 For machine-readable setup verification:
 

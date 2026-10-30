@@ -67,9 +67,7 @@ test("the real stdio server advertises read-only, target-bound inspection tools"
   assert.equal(tools.find((x) => x.name === INSPECT_SESSION).annotations.readOnlyHint, true);
 });
 
-test("a real running server retains its UI through checkout changes, rebuild and resource damage", async t => {
-  const root = fixture();
-  const before = snapshot(root);
+function kitFixture() {
   const kit = fs.mkdtempSync(path.join(os.tmpdir(), "gp-running-kit-"));
   scratch.push(kit);
   const directory = path.join(kit, "examples", "mcp-app");
@@ -88,6 +86,13 @@ test("a real running server retains its UI through checkout changes, rebuild and
   }
   fs.symlinkSync(path.join(DIRECTORY, "node_modules"), path.join(directory, "node_modules"),
     process.platform === "win32" ? "junction" : "dir");
+  return { kit, directory };
+}
+
+test("a real running server retains its UI through checkout changes, rebuild and resource damage", async t => {
+  const root = fixture();
+  const before = snapshot(root);
+  const { kit, directory } = kitFixture();
   const client = await connect(t, root, true, directory);
   const inspect = async client => (await client.callTool({ name: INSPECT_SESSION, arguments: {} })).structuredContent.inspection.runtime;
   const uri = "ui://golden-path/engineering.html";
@@ -95,6 +100,8 @@ test("a real running server retains its UI through checkout changes, rebuild and
   const original = await resource(client);
   assert.equal((await inspect(client)).status, "current");
   fs.appendFileSync(path.join(directory, "server.mjs"), "\n// Reviewed fixture checkout change.\n");
+  fs.appendFileSync(path.join(directory, "engineering.mjs"), '\nimport "../../dependency.mjs";\n');
+  fs.writeFileSync(path.join(kit, "dependency.mjs"), 'console.log("fixture dependency one");\n');
   assert.equal((await inspect(client)).status, "rebuild-required");
   const build = spawnSync(process.execPath, [path.join(directory, "build.mjs")], { encoding: "utf8", timeout: 30000 });
   assert.equal(build.status, 0, build.stderr);
@@ -106,9 +113,43 @@ test("a real running server retains its UI through checkout changes, rebuild and
   const freshResource = await resource(restarted);
   assert.notEqual(freshResource, original);
   assert.match(freshResource, new RegExp(`data-runtime-source="${fresh.runningSource}"`));
-  fs.writeFileSync(path.join(directory, "dist", "engineering.html"), "damaged output");
-  assert.equal((await inspect(restarted)).status, "rebuild-required");
+  assert.match(freshResource, new RegExp(`data-runtime-build="${fresh.runningBuild}"`));
+  fs.writeFileSync(path.join(kit, "dependency.mjs"), 'console.log("fixture dependency two");\n');
+  const rebuilt = spawnSync(process.execPath, [path.join(directory, "build.mjs")], { encoding: "utf8", timeout: 30000 });
+  assert.equal(rebuilt.status, 0, rebuilt.stderr);
+  const dependencyChange = await inspect(restarted);
+  assert.equal(dependencyChange.runningSource, dependencyChange.checkoutSource);
+  assert.notEqual(dependencyChange.runningBuild, dependencyChange.builtBuild);
+  assert.equal(dependencyChange.status, "restart-required");
   assert.equal(await resource(restarted), freshResource);
+  const latest = await connect(t, root, true, directory);
+  const latestResource = await resource(latest);
+  assert.equal((await inspect(latest)).status, "current");
+  assert.notEqual(latestResource, freshResource);
+  assert.match(latestResource, /fixture dependency two/);
+  fs.writeFileSync(path.join(directory, "dist", "engineering.html"), "damaged output");
+  assert.equal((await inspect(latest)).status, "rebuild-required");
+  assert.equal(await resource(latest), latestResource);
+  assert.deepEqual(snapshot(root), before);
+});
+
+test("a real server with unavailable startup identity still exposes diagnostics but not UI", async t => {
+  const root = fixture();
+  const before = snapshot(root);
+  const { directory } = kitFixture();
+  fs.writeFileSync(path.join(directory, "extra.json"), "x".repeat(2 * 1024 * 1024 + 1));
+  const client = await connect(t, root, true, directory);
+  const tools = (await client.listTools()).tools;
+  assert.equal(tools.length, 2);
+  for (const name of [TOOL, INSPECT_SESSION]) {
+    const result = await client.callTool({ name, arguments: {} });
+    assert.notEqual(result.isError, true);
+    const runtime = result.structuredContent.runtime || result.structuredContent.inspection.runtime;
+    assert.equal(runtime.status, "unknown");
+    assert.equal(runtime.runningSource, null);
+    assert.match(runtime.detail, /diagnostic limit/);
+  }
+  await assert.rejects(client.readResource({ uri: "ui://golden-path/engineering.html" }), /diagnostic limit/);
   assert.deepEqual(snapshot(root), before);
 });
 
