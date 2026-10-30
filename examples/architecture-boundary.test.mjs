@@ -127,12 +127,25 @@ test("boundary context: replay the original task on resume, despite rewritten an
 
 test("boundary context: snake_case resume and an absolute local task retain the same pinned source", (t) => {
   const { root, base } = scratch(t);
-  hook(root, "start", {}, path.join(root, TASK));
+  const started = hook(root, "start", {}, path.join(root, TASK));
+  assert.ok(started.additionalContext.includes(ORIGINAL), started.additionalContext);
   write(root, TASK, "Uncommitted replacement intent.\n");
   const resumed = hook(root, "start", { sessionId: undefined, session_id: "boundary-replay", source: "resume" });
-  assert.ok(resumed.additionalContext.includes(ORIGINAL));
+  assert.ok(resumed.additionalContext.includes(ORIGINAL), resumed.additionalContext);
   assert.ok(!resumed.additionalContext.includes("Uncommitted replacement intent."));
   assert.equal(records(root).at(-1).task_context.base_sha, base);
+});
+
+test("boundary context: filesystem aliases resolve to the original repository task", (t) => {
+  const { root } = scratch(t);
+  const alias = path.join(root, "workspace-alias");
+  fs.symlinkSync(root, alias, process.platform === "win32" ? "junction" : "dir");
+  const started = hook(root, "start", {}, path.join(alias, TASK));
+  assert.ok(started.additionalContext.includes(ORIGINAL), started.additionalContext);
+  assert.equal(records(root).at(-1).task_context.path, TASK);
+  write(root, TASK, "A rewritten task through the same filesystem alias.\n");
+  const resumed = hook(root, "start", { source: "resume" });
+  assert.ok(resumed.additionalContext.includes(ORIGINAL), resumed.additionalContext);
 });
 
 test("boundary context: replay project-defined constraints without assuming a UI architecture", async (t) => {

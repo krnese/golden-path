@@ -330,7 +330,7 @@ function taskContext(root, task, base) {
     evidence: { status: "unverified", reason },
   });
   if (typeof task !== "string" || !base) return unavailable("no task-file reference or fixed baseline is available.");
-  const rel = path.relative(root, path.resolve(root, task)).split(path.sep).join("/");
+  const rel = relTo(root, task);
   if (!rel || rel === ".." || rel.startsWith("../") || path.isAbsolute(rel))
     return unavailable("only committed repository-local task files can be replayed automatically; external references must be read explicitly.");
   const [code, source, error] = git(root, "cat-file", "blob", `${base}:${rel}`);
