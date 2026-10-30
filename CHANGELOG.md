@@ -7,6 +7,36 @@ History of the kit. The current way to adopt it is in the [README](README.md); t
 
 ## Unreleased
 
+- **Preserve the boundary, not the agent's justification.** Keep a few accepted
+  architectural statements, owner and revision in existing records; compare
+  consequential effects and the cumulative diff, and escalate only affected work.
+  Start/resume can replay the existing task-file reference from the fixed session
+  baseline, with explicit missing/excerpted context and changed-reference warnings.
+  Add a scripted architectural regression replay, not a policy engine or a claim
+  of reliable semantic detection. Existing acceptance ownership remains unchanged.
+  Refresh the method-only starter's guidance and App recovery/update notes;
+  no runtime, automatic upgrade or new enforcement is bundled into the template.
+  Symlink task entries and missed-start fallback baselines remain explicitly unverified.
+
+- **Safer chat-handoff recovery.** Distinguish an explicit host rejection from
+  an unconfirmed delivery after timeout/disconnection: the latter may already
+  exist in chat, so block identical resends from that panel and do not request
+  closure. Show pending delivery, preserve its state on re-review and prevent
+  copy-selection races while awaiting the bounded SDK acknowledgement.
+  Exercise lost/late acknowledgement using the actual SDK and an isolated
+  in-memory host. Document native restart/render/delivery/closure checks
+  separately from browser/SDK evidence; native completion is not inferred.
+
+- **Read-only runtime compatibility diagnostics.** Existing App inspection tools
+  and setup verification separate kit, App, Node and declared copy-in versions
+  from running/checkout/build identities. Hashed, stamped resources are pinned
+  per server startup; rebuilds cannot hot-swap an older server's UI. Engineering
+  keeps details collapsed, with explicit mismatch/recovery warnings. Add JSON
+  verification and reviewed pin/update/rollback guidance. No automatic upgrades,
+  credential changes, integrity attestation or native-host proof is implied.
+  Recognize legacy level-3 manifests, retain diagnostics through startup identity
+  failures and compare output-specific stamps even when source is unchanged.
+
 - **Companion release review fixes.** Re-enable brief review after failed or
   accepted chat delivery when the view remains open, open full setup directly
   from the welcome action, and exclude tracked-but-deleted files from local

@@ -30,6 +30,27 @@ can see what the tests could not. The pull request's check results, not local ru
 starts before it is compared with the older acceptance, so check the starting commit first and start a new
 session after an owner revision.
 
+**Keep architectural intent with the work.** Put the few important "must stay true" statements, their decision
+owner and accepted revision in the existing task/design/review record. Do not create another registry or
+treat a commit, draft, agent-authored explanation or passing tests as owner approval. Implementation is free
+to evolve inside those statements; changing their meaning is the owner's decision.
+The project's authoritative records define its constraints. Illustrations and test fixtures in this kit
+do not impose architectural choices on other projects.
+
+**Check effects, not filenames.** Before consequential changes, identify which accepted decisions the proposed
+effects could invalidate: interfaces, state ownership, contracts, authority or lifecycle assumptions. Explain
+whether the change preserves, modifies or contradicts them, or what remains uncertain. Ordinary preserving
+work needs no extra approval. Judge actual purpose and behavior against the accepted decisions, not labels
+or an implementation's rewritten rationale. Use bounded investigation to resolve uncertainty; escalate
+if it remains material.
+
+Re-read the accepted sources after resume or context loss and before the next consequential change. Give
+delegated agents the same source references/revisions and relevant statements, not only a summary of the
+implementation. Before reporting, reconcile the cumulative change against the accepted decisions, not just
+the latest patch. Rewriting documentation or developer tests does not supersede the original agreement.
+Use independently governed acceptance/architectural checks where available; state what they do not cover.
+This is a reasoning checkpoint, not a semantic detector or proof that context was understood.
+
 **Delegation change.** When the work seems to need a change to the outcome, constraints, permitted effects,
 security/privacy, blast radius or the acceptance examples, do not silently expand the assignment. Report:
 what changed, why, consequence, evidence available, unknowns, decision required. Continue only separable,

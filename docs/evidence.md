@@ -32,6 +32,29 @@ must not be combined into a claim that naturally occurring tampering was prevent
 The [adoption checklist](ADOPTION.md) packages a proposed setup path. Its existence is not evidence
 of adoption demand or that independent owners can use the workflow without assistance.
 
+## Architectural-boundary mechanism replay
+
+Run `node --test examples/architecture-boundary.test.mjs` for a disposable-repository replay.
+It is a developer regression test with simulated owner-controlled artifacts, **not new owner-approved
+acceptance for this repository** and not an AI evaluation. No real acceptance files are changed.
+
+Context-replay cases also use project-defined state ownership, API compatibility and retry/idempotency
+constraints to check that replay does not depend on a UI architecture. These cases do not evaluate semantic
+correctness in those domains. All fixture constraints are test inputs, not architectural defaults for adopters.
+
+The cases check original task-file replay after documentation rewrites and resume; explicit unavailable
+and excerpted context; a competing conversational input rejected by an unchanged architectural fitness
+check even when developer tests follow the regression; legitimate replacement/form/styling changes; and
+rewritten, committed acceptance rejected by fixed-baseline integrity even when both test commands go green.
+The existing required kit matrix includes this replay. Local execution is not CI evidence.
+
+This establishes only the specified mechanisms when those checks are configured. The fixture's declared
+input purposes are not a general UI analyzer. It does not show that an agent recognizes a contradiction
+before editing, that context was understood, that silent compaction/model switching is detected, or that
+arbitrary mutations and local-state tampering are prevented. No routing-causality claim follows.
+The next behavioral evaluation is an owner-judged replay with real agent decisions and benign controls,
+measuring misses, detection timing, unnecessary escalation and overhead against the existing workflow.
+
 ## Issue-linked validation rehearsal (2026-10-26)
 
 **The mechanisms worked in this local run. The full business-and-engineering

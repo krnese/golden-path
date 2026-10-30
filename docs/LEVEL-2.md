@@ -80,6 +80,40 @@ See the [adoption report](ADOPTION.md#read-only-adoption-report) for scope and e
   - Determined workarounds exist: other tools, generated code, or special-casing the implementation. ImpossibleBench reports that read-only tests stop edits but not other exploits.
 - `method_files_present` (session start) records that the skill files existed and context was offered. **It does not show the agent read or followed the skill.**
 
+## Keeping the boundary through a long session
+
+Keep a few "must stay true" statements, their decision owner and accepted revision in an existing task or
+design record. Before consequential changes, assess proposed effects against them; after implementation,
+compare the cumulative diff. Material conflicts or unresolved uncertainty use the existing delegation-change
+route. Ordinary preserving implementation needs no additional approval.
+
+The existing `GOLDEN_PATH_TASK` environment variable can name that committed repository-local task file
+(relative to the repository root, or an absolute path within it). On session start/resume, the start hook
+offers its text from the **fixed session baseline**, not a subsequently rewritten working copy or HEAD.
+The first non-empty task reference and resolved repository path are retained for that session;
+retargeting a working-tree alias cannot change the baseline file. A different requested reference produces
+a warning rather than silently replacing it. The baseline must already contain the owner's latest accepted
+record. A Git revision identifies content, not approval.
+
+For example, set `GOLDEN_PATH_TASK` to your existing `docs/design.md` before starting the host session
+(PowerShell: `$env:GOLDEN_PATH_TASK = 'docs\design.md'`). This is optional; no new file, configuration
+schema or architecture registry is required. Issue URLs and other references remain valid task identifiers,
+but automatic replay is **UNVERIFIED** when they do not resolve to a committed local file: read those
+authoritative records explicitly. Missing/uncommitted/outside-repository files are not silently replaced
+with current disk content. Files over 12,000 characters are explicitly excerpted; read the full pinned source.
+Historical symlinks are unverified rather than mistaken for document text. If session start was missed,
+the first-stop fallback is also unverified: it may already contain agent commits, not the original agreement.
+
+The existing `method_files_present` entry records the offered file's path, baseline, SHA-256 and whether it
+was excerpted. This is context evidence/cache, not authorization or proof of understanding. State and ledger
+files remain agent-writable. The hook's Git work shares a 10-second budget within its 15-second host timeout.
+No compaction/model-switch hook or automatic context propagation to arbitrary subagents is added:
+the skill tells the agent to re-read accepted sources after context loss and carry them into delegation.
+
+Configured acceptance checks and fixed-baseline integrity remain the deterministic backstop; protect actual
+architectural fitness checks through those existing controls. The impact assessment is guidance, **not an
+enforced semantic detector**. No new approval service or mandatory Code Owner setting is introduced.
+
 ## Changing acceptance tests on purpose (authorised revision)
 
 The PR-base comparison blocks agent edits to protected acceptance tests. Legitimate owner changes go through GitHub's own controls; this adds no new system.

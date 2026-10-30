@@ -156,9 +156,28 @@ test("setup verification checks the configured server and real App without writi
   assert.equal(path.relative(root, verified.root), "");
   assert.equal(verified.sessions, 0);
   assert.equal(verified.evidence, "unavailable");
+  assert.equal(verified.runtime.status, "current");
+  assert.equal(verified.runtime.installation.level, 1);
+  assert.equal(verified.hostVerification, "not-performed");
+  const machine = spawnSync(process.execPath, [path.join(DIRECTORY, "verify.mjs"), "--target", root, "--json"],
+    { encoding: "utf8", timeout: 30000 });
+  assert.equal(machine.status, 0, machine.stderr);
+  const data = JSON.parse(machine.stdout);
+  assert.equal(data.runtime.status, "current");
+  assert.equal(data.hostVerification, "not-performed");
   assert.equal(git(root, "status", "--porcelain"), before);
   assert.equal(fs.existsSync(path.join(root, ".golden-path", "state")), false);
   assert.equal(fs.existsSync(path.join(root, ".golden-path", "config.json")), false);
+  const manifest = path.join(root, ".golden-path", "install-manifest.json");
+  const installed = fs.readFileSync(manifest, "utf8");
+  const legacy = JSON.stringify({ ...JSON.parse(installed), level: 3 });
+  fs.writeFileSync(manifest, legacy);
+  assert.equal((await verifyApp(root)).runtime.installation.level, 3);
+  assert.equal(fs.readFileSync(manifest, "utf8"), legacy);
+  fs.writeFileSync(manifest, "{broken");
+  await assert.rejects(verifyApp(root), /Installation manifest unavailable/);
+  assert.equal(fs.readFileSync(manifest, "utf8"), "{broken");
+  fs.writeFileSync(manifest, installed);
   config.mcpServers[SERVER_NAME].command = "unreviewed-command";
   writeConfig(root, JSON.stringify(config));
   await assert.rejects(verifyApp(root), /differs.*no configured command was run/);

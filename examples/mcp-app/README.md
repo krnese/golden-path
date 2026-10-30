@@ -25,6 +25,28 @@ After a chat send finishes, retained drafts can be edited and reviewed again
 even if delivery failed or the host left the App open. **Inspect setup details**
 on the welcome screen opens the full technical view directly.
 
+## Version and compatibility
+
+Engineering has collapsed **Version and compatibility** details; Guided only
+adds a warning when compatibility cannot be established. Existing inspection
+tools report kit/App/Node versions, declared copy-in method version/level, and
+running/checkout/build identities without changing files or credentials.
+
+The build stamps all four self-contained resources and writes
+`dist/build-info.json` last with source and resource hashes. The server validates
+and pins its startup resources, including the optional architecture example.
+The local preview pins its host HTML too. Rebuilding does not replace a running
+process's UI: rebuild, restart the MCP server/preview and close/reopen the panel.
+Missing, invalid or mixed builds fail explicitly; older inspection responses
+remain readable but show unavailable diagnostics, never inferred compatibility.
+
+`verify.mjs --target <application> [--json]` checks the trusted configured
+**fresh** process, handshake, inspection and actual resource identity.
+`current` means locally consistent, not latest, dependency integrity, approved
+acceptance, host rendering or protection. Copy-in version declarations are
+separate from file integrity and plugin discovery. See
+[reviewed updates, pinning and rollback](../../docs/MCP-APP-SETUP.md#keeping-the-app-up-to-date).
+
 ## Two presentations, the same recorded facts
 
 **Guided | Engineering** remains visible above the welcome screen and workspace;
@@ -87,6 +109,13 @@ the host accepts that message does the App call `requestTeardown`; the host
 decides whether to close it. Failed delivery leaves the message and App in place.
 A failed close request is reported separately from successful delivery, and the
 same accepted message is not resent. Otherwise, select/copy/paste works.
+An explicit host rejection permits a deliberate retry. A timeout/disconnect
+instead leaves delivery **unconfirmed**: the message may already be in chat,
+so no closure or resend of that exact text is requested. Host confirmation is
+bounded to 60 seconds; editing and copy-selection actions wait with it.
+Re-reviewing preserves accepted/unconfirmed status. These safeguards are local
+to the current panel; after reopening, check chat before sending again.
+See [recovery and native-host verification](../../docs/MCP-APP-SETUP.md#if-continuing-in-chat-does-not-complete).
 Nothing is sent automatically. Notes remain local to the current view, are not
 written to browser storage or a separate contract store, and are lost on closing
 or reloading the App. Copy them into the existing request/conversation to retain

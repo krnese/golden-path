@@ -1,6 +1,22 @@
 import { z } from "zod";
 
 export const sessionIdSchema = z.string().regex(/^[A-Za-z0-9_-]{1,80}$/);
+export const runtimeSchema = z.object({
+  kitVersion: z.string(), appVersion: z.string(), nodeVersion: z.string(),
+  protocolVersion: z.literal(1),
+  runningSource: z.string().regex(/^[a-f0-9]{64}$/).nullable(),
+  checkoutSource: z.string().regex(/^[a-f0-9]{64}$/).nullable(),
+  builtSource: z.string().regex(/^[a-f0-9]{64}$/).nullable(),
+  runningBuild: z.string().regex(/^[a-f0-9]{64}$/).nullable().optional(),
+  builtBuild: z.string().regex(/^[a-f0-9]{64}$/).nullable().optional(),
+  status: z.enum(["current", "rebuild-required", "restart-required", "unknown"]),
+  detail: z.string(), next: z.string(),
+  installation: z.object({
+    status: z.enum(["present", "missing", "unknown"]),
+    version: z.string().nullable(), level: z.union([z.literal(1), z.literal(2), z.literal(3)]).nullable(),
+    detail: z.string(),
+  }),
+});
 export const briefSchema = z.object({
   outcome: z.string().trim().min(1).max(2000).optional(),
   behavior: z.string().trim().min(1).max(2000).optional(),
@@ -96,6 +112,7 @@ export const inspectionSchema = z.object({
   handoff: z.string(),
   brief: briefSchema.optional(),
   repository: repositorySchema.optional(),
+  runtime: runtimeSchema.optional(),
   artifact: z.object({
     path: z.string(), view: z.enum(["source", "diff"]), text: z.string(),
     truncated: z.boolean(), editorUrl: z.string(),

@@ -1,4 +1,3 @@
-import fs from "node:fs";
 import path from "node:path";
 import http from "node:http";
 import { fileURLToPath } from "node:url";
@@ -7,6 +6,7 @@ import { Client } from "@modelcontextprotocol/client";
 import { StdioClientTransport } from "@modelcontextprotocol/client/stdio";
 import { DIRECTORY, RESOURCE, TOOL, ARCHITECTURE_RESOURCE, READ_MODEL, UPDATE_MODEL, ENGINEERING_RESOURCE, INSPECT_SESSION, optionsFromArgs } from "./server.mjs";
 import { inspectionInput } from "./engineering-schema.mjs";
+import { createRuntimeInspector } from "./runtime-info.mjs";
 
 async function jsonInput(req, label = "Preview request") {
   const chunks = [];
@@ -22,6 +22,7 @@ async function jsonInput(req, label = "Preview request") {
 export async function startPreview(target, port = 4328, state, session, engineering = false) {
   if (engineering && state) throw new Error("Choose either engineering inspection or the isolated architecture example.");
   const engineeringView = engineering || !!session;
+  const host = createRuntimeInspector().resource("host");
   const client = new Client({ name: "golden-path-local-preview", version: "0.1.0" });
   await client.connect(new StdioClientTransport({
     command: process.execPath, args: [path.join(DIRECTORY, "server.mjs"), "--target", target, ...(state ? ["--state", state] : []), ...(session ? ["--session", session] : [])],
@@ -40,7 +41,7 @@ export async function startPreview(target, port = 4328, state, session, engineer
       if (req.method === "GET" && new URL(req.url, `http://${authority}`).pathname === "/") {
         res.setHeader("Content-Type", "text/html; charset=utf-8");
         res.setHeader("Content-Security-Policy", "default-src 'none'; script-src 'unsafe-inline'; style-src 'unsafe-inline'; frame-src 'self'; connect-src 'self'; frame-ancestors 'none'");
-        res.end(fs.readFileSync(path.join(DIRECTORY, "dist", "host.html"), "utf8")
+        res.end(host
           .replace("<!-- VIEW -->", engineeringView ? "engineering" : state ? "architecture" : "adoption"));
       } else if (req.method === "GET" && req.url === "/app") {
         const uri = engineeringView ? ENGINEERING_RESOURCE : state ? ARCHITECTURE_RESOURCE : RESOURCE;

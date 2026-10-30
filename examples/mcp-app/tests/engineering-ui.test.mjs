@@ -3,8 +3,10 @@ import fs from "node:fs";
 import { test } from "node:test";
 import { inspectionSchema } from "../engineering-schema.mjs";
 import { proposalText, plainEvidence } from "../guided-content.mjs";
+import { App as SdkApp } from "@modelcontextprotocol/ext-apps";
+import { AppBridge } from "@modelcontextprotocol/ext-apps/app-bridge";
 
-test("the actual UI renders all panels, preserves guided notes across inspection and surfaces errors", async () => {
+test("the actual UI renders all panels, preserves guided notes across inspection and surfaces errors", async t => {
   const nodes = [];
   class Node {
     constructor(tag = "div", text = "", value = "") {
@@ -120,6 +122,57 @@ test("the actual UI renders all panels, preserves guided notes across inspection
   assert.equal(ids.get("error").hidden, true);
   assert.equal(ids.get("goal").value, "Keep my unsaved outcome.");
   app.ontoolresult({ structuredContent: { inspection: report } });
+  assert.equal(ids.get("runtime-warning").hidden, false);
+  assert.match(ids.get("runtime-warning").textContent, /Version diagnostics are unavailable/);
+  const runtime = {
+    kitVersion: "3.1.0-preview.1", appVersion: "0.1.0", nodeVersion: process.version, protocolVersion: 1,
+    runningSource: "a".repeat(64), checkoutSource: "a".repeat(64), builtSource: "a".repeat(64),
+    runningBuild: "c".repeat(64), builtBuild: "c".repeat(64),
+    status: "current", detail: "This checkout and build match. Not a protection verdict.",
+    next: "Verify host discovery separately.",
+    installation: { status: "missing", version: null, level: null, detail: "No copy-in installation manifest." },
+  };
+  document.documentElement.dataset = { runtimeSource: runtime.runningSource, runtimeBuild: runtime.runningBuild };
+  report.runtime = runtime;
+  ids.get("runtime-details").open = false;
+  app.ontoolresult({ structuredContent: { inspection: report } });
+  assert.equal(ids.get("runtime-warning").hidden, true);
+  assert.equal(ids.get("runtime-details").open, false);
+  assert.match(ids.get("runtime-versions").textContent, /Kit 3.1.0-preview.1/);
+  ids.get("runtime-details").open = true;
+  app.ontoolresult({ structuredContent: { inspection: report } });
+  assert.equal(ids.get("runtime-details").open, true, "Refresh preserves a user's open version details.");
+  for (const status of ["rebuild-required", "restart-required", "unknown"]) {
+    app.ontoolresult({ structuredContent: { inspection: { ...report, runtime: {
+      ...runtime, status, detail: `Compatibility ${status}.`, next: "Rebuild, restart and reopen.",
+    } } } });
+    assert.equal(ids.get("runtime-warning").hidden, false);
+    assert.match(ids.get("runtime-warning").textContent, new RegExp(status));
+    assert.equal(ids.get("goal").value, "Keep my unsaved outcome.");
+  }
+  document.documentElement.dataset.runtimeSource = "b".repeat(64);
+  app.ontoolresult({ structuredContent: { inspection: report } });
+  assert.match(ids.get("runtime-warning").textContent, /different server build/);
+  delete document.documentElement.dataset.runtimeSource;
+  app.ontoolresult({ structuredContent: { inspection: report } });
+  assert.match(ids.get("runtime-warning").textContent, /no build identity/);
+  document.documentElement.dataset.runtimeSource = runtime.runningSource;
+  document.documentElement.dataset.runtimeBuild = "d".repeat(64);
+  app.ontoolresult({ structuredContent: { inspection: report } });
+  assert.match(ids.get("runtime-warning").textContent, /different server build/);
+  assert.equal(ids.get("goal").value, "Keep my unsaved outcome.");
+  document.documentElement.dataset.runtimeBuild = runtime.runningBuild;
+  app.ontoolresult({ structuredContent: { inspection: { ...report, runtime: {
+    ...runtime, runningBuild: undefined, builtBuild: undefined,
+  } } } });
+  assert.match(ids.get("runtime-warning").textContent, /no build identity/);
+  app.ontoolresult({ structuredContent: { inspection: report } });
+  app.ontoolresult({ structuredContent: { inspection: { ...report, runtime: { ...runtime, protocolVersion: 2 } } } });
+  assert.match(ids.get("error").textContent, /cannot interpret.*protocol/);
+  assert.equal(ids.get("goal").value, "Keep my unsaved outcome.");
+  app.ontoolresult({ structuredContent: { inspection: report } });
+  assert.equal(ids.get("error").hidden, true);
+  assert.equal(ids.get("runtime-warning").hidden, true);
   assert.match(ids.get("status").textContent, /Connected. Begin in chat/, ids.get("error").textContent);
   assert.equal(ids.get("first-run").hidden, false);
   assert.equal(ids.get("workspace").hidden, true);
@@ -274,6 +327,7 @@ test("the actual UI renders all panels, preserves guided notes across inspection
   assert.match(ids.get("proposal-status").textContent, /Could not share in chat/);
   assert.equal(ids.get("proposal-text").value, app.sent.content[0].text);
   assert.equal(ids.get("journey-next").disabled, false);
+  assert.equal(ids.get("send-examples").disabled, false, "An explicit host rejection permits an intentional retry.");
   ids.get("brief-review").children[0].children[0].children[1].listeners.click();
   ids.get("goal").value = "A revised outcome after failed delivery.";
   ids.get("goal").listeners.input();
@@ -335,16 +389,28 @@ test("the actual UI renders all panels, preserves guided notes across inspection
   assert.equal(ids.get("send-examples").disabled, true);
   assert.equal(ids.get("goal").disabled, true);
   assert.equal(ids.get("owner-decision").disabled, true);
+  for (const id of ["review", "block", "warn"]) assert.equal(ids.get(`choice-${id}`).disabled, true);
+  const pendingException = ids.get("exception").value;
+  ids.get("choice-block").checked = true;
+  ids.get("choice-block").listeners.change();
+  assert.equal(ids.get("exception").value, pendingException);
   assert.equal(ids.get("brief-review").children[0].children[0].children[1].disabled, true);
+  assert.equal(ids.get("select-examples").disabled, true);
+  assert.equal(ids.get("select-welcome").disabled, true);
+  assert.match(ids.get("proposal-status").textContent, /Waiting up to 60 seconds/);
   await ids.get("send-examples").listeners.click();
   assert.deepEqual(calls, ["send"]);
   assert.equal(app.closeRequests, undefined);
   accept({});
   await delivery;
   assert.equal(ids.get("goal").disabled, false);
+  for (const id of ["review", "block", "warn"]) assert.equal(ids.get(`choice-${id}`).disabled, false);
   assert.equal(ids.get("journey-next").disabled, false);
   assert.equal(app.closeRequests, 1);
   assert.match(ids.get("proposal-status").textContent, /closure requested.*host decides/);
+  prepare();
+  assert.match(ids.get("proposal-status").textContent, /already accepted/);
+  assert.doesNotMatch(ids.get("proposal-status").textContent, /has not been sent/);
   await ids.get("send-examples").listeners.click();
   assert.deepEqual(calls, ["send"]);
   assert.equal(app.closeRequests, 1);
@@ -422,4 +488,73 @@ test("the actual UI renders all panels, preserves guided notes across inspection
   assert.equal(ids.get("owner-decision").value, "review");
   assert.match(ids.get("proposal-text").value, /A replacement conversation brief/);
   assert.doesNotMatch(ids.get("proposal-text").value, /My explicit owner decision/);
+
+  const pair = [0, 1].map(i => ({
+    start: async () => {},
+    close: async () => {},
+    send: async message => queueMicrotask(() => pair[1 - i].onmessage?.(structuredClone(message))),
+  }));
+  const sdk = new SdkApp({ name: "local-handoff-test", version: "0.1.0" }, {}, { autoResize: false });
+  const bridge = new AppBridge(null, { name: "isolated-test-host", version: "0.1.0" },
+    { message: { text: {} } }, { hostContext: { platform: "web" } });
+  t.after(async () => { await sdk.close(); await bridge.close(); });
+  const received = [];
+  let acknowledge;
+  bridge.onmessage = async message => {
+    received.push(message);
+    return new Promise(resolve => { acknowledge = resolve; });
+  };
+  await bridge.connect(pair[0]);
+  await sdk.connect(pair[1]);
+  app.sendMessage = (message, options) => {
+    assert.equal(options.timeout, 60_000);
+    return sdk.sendMessage(message, { ...options, timeout: 10 });
+  };
+  const closesBeforeTimeout = app.closeRequests;
+  ids.get("message-details").open = false;
+  const timedOut = ids.get("send-examples").listeners.click();
+  assert.equal(ids.get("select-examples").disabled, true);
+  ids.get("select-examples").listeners.click();
+  assert.equal(ids.get("message-details").open, false);
+  await timedOut;
+  assert.equal(received.length, 1, "The real SDK delivered the message even though its acknowledgement timed out.");
+  assert.equal(received[0].content[0].text, ids.get("proposal-text").value);
+  assert.match(ids.get("proposal-status").textContent, /Delivery was not confirmed.*Request timed out.*may already be in chat/);
+  assert.equal(app.closeRequests, closesBeforeTimeout);
+  assert.equal(ids.get("send-examples").disabled, true);
+  assert.equal(ids.get("select-examples").disabled, false);
+  assert.equal(ids.get("goal").disabled, false);
+  acknowledge({});
+  await new Promise(resolve => setImmediate(resolve));
+  prepare();
+  assert.match(ids.get("proposal-status").textContent, /Delivery was not confirmed/);
+  assert.equal(ids.get("send-examples").disabled, true);
+  await ids.get("send-examples").listeners.click();
+  assert.equal(received.length, 1);
+  assert.equal(app.closeRequests, closesBeforeTimeout);
+  const uncertainGoal = ids.get("goal").value;
+  ids.get("goal").value = "A deliberately different follow-up after checking chat.";
+  ids.get("goal").listeners.input();
+  prepare();
+  assert.equal(ids.get("send-examples").disabled, false);
+  ids.get("goal").value = uncertainGoal;
+  ids.get("goal").listeners.input();
+  prepare();
+  assert.equal(ids.get("send-examples").disabled, true, "Editing and restoring a draft cannot erase its unconfirmed delivery.");
+  await sdk.close();
+  for (const id of ["goal", "expected", "exception", "failure", "boundary"]) ids.get(id).value = "";
+  ids.get("welcome-prompt").value = "A separate local welcome test, never sent to Copilot.";
+  await ids.get("send-welcome").listeners.click();
+  assert.match(ids.get("welcome-status").textContent, /Delivery was not confirmed/);
+  assert.equal(ids.get("send-welcome").disabled, true);
+  assert.equal(app.closeRequests, closesBeforeTimeout);
+  ids.get("select-welcome").listeners.click();
+  assert.match(ids.get("welcome-status").textContent, /Check there before copying/);
+  assert.doesNotMatch(ids.get("welcome-status").textContent, /It has not been sent/);
+  ids.get("welcome-prompt").value = "An explicitly accepted local welcome fixture.";
+  app.sendMessage = async () => ({});
+  await ids.get("send-welcome").listeners.click();
+  ids.get("select-welcome").listeners.click();
+  assert.match(ids.get("welcome-status").textContent, /already accepted/);
+  assert.equal(ids.get("send-welcome").disabled, true);
 });

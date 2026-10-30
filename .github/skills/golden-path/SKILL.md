@@ -9,8 +9,9 @@ A way of working with the agent you already have. It grants no authority. See [m
 For first use, bootstrap, team or brownfield adoption, follow [guided adoption](references/ADOPTION.md); ground each change's agreement in shared authoritative records and reuse existing controls.
 
 1. **Intent**: restate the outcome the expert wants, in their terms. Ask only questions that change the next step.
-2. **Context**: use the authoritative sources the expert or repo names (issues, docs, policies, existing code). Do not invent requirements.
-3. **Boundary**: what must stay true, and which effects are permitted. Editing and testing are not merging or deploying.
+2. **Context**: use the authoritative sources the expert or repo names (issues, docs, policies, existing code); do not invent requirements. Keep the few "must stay true" statements, decision owner and accepted revision in those records, not only chat.
+3. **Boundary**: before consequential changes, compare proposed effects with those statements: preserves, modifies, contradicts or uncertain. Re-read the accepted sources after resume/context loss; carry them into delegation.
+   Reconcile the cumulative diff before reporting. A material conflict or unresolved uncertainty is a **DELEGATION CHANGE**: pause affected work, explain the impact and seek the owner's decision; continue only separable permitted work. Do not rewrite the agreement or its checks to justify implementation. Editing and testing are not merging or deploying.
 4. **Acceptance**: the expert's examples are the acceptance tests (the repository says where they live).
    - Before writing code, check that your starting commit has the owner's latest acceptance (compare with the
      default branch). If it is behind, tell the user to update and start a new session.

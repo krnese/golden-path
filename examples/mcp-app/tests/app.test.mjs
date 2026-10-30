@@ -3,6 +3,7 @@ import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
 import { spawnSync } from "node:child_process";
+import { APP_RESOURCES } from "../runtime-info.mjs";
 import { afterEach, test } from "node:test";
 import { Client } from "@modelcontextprotocol/client";
 import { StdioClientTransport } from "@modelcontextprotocol/client/stdio";
@@ -44,12 +45,12 @@ function snapshot(root) {
   walk(root);
   return files;
 }
-async function connect(t, root, apps = true) {
+async function connect(t, root, apps = true, directory = DIRECTORY) {
   const client = new Client({ name: "golden-path-test", version: "0.1.0" },
     { capabilities: apps ? { extensions: { "io.modelcontextprotocol/ui": { mimeTypes: [RESOURCE_MIME_TYPE] } } } : {} });
   t.after(() => client.close());
   await client.connect(new StdioClientTransport({
-    command: process.execPath, args: [path.join(DIRECTORY, "server.mjs"), "--target", root],
+    command: process.execPath, args: [path.join(directory, "server.mjs"), "--target", root],
   }));
   return client;
 }
@@ -64,6 +65,92 @@ test("the real stdio server advertises read-only, target-bound inspection tools"
   assert.equal(tools[0].annotations.readOnlyHint, true);
   assert.equal(tools[0].inputSchema.additionalProperties, false);
   assert.equal(tools.find((x) => x.name === INSPECT_SESSION).annotations.readOnlyHint, true);
+});
+
+function kitFixture() {
+  const kit = fs.mkdtempSync(path.join(os.tmpdir(), "gp-running-kit-"));
+  scratch.push(kit);
+  const directory = path.join(kit, "examples", "mcp-app");
+  fs.mkdirSync(path.join(directory, "dist"), { recursive: true });
+  fs.mkdirSync(path.join(kit, "plugin", "scripts"), { recursive: true });
+  for (const entry of fs.readdirSync(DIRECTORY, { withFileTypes: true })) {
+    if (entry.isFile() && /\.(mjs|html|css|json)$/.test(entry.name)) {
+      fs.copyFileSync(path.join(DIRECTORY, entry.name), path.join(directory, entry.name));
+    }
+  }
+  for (const name of [...APP_RESOURCES.map(name => `${name}.html`), "build-info.json"]) {
+    fs.copyFileSync(path.join(DIRECTORY, "dist", name), path.join(directory, "dist", name));
+  }
+  for (const file of ["plugin.json", path.join("scripts", "gate.mjs")]) {
+    fs.copyFileSync(path.resolve(DIRECTORY, "..", "..", "plugin", file), path.join(kit, "plugin", file));
+  }
+  fs.symlinkSync(path.join(DIRECTORY, "node_modules"), path.join(directory, "node_modules"),
+    process.platform === "win32" ? "junction" : "dir");
+  return { kit, directory };
+}
+
+test("a real running server retains its UI through checkout changes, rebuild and resource damage", async t => {
+  const root = fixture();
+  const before = snapshot(root);
+  const { kit, directory } = kitFixture();
+  const client = await connect(t, root, true, directory);
+  const inspect = async client => (await client.callTool({ name: INSPECT_SESSION, arguments: {} })).structuredContent.inspection.runtime;
+  const uri = "ui://golden-path/engineering.html";
+  const resource = async client => (await client.readResource({ uri })).contents[0].text;
+  const original = await resource(client);
+  assert.equal((await inspect(client)).status, "current");
+  fs.appendFileSync(path.join(directory, "server.mjs"), "\n// Reviewed fixture checkout change.\n");
+  fs.appendFileSync(path.join(directory, "engineering.mjs"), '\nimport "../../dependency.mjs";\n');
+  fs.writeFileSync(path.join(kit, "dependency.mjs"), 'console.log("fixture dependency one");\n');
+  assert.equal((await inspect(client)).status, "rebuild-required");
+  const build = spawnSync(process.execPath, [path.join(directory, "build.mjs")], { encoding: "utf8", timeout: 30000 });
+  assert.equal(build.status, 0, build.stderr);
+  assert.equal((await inspect(client)).status, "restart-required");
+  assert.equal(await resource(client), original);
+  const restarted = await connect(t, root, true, directory);
+  const fresh = await inspect(restarted);
+  assert.equal(fresh.status, "current");
+  const freshResource = await resource(restarted);
+  assert.notEqual(freshResource, original);
+  assert.match(freshResource, new RegExp(`data-runtime-source="${fresh.runningSource}"`));
+  assert.match(freshResource, new RegExp(`data-runtime-build="${fresh.runningBuild}"`));
+  fs.writeFileSync(path.join(kit, "dependency.mjs"), 'console.log("fixture dependency two");\n');
+  const rebuilt = spawnSync(process.execPath, [path.join(directory, "build.mjs")], { encoding: "utf8", timeout: 30000 });
+  assert.equal(rebuilt.status, 0, rebuilt.stderr);
+  const dependencyChange = await inspect(restarted);
+  assert.equal(dependencyChange.runningSource, dependencyChange.checkoutSource);
+  assert.notEqual(dependencyChange.runningBuild, dependencyChange.builtBuild);
+  assert.equal(dependencyChange.status, "restart-required");
+  assert.equal(await resource(restarted), freshResource);
+  const latest = await connect(t, root, true, directory);
+  const latestResource = await resource(latest);
+  assert.equal((await inspect(latest)).status, "current");
+  assert.notEqual(latestResource, freshResource);
+  assert.match(latestResource, /fixture dependency two/);
+  fs.writeFileSync(path.join(directory, "dist", "engineering.html"), "damaged output");
+  assert.equal((await inspect(latest)).status, "rebuild-required");
+  assert.equal(await resource(latest), latestResource);
+  assert.deepEqual(snapshot(root), before);
+});
+
+test("a real server with unavailable startup identity still exposes diagnostics but not UI", async t => {
+  const root = fixture();
+  const before = snapshot(root);
+  const { directory } = kitFixture();
+  fs.writeFileSync(path.join(directory, "extra.json"), "x".repeat(2 * 1024 * 1024 + 1));
+  const client = await connect(t, root, true, directory);
+  const tools = (await client.listTools()).tools;
+  assert.equal(tools.length, 2);
+  for (const name of [TOOL, INSPECT_SESSION]) {
+    const result = await client.callTool({ name, arguments: {} });
+    assert.notEqual(result.isError, true);
+    const runtime = result.structuredContent.runtime || result.structuredContent.inspection.runtime;
+    assert.equal(runtime.status, "unknown");
+    assert.equal(runtime.runningSource, null);
+    assert.match(runtime.detail, /diagnostic limit/);
+  }
+  await assert.rejects(client.readResource({ uri: "ui://golden-path/engineering.html" }), /diagnostic limit/);
+  assert.deepEqual(snapshot(root), before);
 });
 
 test("the resource is the built, self-contained MCP App with no external resource permissions", async (t) => {
@@ -96,6 +183,9 @@ test("inspection returns honest evidence, never executes commands and leaves the
   const result = await client.callTool({ name: TOOL, arguments: {} });
   assert.notEqual(result.isError, true);
   const { report, inspectedAt } = result.structuredContent;
+  assert.equal(result.structuredContent.runtime.status, "current");
+  assert.equal(result.structuredContent.runtime.installation.status, "missing");
+  assert.equal(client.getServerVersion().version, result.structuredContent.runtime.appVersion);
   assert.equal(fs.realpathSync.native(report.root), root);
   assert.match(report.head, /^[a-f0-9]{40}$/);
   assert.ok(Number.isFinite(Date.parse(inspectedAt)));
